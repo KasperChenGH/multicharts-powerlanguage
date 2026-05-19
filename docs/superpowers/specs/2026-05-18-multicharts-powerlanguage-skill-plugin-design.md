@@ -66,6 +66,10 @@ Multicharts-Powerlanguage-skill/
 │           └── …  (40 category folders)
 ├── scripts/
 │   └── generate-keyword-details.ps1    # maintainer-only build tool (see "Build process")
+├── tests/                              # MultiCharts compile-test fixtures (maintainer-only)
+│   ├── test_indicator.pla
+│   ├── test_signal.pla
+│   └── test_function.pla
 ├── references/                         # gitignored — local-only working data
 │   ├── chm_extracted/                  # decompiled PowerLanguage.chm (MCT-copyrighted)
 │   └── wiki_keyword_index.txt          # wiki category page text
@@ -218,13 +222,44 @@ End users never run anything. The maintainer regenerates `keywords-index.md` and
 5. **Per file, generate an original example** from the signature pattern (template-based; never read MCT's example text).
 6. **Write** `skills/powerlanguage-keywords-reference/details/<Category>/<Keyword>.md` following the template above.
 7. **Rebuild** `keywords-index.md` from the produced details.
-8. **Flag for human review** any keyword whose source description couldn't be parsed cleanly — these get manually authored.
+8. **Emit verification fixtures.** For each script type (Indicator / Signal / Function), write `tests/test_<scripttype>.pla` containing a use of every keyword from the assigned categories inside a syntactically valid surrounding construct. The maintainer compiles these in MultiCharts as the primary correctness check (see "Verification before release" below).
+9. **Flag for human review** any keyword whose source description couldn't be parsed cleanly — these get manually authored.
 
 The script is committed to the repo for transparency, but only the maintainer runs it. It assumes Windows + MultiCharts installed; it doesn't run for end users and isn't part of the user-facing install flow.
 
-A separate verification step before each release:
-- Lint pass: ensure no `details/*.md` contains any verbatim string from `references/chm_extracted/`.
-- Spot-review of ~50-100 high-traffic keywords (Buy, Sell, If, Then, Average, RSI, MACD, Plot1, EntryPrice, MarketPosition, etc.) for prose quality.
+## Verification before release
+
+Two checks, run in order before tagging a release:
+
+### 1. Compile-test in MultiCharts (syntactic correctness)
+
+The build script *also* emits three PowerLanguage test files into `tests/`:
+
+| File | Script type | Exercises |
+|---|---|---|
+| `tests/test_indicator.pla` | Indicator | Plotting, Drawing (Arrow/Rectangle/Trendline/Text), Output, Colors, MouseClickEvents, Multimedia, ExpertCommentary, Alerts, Quote_Fields, Sessions, Math_and_Trig, Date_and_Time_routines, Text_Manipulation, Comparison_and_Loops, Declaration, Execution_Control, Data_Information_General, DOM, AccountsPositions, Skip_Words, Attributes, Dynamic_Arrays, Environment_Information, DLL_Calling, Currency_Codes, Miscellaneous_keywords |
+| `tests/test_signal.pla` | Signal | Strategy_Orders, Strategy_Position, Strategy_Performance, Strategy_Position_Synchronization, Strategy_Position_Trades, Strategy_Properties, Strategy_Events, Portfolio_Money_Management, Portfolio_Strategy_*  |
+| `tests/test_function.pla` | Function | Function-return idioms and any function-only keywords |
+
+Each test file references every keyword in its assigned categories inside a syntactically valid surrounding construct (e.g. skip words and color constants appear inside an `If/Then` that uses them; type names appear in `Inputs:` or `Variables:` declarations).
+
+**Pass criterion:** opening each `.pla` in MultiCharts → PowerLanguage Editor → **Verify** (Ctrl+F3) returns zero errors. That proves every signature and usage pattern in our paraphrased `details/<Category>/<Keyword>.md` entries is syntactically valid for the current MultiCharts version.
+
+**Fail action:** MultiCharts reports the failing line; trace back to the originating keyword; fix its `details/<Category>/<Keyword>.md` entry; re-run the build script; re-verify.
+
+This check is performed by the maintainer on a Windows machine with MultiCharts installed. It is not part of the user-facing install flow.
+
+### 2. Prose spot-check (semantic correctness)
+
+The compile test only catches syntax errors. Behavioral/semantic bugs in our prose paraphrases (e.g. an inaccurate description of when an order fills) won't surface. So additionally, hand-review the prose of these ~10 high-frequency keywords:
+
+`Buy`, `Sell`, `If`, `Then`, `Begin`, `End`, `Average`, `Plot1`, `MarketPosition`, `EntryPrice`
+
+Confirm description accuracy by reading the corresponding `references/chm_extracted/files/03_words/<Category>/<keyword>.htm` and verifying our paraphrase doesn't introduce factual errors.
+
+### 3. Verbatim-string lint (copyright)
+
+Ensure no committed `details/*.md` file contains a verbatim string of ≥10 consecutive words from `references/chm_extracted/`. The build script flags any entry where the paraphrase came out too close to the source; those get rewritten before commit.
 
 ---
 
@@ -329,7 +364,8 @@ The plugin is complete when:
 5. **Lint:** no file under `skills/` contains TXF / TWD / "92 strategies" / personal-strategy-name references.
 6. `.claude-plugin/plugin.json` and `marketplace.json` are valid JSON.
 7. `README.md` documents the install command, cross-platform support, and the MCT attribution.
-8. **Manual smoke test** from a fresh Claude Code instance on Windows AND on macOS or Linux: install the plugin from a local path, ask "what does the Buy keyword do in PowerLanguage?" — the `powerlanguage-keywords-reference` skill should auto-invoke and Claude should answer using the paraphrased entry plus the wiki link.
+8. **MultiCharts compile-test.** The maintainer opens each `tests/test_<scripttype>.pla` in MultiCharts PowerLanguage Editor and runs Verify (Ctrl+F3). All three files must compile with zero errors. This is the primary correctness check for signatures and usage patterns across all 951 keywords.
+9. **Manual smoke test** from a fresh Claude Code instance on Windows AND on macOS or Linux: install the plugin from a local path, ask "what does the Buy keyword do in PowerLanguage?" — the `powerlanguage-keywords-reference` skill should auto-invoke and Claude should answer using the paraphrased entry plus the wiki link.
 
 ---
 
