@@ -30,6 +30,11 @@ Describe 'SKILL.md frontmatter' {
       $r.Valid | Should -BeTrue -Because $r.Reason
       $r.Name  | Should -Be 'multicharts-fundamentals'
     }
+    It 'powerlanguage-syntax has valid frontmatter' {
+      $r = Test-SkillFrontmatter "$repoRoot/skills/powerlanguage-syntax/SKILL.md"
+      $r.Valid | Should -BeTrue -Because $r.Reason
+      $r.Name  | Should -Be 'powerlanguage-syntax'
+    }
   }
 
   Context 'negative cases (synthetic fixtures)' {
