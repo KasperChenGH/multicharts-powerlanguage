@@ -1,0 +1,25 @@
+multicharts-powerlanguage
+A Claude Code plugin for MultiCharts PowerLanguage
+
+Copyright (c) 2026 Yu-An Chen (also published as Kasper Chen)
+Licensed under the MIT License — see LICENSE.
+
+---
+
+Trademarks
+
+  MultiCharts® and PowerLanguage® are trademarks of MCT Limited (Gibraltar).
+  This plugin is not affiliated with, endorsed by, or sponsored by MCT Limited.
+
+Source materials
+
+  The 947 keyword detail entries in skills/powerlanguage-keywords-reference/details/
+  are original paraphrased summaries written for this plugin. Structural data
+  (keyword name, category, signature, parameter types) is factual API information
+  derived from the public PowerLanguage documentation maintained by MCT Limited
+  at https://www.multicharts.com/. Each entry links back to its corresponding
+  official wiki page for the authoritative prose.
+
+  No raw content from PowerLanguage.chm is redistributed in this repository.
+  Where a paraphrase could not be safely generated, the entry uses a generic
+  placeholder description and a wiki link rather than verbatim source text.
