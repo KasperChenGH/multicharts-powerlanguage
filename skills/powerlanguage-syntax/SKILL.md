@@ -198,9 +198,10 @@ A common new-user mistake is to write `Value1 = SomeKeyword;` for a keyword that
 - A keyword name that contains a space in the official docs (e.g. `DateTime bar update`, `Cancel Alert`) cannot be used as a single identifier — PowerLanguage parses only the first word and chokes on the rest.
 - **Single-letter data-series aliases** (`C`=Close, `D`=Date, `H`=High, `I`=OpenInt, `L`=Low, `O`=Open, `T`=Time, `V`=Volume) are reserved — using them with parentheses like `C(Close)` causes *"A keyword/variable is used as a function"*. Use square brackets for barsback: `C[1]`.
 - A handful of names in otherwise-value-rich categories are reserved syntactic tokens: `Data` (used as `Close of Data2`), `Call` / `Put` / `Strike` (option-context syntax), `Length`, `OptionType`, `DeltaType`, `RevSize`, `BoxSize`.
-- **Procedure keywords** like `ScrollToBar` perform an action and do NOT return a value — assigning them to `Value1` causes *"Function must have a return value"*. Call them as standalone statements: `ScrollToBar(1, 0);`.
+- **Procedure keywords** like `ScrollToBar`, `PlaceMarketOrder`, `ChangeMarketPosition` perform an action and do NOT return a value — assigning them to `Value1` causes *"Function must have a return value"*. Call them as standalone statements: `ScrollToBar(1, 0);`.
+- **Signal/portfolio-only keywords** like `Portfolio_CurrencyCode`, `StrategyCurrencyCode`, `InitialCapital` cause *"X is not applicable to this type of study"* when used in an Indicator. They only work in Signal studies.
 - **Drawing-object accessors** (any `Rectangle*`, `TL_*`, `Arw_*`, `Text_*`, or `MC_TL_*`/`MC_Arw_*`/etc. function ending in `Get`/`Set`/`Delete`/`New`/…) take at least one drawing-object ID argument — never use them as bare values.
-- **`Set*` keywords** are setters (e.g. `SetMaxBarsBack`, `SetPlotColor`, `SetStopLoss`) — they always require at least one value argument.
+- **Setter keywords** (`Set*`, `Portfolio_Set*`, `pmm_set_*`, or any name containing `_set_`) are statement-shaped — they always require at least one value argument and don't return a value.
 - **Lowercase-prefix functions** (e.g. `getTPOinfo`, `getplotstyle`) usually take parameters; the unusual lowercase naming is the signal.
 - **String-returning keywords** like `Description`, `Symbol`, `GetCurrency`, `BarType_uid`, anything ending in `Name` / `Description` / `Listed` / `ToStr` — can be assigned only to a string variable, not the numeric `Value1`.
 - **Boolean-returning keywords** like `Is64BitProcess`, `MouseClickShiftPressed`, `AlertEnabled` — use them inside an `If` condition (`If Is64BitProcess Then ...`); direct assignment to `Condition1` sometimes fails because PowerLanguage returns numeric 0/1 instead of `TrueFalse` for some "logical" functions.
@@ -218,5 +219,6 @@ If MultiCharts gives you one of these errors when using a keyword:
 | `Types are not compatible` | RHS returns a type incompatible with the LHS variable | Assign string→string var, bool→bool var, numeric→`Value1` |
 | `A keyword/variable is used as a function` | Using a data-series alias with parentheses, e.g. `C(Close)` | Use square brackets for barsback: `C[1]`, or no brackets: `Value1 = C;` |
 | `Function must have a return value` | Assigning a procedure keyword (e.g. `ScrollToBar`) to a variable | Call as a standalone statement: `ScrollToBar(1, 0);` |
+| `X is not applicable to this type of study` | Using a signal-only keyword in an Indicator (e.g. `InitialCapital`) | Move to a Signal study, or remove the keyword |
 
 When in doubt, look up the keyword in the `powerlanguage-keywords-reference` skill — the signature line shows whether it's used as `KeywordName(args)` (callable function) or in a larger construct (then it can't be the whole RHS).
