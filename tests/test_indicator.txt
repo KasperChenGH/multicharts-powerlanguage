@@ -49,7 +49,7 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Multimedia: PlaySound }
     // PlaySound is a language construct (Multimedia); see official docs for usage.
     { MouseClickEvents: MouseClickShiftPressed }
-    Condition1 = MouseClickShiftPressed;
+    If MouseClickShiftPressed Then Begin End;
     { Output: ClearDebug }
     // ClearDebug is a language construct (Output); see official docs for usage.
     { Output: File }
@@ -63,7 +63,7 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Miscellaneous_keywords: Yesterday }
     // Yesterday is a language construct (Miscellaneous_keywords); see official docs for usage.
     { MouseClickEvents: MouseClickCtrlPressed }
-    Condition1 = MouseClickCtrlPressed;
+    If MouseClickCtrlPressed Then Begin End;
     { MouseClickEvents: MouseClickDateTime }
     Value1 = MouseClickDateTime;
     { MouseClickEvents: MouseClickDataNumber }
@@ -191,7 +191,7 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Execution_Control: Abort }
     // Abort is a language construct (Execution_Control); see official docs for usage.
     { Environment_Information: Is64BitProcess }
-    Condition1 = Is64BitProcess;
+    If Is64BitProcess Then Begin End;
     { Environment_Information: getTPOinfo }
     Value1 = getTPOinfo;
     { Environment_Information: GetCurrency }
@@ -199,7 +199,7 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Environment_Information: GetUserID }
     Value1 = GetUserID;
     { Environment_Information: Is64BitOperatingSystem }
-    Condition1 = Is64BitOperatingSystem;
+    If Is64BitOperatingSystem Then Begin End;
     { Environment_Information: GetUserName }
     // GetUserName returns a string; see official docs for usage.
     { Execution_Control: RecalcLastBarAfter }
@@ -963,7 +963,7 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { AccountsPositions: GetNumPositions }
     Value1 = GetNumPositions;
     { Alerts: CheckAlert }
-    Condition1 = CheckAlert;
+    If CheckAlert Then Begin End;
     { Alerts: Cancel Alert }
     // Cancel Alert (multi-word keyword); see official docs for usage.
     { Arrow_Drawing: Arw_Anchor_to_Bars }
@@ -981,7 +981,7 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { AccountsPositions: InitialCapital }
     Value1 = InitialCapital;
     { Alerts: AlertEnabled }
-    Condition1 = AlertEnabled;
+    If AlertEnabled Then Begin End;
     { Alerts: Alert }
     // Alert is a reserved syntactic token; see official docs for usage.
     { Arrow_Drawing: Arw_New_BN }

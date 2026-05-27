@@ -122,7 +122,10 @@ function Get-KeywordStatement {
   $looksLikeBoolean = ($name -match '(?i)(Pressed|Enabled)$') -or
                       ($name -match '^(?i)(Is|Has|Can)[A-Z0-9]')
   if (($booleanReturningNames -contains $name) -or $looksLikeBoolean) {
-    return "Condition1 = $name;"
+    # Use an If-condition form that compiles whether the return type is
+    # TrueFalse OR numeric 0/1. Direct "Condition1 = X;" fails when X
+    # is actually a numeric flag rather than a TrueFalse.
+    return "If $name Then Begin End;"
   }
 
   # Drawing-object accessors (Rectangle/TL/Arw/Text Get*/Set*/Delete*/Active*)

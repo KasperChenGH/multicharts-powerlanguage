@@ -201,7 +201,7 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Strategy_Position: MarketPosition_Checked }
     Value1 = MarketPosition_Checked;
     { Strategy_Position: MarketPosition_at_Broker_for_The_Strategy }
-    Condition1 = MarketPosition_at_Broker_for_The_Strategy;
+    If MarketPosition_at_Broker_for_The_Strategy Then Begin End;
     { Strategy_Position: MarketPosition_at_Broker }
     Value1 = MarketPosition_at_Broker;
     { Strategy_Position: MaxPositionLoss_Checked }
