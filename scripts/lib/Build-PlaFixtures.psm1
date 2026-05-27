@@ -170,11 +170,11 @@ function Get-KeywordStatement {
         'Array_GetType'         { return 'Value1 = Array_GetType( pl_test_ints );' }
         'Array_IndexOf'         { return 'Value1 = Array_IndexOf( pl_test_ints, 5 );' }
         'Array_Contains'        { return 'If Array_Contains( pl_test_ints, 5 ) Then Begin End;' }
-        'Array_Compare'         { return 'Value1 = Array_Compare( pl_test_ints, pl_test_ints );' }
+        'Array_Compare'         { return 'Value1 = Array_Compare( pl_test_ints, 0, pl_test_ints, 0, 5 );' }
         'Array_Copy'            { return 'Array_Copy( pl_test_ints, 0, pl_test_ints, 0, 5 );' }
-        'Array_Sort'            { return 'Array_Sort( pl_test_ints );' }
-        'Array_Sum'             { return 'Value1 = Array_Sum( pl_test_floats );' }
-        'Array_SetValRange'     { return 'Array_SetValRange( pl_test_ints, 0, 0, 5 );' }
+        'Array_Sort'            { return 'Array_Sort( pl_test_ints, 0, 5, True );' }
+        'Array_Sum'             { return 'Value1 = Array_Sum( pl_test_floats, 0, 5 );' }
+        'Array_SetValRange'     { return 'Array_SetValRange( pl_test_ints, 0, 5, 0 );' }
         'Fill_Array'            { return 'Fill_Array( pl_test_ints, 0 );' }
         default                 { return "// $name (Dynamic_Arrays); see official docs." }
       }

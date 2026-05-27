@@ -260,15 +260,15 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Environment_Information: BaseDataNumber }
     Value1 = BaseDataNumber;
     { Dynamic_Arrays: Array_SetValRange }
-    Array_SetValRange( pl_test_ints, 0, 0, 5 );
+    Array_SetValRange( pl_test_ints, 0, 5, 0 );
     { Dynamic_Arrays: Array_SetStringValue }
     Array_SetStringValue( pl_test_strs, 0, "x" );
     { Dynamic_Arrays: Array_Sort }
-    Array_Sort( pl_test_ints );
+    Array_Sort( pl_test_ints, 0, 5, True );
     { Dynamic_Arrays: Fill_Array }
     Fill_Array( pl_test_ints, 0 );
     { Dynamic_Arrays: Array_Sum }
-    Value1 = Array_Sum( pl_test_floats );
+    Value1 = Array_Sum( pl_test_floats, 0, 5 );
     { Execution_Control: #Return }
     // #Return is a language construct (Execution_Control); see official docs for usage.
     { Math_and_Trig: Sign }
@@ -1198,7 +1198,7 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Dynamic_Arrays: Array_Contains }
     If Array_Contains( pl_test_ints, 5 ) Then Begin End;
     { Dynamic_Arrays: Array_Compare }
-    Value1 = Array_Compare( pl_test_ints, pl_test_ints );
+    Value1 = Array_Compare( pl_test_ints, 0, pl_test_ints, 0, 5 );
     { DOM: DOM_BidPrice }
     Value1 = DOM_BidPrice;
     { DLL_Calling: #Events }
