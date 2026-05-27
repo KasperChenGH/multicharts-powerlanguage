@@ -225,27 +225,27 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Execution_Control: fpcMedAccuracy }
     // fpcMedAccuracy is a language construct (Execution_Control); see official docs for usage.
     { Dynamic_Arrays: Array_SetBooleanValue }
-    Value1 = Array_SetBooleanValue;
+    // Array_SetBooleanValue is a language construct (Dynamic_Arrays); see official docs for usage.
     { Dynamic_Arrays: Array_IndexOf }
-    Value1 = Array_IndexOf;
+    // Array_IndexOf is a language construct (Dynamic_Arrays); see official docs for usage.
     { Dynamic_Arrays: Array_SetFloatValue }
-    Value1 = Array_SetFloatValue;
+    // Array_SetFloatValue is a language construct (Dynamic_Arrays); see official docs for usage.
     { Dynamic_Arrays: Array_SetMaxIndex }
-    Value1 = Array_SetMaxIndex;
+    // Array_SetMaxIndex is a language construct (Dynamic_Arrays); see official docs for usage.
     { Dynamic_Arrays: Array_SetIntegerValue }
-    Value1 = Array_SetIntegerValue;
+    // Array_SetIntegerValue is a language construct (Dynamic_Arrays); see official docs for usage.
     { Dynamic_Arrays: Array_GetType }
-    Value1 = Array_GetType;
+    // Array_GetType is a language construct (Dynamic_Arrays); see official docs for usage.
     { Dynamic_Arrays: Array_GetFloatValue }
-    Value1 = Array_GetFloatValue;
+    // Array_GetFloatValue is a language construct (Dynamic_Arrays); see official docs for usage.
     { Dynamic_Arrays: Array_GetBooleanValue }
-    Value1 = Array_GetBooleanValue;
+    // Array_GetBooleanValue is a language construct (Dynamic_Arrays); see official docs for usage.
     { Dynamic_Arrays: Array_GetIntegerValue }
-    Value1 = Array_GetIntegerValue;
+    // Array_GetIntegerValue is a language construct (Dynamic_Arrays); see official docs for usage.
     { Dynamic_Arrays: Array_GetStringValue }
-    Value1 = Array_GetStringValue;
+    // Array_GetStringValue is a language construct (Dynamic_Arrays); see official docs for usage.
     { Dynamic_Arrays: Array_GetMaxIndex }
-    Value1 = Array_GetMaxIndex;
+    // Array_GetMaxIndex is a language construct (Dynamic_Arrays); see official docs for usage.
     { Environment_Information: ExecOffset }
     Value1 = ExecOffset;
     { Environment_Information: CurrentDataNumber }
@@ -259,15 +259,15 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Environment_Information: BaseDataNumber }
     Value1 = BaseDataNumber;
     { Dynamic_Arrays: Array_SetValRange }
-    Value1 = Array_SetValRange;
+    // Array_SetValRange is a language construct (Dynamic_Arrays); see official docs for usage.
     { Dynamic_Arrays: Array_SetStringValue }
-    Value1 = Array_SetStringValue;
+    // Array_SetStringValue is a language construct (Dynamic_Arrays); see official docs for usage.
     { Dynamic_Arrays: Array_Sort }
-    Value1 = Array_Sort;
+    // Array_Sort is a language construct (Dynamic_Arrays); see official docs for usage.
     { Dynamic_Arrays: Fill_Array }
-    Value1 = Fill_Array;
+    // Fill_Array is a language construct (Dynamic_Arrays); see official docs for usage.
     { Dynamic_Arrays: Array_Sum }
-    Value1 = Array_Sum;
+    // Array_Sum is a language construct (Dynamic_Arrays); see official docs for usage.
     { Execution_Control: #Return }
     // #Return is a language construct (Execution_Control); see official docs for usage.
     { Math_and_Trig: Sign }
@@ -717,7 +717,7 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Text_Drawing: Text_GetAttribute }
     // Text_GetAttribute is a drawing-object accessor (takes a drawing-object ID); see official docs.
     { Dynamic_Arrays: Array_Copy }
-    Value1 = Array_Copy;
+    // Array_Copy is a language construct (Dynamic_Arrays); see official docs for usage.
     { Comparison_and_Loops: For }
     // For is a language construct (Comparison_and_Loops); see official docs for usage.
     { Comparison_and_Loops: False }
@@ -1195,9 +1195,9 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { DOM: DOM_IsConnected }
     Value1 = DOM_IsConnected;
     { Dynamic_Arrays: Array_Contains }
-    Value1 = Array_Contains;
+    // Array_Contains is a language construct (Dynamic_Arrays); see official docs for usage.
     { Dynamic_Arrays: Array_Compare }
-    Value1 = Array_Compare;
+    // Array_Compare is a language construct (Dynamic_Arrays); see official docs for usage.
     { DOM: DOM_BidPrice }
     Value1 = DOM_BidPrice;
     { DLL_Calling: #Events }

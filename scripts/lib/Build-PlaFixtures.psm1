@@ -59,7 +59,7 @@ function Get-KeywordStatement {
   # operators, control-flow keywords, script-level attributes) that cannot
   # appear as values in `Value1 = X;`. Emit a comment so the compile-test still
   # exercises the keyword name without producing a parse error.
-  if ($cat -in @('Declaration','Comparison_and_Loops','Attributes','ExpertCommentary','DLL_Calling','Output','Multimedia','Miscellaneous_keywords','Execution_Control')) {
+  if ($cat -in @('Declaration','Comparison_and_Loops','Attributes','ExpertCommentary','DLL_Calling','Output','Multimedia','Miscellaneous_keywords','Execution_Control','Dynamic_Arrays')) {
     return "// $name is a language construct ($cat); see official docs for usage."
   }
 
