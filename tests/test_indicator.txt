@@ -980,7 +980,7 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { AccountsPositions: GetRTAccountNetWorth }
     Value1 = GetRTAccountNetWorth( "x" );
     { AccountsPositions: InitialCapital }
-    Value1 = InitialCapital;
+    // InitialCapital is signal/portfolio-only; not applicable to Indicator studies.
     { Alerts: AlertEnabled }
     If AlertEnabled Then Begin End;
     { Alerts: Alert }

@@ -93,7 +93,8 @@ function Get-KeywordStatement {
   # Signal/portfolio-only keywords that land in Indicator-mapped categories.
   # Using them in an Indicator causes "X is not applicable to this type of study".
   $signalOnlyKeywords = @(
-    'Portfolio_CurrencyCode','StrategyCurrencyCode'
+    'Portfolio_CurrencyCode','StrategyCurrencyCode',
+    'InitialCapital'
   )
   if ($signalOnlyKeywords -contains $name) {
     return "// $name is signal/portfolio-only; not applicable to Indicator studies."
