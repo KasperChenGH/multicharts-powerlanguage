@@ -229,15 +229,15 @@ function Get-KeywordStatement {
 
       if ($argCount -eq 0) { return "Value1 = $name;" }
 
-      # Heuristic: function-name prefix hints about the first arg's type.
-      # StringTo*, StrTo* etc. take a string as first arg; my default of Close
-      # (numeric) fails with "Incorrect argument type".
-      $firstArgIsString = $name -match '^(StringTo|StrTo)'
+      # Heuristic: function-name prefix hints arg types. StringTo*/StrTo* take
+      # string args (often multiple — the input value AND the format spec).
+      # Default of Close/14 fails with "Incorrect argument type".
+      $allArgsString = $name -match '^(StringTo|StrTo)'
 
       $argv = @()
       for ($i = 0; $i -lt $argCount; $i++) {
         $type = if ($i -lt $params.Count) { $params[$i].Type } else { 'numeric' }
-        if ($i -eq 0 -and $firstArgIsString) { $type = 'string' }
+        if ($allArgsString) { $type = 'string' }
         $argv += switch ($type) {
           'numeric'   { if ($i -eq 0) { 'Close' } else { '14' } }
           'string'    { '"x"' }

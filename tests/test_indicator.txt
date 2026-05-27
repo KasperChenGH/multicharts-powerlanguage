@@ -1132,7 +1132,7 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Date_and_Time_routines: Time2Time_s }
     Value1 = Time2Time_s( Close );
     { Date_and_Time_routines: StringToDTFormatted }
-    Value1 = StringToDTFormatted( "x", 14 );
+    Value1 = StringToDTFormatted( "x", "x" );
     { Date_and_Time_routines: Saturday }
     Value1 = Saturday;
     { Date_and_Time_routines: MonthFromDateTime }
