@@ -79,7 +79,7 @@ function Get-KeywordStatement {
   $reservedTokens = @(
     'Data','Call','Put','Strike','Length','OptionType','DeltaType','RevSize','BoxSize',
     # Connector words from Data_Information_General that overlap with Miscellaneous_keywords
-    'Day','Days','Point','Points','Tick','Ticks','Ago','Next','This','Today','Yesterday',
+    'Bar','Bars','Day','Days','Point','Points','Tick','Ticks','Ago','Next','This','Today','Yesterday',
     # Single-letter aliases that PowerLanguage may parse as reserved
     'D','I'
   )

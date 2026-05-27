@@ -875,7 +875,7 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Currency_Codes: JPY }
     Value1 = JPY;
     { Data_Information_General: Bars }
-    Value1 = Bars;
+    // Bars is a reserved syntactic token; see official docs for usage.
     { Data_Information_General: BarInterval }
     Value1 = BarInterval;
     { Data_Information_General: BarStatus }
@@ -885,7 +885,7 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Data_Information_General: BarType }
     Value1 = BarType;
     { Data_Information_General: Bar }
-    Value1 = Bar;
+    // Bar is a reserved syntactic token; see official docs for usage.
     { Currency_Codes: TRY_ }
     Value1 = TRY_;
     { Currency_Codes: SymbolCurrencyCode }

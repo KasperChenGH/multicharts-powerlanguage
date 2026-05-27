@@ -1,6 +1,6 @@
 ---
 name: powerlanguage-syntax
-description: Use when reading or writing PowerLanguage code — declarations (Inputs, Variables, Arrays), data types (numeric, string, truefalse), the begin/end semicolon rules, control flow (If/Then/Else, For, While, Switch), bar references (Close, Close[N], Date, Time, BarNumber), operators, comments, the built-in trade-state variables (MarketPosition, EntryPrice, BarsSinceEntry, CurrentContracts), and common gotchas like MarketPosition(N) being position history (NOT bar offset) and bars being labeled by their close time (NOT open time).
+description: Use when reading or writing PowerLanguage code — declarations (Inputs, Variables, Arrays), data types (numeric, string, truefalse), the begin/end semicolon rules, control flow (If/Then/Else, For, While, Switch), bar references (Close, Close[N], Date, Time, BarNumber), operators, comments, the pre-declared Value1..Value10000 and Condition1..Condition10000 built-ins, the built-in trade-state variables (MarketPosition, EntryPrice, BarsSinceEntry, CurrentContracts), and common gotchas — including "syntax error, unexpected X" / "Wrong syntax of X" errors caused by writing keywords like Print/File/Variable/If/Yesterday/#BeginCmtry as RHS values, MarketPosition(N) being position history (NOT bar offset), and bars being labeled by their close time (NOT open time).
 ---
 
 # PowerLanguage Syntax
@@ -175,3 +175,28 @@ You cannot assign to an Input inside a script. If you need a mutable copy, decla
 ### Variable types are fixed at first assignment
 
 `Variables: x(0);` makes `x` numeric for the life of the script. You can't later assign a string to it. Same for `True`/`False` initial values (bool) and `""` (string).
+
+### Many keywords can't appear as values on the right-hand side of `=`
+
+A common new-user mistake is to write `Value1 = SomeKeyword;` for a keyword that looks identifier-like in the documentation but is actually a syntactic construct. PowerLanguage will throw "syntax error, unexpected '…'" or "Wrong syntax of '…'" when you do this. Empirically, the following classes never work as RHS values:
+
+**Whole keyword classes:**
+
+| Class | Example keywords | Why |
+|---|---|---|
+| Type / declaration words | `Numeric`, `String`, `TrueFalse`, `Variable`, `Var`, `NumericSeries`, `IntraBarPersist` | Used inside `Inputs:` / `Variables:` / `Arrays:` blocks |
+| Control flow / operators | `If`, `Then`, `Else`, `For`, `While`, `Begin`, `End`, `To`, `DownTo`, `Switch`, `Case`, `and`, `or`, `not` | Reserved syntax |
+| Script-level attributes | `IntraBarOrderGeneration`, `LegacyColorValue`, `RecoverDrawings`, `AllowSendOrdersOn…` | Used in `[Attr = value];` form at script start |
+| Output statements | `Print`, `FileAppend`, `FileClose`, `FileDelete`, `ClearDebug`, `ClearPrintLog`, `File`, `MessageLog`, `PlaySound` | Statement-shaped, no return value |
+| DLL-calling directives | `DefineDllFunc`, `external`, `method`, `OnCreate`, `OnDestroy`, `ThreadSafe`, plus C type names (`int`, `lpstr`, `bool`, …) | Statement / declaration syntax |
+| Expert Commentary | `#BeginCmtry`, `#EndCmtry`, `CheckCommentary`, `AtCommentaryBar` | Paired-block directives |
+| Preprocessor (`#`-prefixed) | `#BeginCmtry`, `#EndCmtry`, `#Return`, `#Events` | Reserved positions; `#BeginCmtry` in particular opens a commentary block that runs to `#EndCmtry` |
+| Connector words | `Bar`, `Bars`, `Day`, `Days`, `Point`, `Points`, `Tick`, `Ticks`, `Ago`, `Next`, `This`, `Today`, `Yesterday`, `Market`, `Contract`, `Contracts` | Used in compound phrases ("5 bars ago", "next bar at market") |
+
+**Other rules of thumb:**
+
+- A keyword name that contains a space in the official docs (e.g. `DateTime bar update`, `Cancel Alert`) cannot be used as a single identifier — PowerLanguage parses only the first word and chokes on the rest.
+- Single-letter aliases like `D` (Date) and `I` (loop index) are reserved tokens, not identifiers.
+- A handful of names in otherwise-value-rich categories are reserved syntactic tokens: `Data` (used as `Close of Data2`), `Call` / `Put` / `Strike` (option-context syntax), `Length`, `OptionType`, `DeltaType`, `RevSize`, `BoxSize`.
+
+When in doubt, look up the keyword in the `powerlanguage-keywords-reference` skill — the signature line shows whether it's used as `KeywordName(args)` (callable function) or in a larger construct (then it can't be the whole RHS).
