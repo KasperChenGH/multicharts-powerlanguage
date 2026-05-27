@@ -256,7 +256,7 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Portfolio_Money_Management: pmms_strategy_deny_short_entries }
     Value1 = pmms_strategy_deny_short_entries( Close );
     { Portfolio_Money_Management: pmms_strategy_is_paused }
-    Value1 = pmms_strategy_is_paused( Close );
+    If pmms_strategy_is_paused( 1 ) Then Begin End;
     { Portfolio_Money_Management: pmms_strategy_netprofit }
     Value1 = pmms_strategy_netprofit( Close );
     { Portfolio_Money_Management: pmms_strategy_maxiddrawdown }

@@ -144,7 +144,8 @@ function Get-KeywordStatement {
     'MouseClickShiftPressed','MouseClickCtrlPressed','AlertEnabled',
     'CheckAlert',
     'SessionLastBar','SessionFirstBar','LastBarOnChart',
-    'PosTradeIsOpen','PosTradeIsLong'
+    'PosTradeIsOpen','PosTradeIsLong',
+    'pmms_strategy_is_paused'
   )
   $looksLikeBoolean = ($name -match '(?i)(Pressed|Enabled)$') -or
                       ($name -match '^(?i)(Is|Has|Can)[A-Z0-9]') -or
