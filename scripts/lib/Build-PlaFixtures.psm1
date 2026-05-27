@@ -212,14 +212,27 @@ function Get-KeywordStatement {
       return "// $name -- see official docs"
     }
     default {
-      if ($params.Count -eq 0)              { return "Value1 = $name;" }
+      # Derive arg count from the Usage signature commas (more reliable than
+      # Parse-Chm's parameter detection, which misses inline-documented params).
+      $argCount = 0
+      if ($Kw.Usage -match '\(([^)]*)\)') {
+        $inner = $Matches[1].Trim()
+        if (-not [string]::IsNullOrEmpty($inner)) { $argCount = (($inner -split ',').Count) }
+      } else {
+        # No parens in Usage — treat as zero-arg value reference.
+        $argCount = $params.Count
+      }
+
+      if ($argCount -eq 0) { return "Value1 = $name;" }
+
       $argv = @()
-      foreach ($p in $params | Select-Object -First 3) {
-        $argv += switch ($p.Type) {
-          'numeric'   { '14' }
+      for ($i = 0; $i -lt $argCount; $i++) {
+        $type = if ($i -lt $params.Count) { $params[$i].Type } else { 'numeric' }
+        $argv += switch ($type) {
+          'numeric'   { if ($i -eq 0) { 'Close' } else { '14' } }
           'string'    { '"x"' }
           'truefalse' { 'True' }
-          default     { 'Close' }
+          default     { if ($i -eq 0) { 'Close' } else { '1' } }
         }
       }
       return "Value1 = $name( $($argv -join ', ') );"

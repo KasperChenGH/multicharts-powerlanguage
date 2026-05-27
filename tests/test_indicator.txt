@@ -474,15 +474,15 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Trendline_Drawing: TL_SetAlert }
     // TL_SetAlert is a drawing-object accessor (takes a drawing-object ID); see official docs.
     { Trendline_Drawing: Tool_Dashed2 }
-    Value1 = Tool_Dashed2;
+    Value1 = Tool_Dashed2( Close, 14 );
     { Trendline_Drawing: Tool_Dashed }
-    Value1 = Tool_Dashed;
+    Value1 = Tool_Dashed( Close, 14 );
     { Trendline_Drawing: Tool_Dashed3 }
-    Value1 = Tool_Dashed3;
+    Value1 = Tool_Dashed3( Close, 14 );
     { Trendline_Drawing: Tool_Solid }
-    Value1 = Tool_Solid;
+    Value1 = Tool_Solid( Close, 14 );
     { Trendline_Drawing: Tool_Dotted }
-    Value1 = Tool_Dotted;
+    Value1 = Tool_Dotted( Close, 14 );
     { Trendline_Drawing: TL_SetStyle }
     // TL_SetStyle is a drawing-object accessor (takes a drawing-object ID); see official docs.
     { Trendline_Drawing: TL_SetEnd_s }
@@ -548,7 +548,7 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Sessions: SessionCountMS }
     Value1 = SessionCountMS;
     { Sessions: SessionCount }
-    Value1 = SessionCount;
+    Value1 = SessionCount( Close );
     { Sessions: Sess1StartTime }
     Value1 = Sess1StartTime;
     { Sessions: AutoSession }
@@ -562,9 +562,9 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Sessions: Sess1EndTime }
     Value1 = Sess1EndTime;
     { Sessions: SessionStartTimeMS }
-    Value1 = SessionStartTimeMS;
+    Value1 = SessionStartTimeMS( Close );
     { Sessions: SessionStartTime }
-    Value1 = SessionStartTime;
+    Value1 = SessionStartTime( Close, 14 );
     { Skip_Words: A }
     // A appears inside other constructs.
     { Skip_Words: At }
@@ -572,17 +572,17 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Skip_Words: An }
     // An appears inside other constructs.
     { Sessions: SessionStartDayMS }
-    Value1 = SessionStartDayMS;
+    Value1 = SessionStartDayMS( Close );
     { Sessions: SessionEndDayMS }
-    Value1 = SessionEndDayMS;
+    Value1 = SessionEndDayMS( Close );
     { Sessions: SessionEndDay }
-    Value1 = SessionEndDay;
+    Value1 = SessionEndDay( Close, 14 );
     { Sessions: SessionEndTime }
-    Value1 = SessionEndTime;
+    Value1 = SessionEndTime( Close, 14 );
     { Sessions: SessionStartDay }
-    Value1 = SessionStartDay;
+    Value1 = SessionStartDay( Close, 14 );
     { Sessions: SessionEndTimeMS }
-    Value1 = SessionEndTimeMS;
+    Value1 = SessionEndTimeMS( Close );
     { Rectangle_Drawing: RectangleNewSelf_s }
     // RectangleNewSelf_s is a drawing-object accessor (takes a drawing-object ID); see official docs.
     { Rectangle_Drawing: RectangleNewSelf_DT }
@@ -748,7 +748,7 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Currency_Codes: CAD }
     Value1 = CAD;
     { Currency_Codes: Convert_Currency }
-    Value1 = Convert_Currency;
+    Value1 = Convert_Currency( Close, 14, 14, 14 );
     { Currency_Codes: CHF }
     Value1 = CHF;
     { Comparison_and_Loops: Under }
@@ -766,25 +766,25 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Colors: Green }
     Value1 = Green;
     { Colors: GradientColor }
-    Value1 = GradientColor;
+    Value1 = GradientColor( Close, 14, 14, 14, 14 );
     { Colors: LegacyColorToRGB }
-    Value1 = LegacyColorToRGB;
+    Value1 = LegacyColorToRGB( Close );
     { Colors: Magenta }
     Value1 = Magenta;
     { Colors: LightGray }
     Value1 = LightGray;
     { Colors: GetRValue }
-    Value1 = GetRValue;
+    Value1 = GetRValue( Close );
     { Colors: DarkYellow }
     Value1 = DarkYellow;
     { Colors: DarkRed }
     Value1 = DarkRed;
     { Colors: GetAValue }
-    Value1 = GetAValue;
+    Value1 = GetAValue( Close );
     { Colors: GetGValue }
-    Value1 = GetGValue;
+    Value1 = GetGValue( Close );
     { Colors: GetBValue }
-    Value1 = GetBValue;
+    Value1 = GetBValue( Close );
     { Comparison_and_Loops: And }
     // And is a language construct (Comparison_and_Loops); see official docs for usage.
     { Comparison_and_Loops: Above }
@@ -798,17 +798,17 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Colors: Yellow }
     Value1 = Yellow;
     { Colors: RGB }
-    Value1 = RGB;
+    Value1 = RGB( Close, 14, 14 );
     { Colors: Red }
     Value1 = Red;
     { Colors: RGBToLegacyColor }
-    Value1 = RGBToLegacyColor;
+    Value1 = RGBToLegacyColor( Close );
     { Colors: White }
     Value1 = White;
     { Colors: Transparent }
     Value1 = Transparent;
     { Currency_Codes: CurrencyCodeToStr }
-    Value1 = CurrencyCodeToStr;
+    Value1 = CurrencyCodeToStr( Close );
     { Data_Information_General: CurrentBar }
     Value1 = CurrentBar;
     { Data_Information_General: Close }
@@ -880,7 +880,7 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Data_Information_General: BarInterval }
     Value1 = BarInterval;
     { Data_Information_General: BarStatus }
-    Value1 = BarStatus;
+    Value1 = BarStatus( Close );
     { Data_Information_General: BarType_ex }
     Value1 = BarType_ex;
     { Data_Information_General: BarType }
@@ -942,27 +942,27 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Arrow_Drawing: Arw_GetTextSize }
     // Arw_GetTextSize is a drawing-object accessor (takes a drawing-object ID); see official docs.
     { AccountsPositions: GetPositionQuantity }
-    Value1 = GetPositionQuantity;
+    Value1 = GetPositionQuantity( Close, 14 );
     { AccountsPositions: GetPositionOpenPL }
-    Value1 = GetPositionOpenPL;
+    Value1 = GetPositionOpenPL( Close, 14 );
     { AccountsPositions: GetPositionSymbol }
     // GetPositionSymbol returns a string; see official docs for usage.
     { AccountsPositions: GetRTAccountEquity }
-    Value1 = GetRTAccountEquity;
+    Value1 = GetRTAccountEquity( Close );
     { AccountsPositions: GetPositionTotalCost }
-    Value1 = GetPositionTotalCost;
+    Value1 = GetPositionTotalCost( Close, 14 );
     { AccountsPositions: GetPositionBrokerSymbol }
     // GetPositionBrokerSymbol returns a string; see official docs for usage.
     { AccountsPositions: GetAccountID }
     Value1 = GetAccountID;
     { AccountsPositions: GetAccount }
-    Value1 = GetAccount;
+    Value1 = GetAccount( Close );
     { AccountsPositions: GetNumAccounts }
     Value1 = GetNumAccounts;
     { AccountsPositions: GetPositionAveragePrice }
-    Value1 = GetPositionAveragePrice;
+    Value1 = GetPositionAveragePrice( Close, 14 );
     { AccountsPositions: GetNumPositions }
-    Value1 = GetNumPositions;
+    Value1 = GetNumPositions( Close );
     { Alerts: CheckAlert }
     If CheckAlert Then Begin End;
     { Alerts: Cancel Alert }
@@ -976,9 +976,9 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Alerts: AlertEx }
     // AlertEx is a reserved syntactic token; see official docs for usage.
     { AccountsPositions: GetRTUnrealizedPL }
-    Value1 = GetRTUnrealizedPL;
+    Value1 = GetRTUnrealizedPL( Close );
     { AccountsPositions: GetRTAccountNetWorth }
-    Value1 = GetRTAccountNetWorth;
+    Value1 = GetRTAccountNetWorth( Close );
     { AccountsPositions: InitialCapital }
     Value1 = InitialCapital;
     { Alerts: AlertEnabled }
@@ -1022,7 +1022,7 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Colors: DarkBlue }
     Value1 = DarkBlue;
     { Colors: ARGB }
-    Value1 = ARGB;
+    Value1 = ARGB( Close, 14, 14, 14 );
     { Attributes: SameExitFromOneEntryOnce }
     // SameExitFromOneEntryOnce is a language construct (Attributes); see official docs for usage.
     { Colors: Black }
@@ -1124,29 +1124,29 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Date_and_Time_routines: Sunday }
     Value1 = Sunday;
     { Date_and_Time_routines: StringToTime }
-    Value1 = StringToTime;
+    Value1 = StringToTime( Close );
     { Date_and_Time_routines: Thursday }
     Value1 = Thursday;
     { Date_and_Time_routines: TimeToString }
-    Value1 = TimeToString;
+    Value1 = TimeToString( Close );
     { Date_and_Time_routines: Time2Time_s }
-    Value1 = Time2Time_s;
+    Value1 = Time2Time_s( Close );
     { Date_and_Time_routines: StringToDTFormatted }
-    Value1 = StringToDTFormatted;
+    Value1 = StringToDTFormatted( Close, 14 );
     { Date_and_Time_routines: Saturday }
     Value1 = Saturday;
     { Date_and_Time_routines: MonthFromDateTime }
-    Value1 = MonthFromDateTime;
+    Value1 = MonthFromDateTime( Close );
     { Date_and_Time_routines: SecondsFromDateTime }
-    Value1 = SecondsFromDateTime;
+    Value1 = SecondsFromDateTime( Close );
     { Date_and_Time_routines: StringToDateTime }
-    Value1 = StringToDateTime;
+    Value1 = StringToDateTime( Close );
     { Date_and_Time_routines: StringToDate }
-    Value1 = StringToDate;
+    Value1 = StringToDate( Close );
     { Declaration: Array }
     // Array is a language construct (Declaration); see official docs for usage.
     { Date_and_Time_routines: YearFromDateTime }
-    Value1 = YearFromDateTime;
+    Value1 = YearFromDateTime( Close );
     { Declaration: Arrays }
     // Arrays is a language construct (Declaration); see official docs for usage.
     { Declaration: Inputs }
@@ -1154,11 +1154,11 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Declaration: Input }
     // Input is a language construct (Declaration); see official docs for usage.
     { Date_and_Time_routines: Year }
-    Value1 = Year;
+    Value1 = Year( Close );
     { Date_and_Time_routines: Time_s2Time }
-    Value1 = Time_s2Time;
+    Value1 = Time_s2Time( Close );
     { Date_and_Time_routines: TimeToString_ms }
-    Value1 = TimeToString_ms;
+    Value1 = TimeToString_ms( Close );
     { Date_and_Time_routines: Tuesday }
     Value1 = Tuesday;
     { Date_and_Time_routines: Wednesday }
@@ -1190,9 +1190,9 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { DLL_Calling: OnCreate }
     // OnCreate is a language construct (DLL_Calling); see official docs for usage.
     { DOM: DOM_BidSize }
-    Value1 = DOM_BidSize;
+    Value1 = DOM_BidSize( Close );
     { DOM: DOM_BidsCount }
-    Value1 = DOM_BidsCount;
+    Value1 = DOM_BidsCount( Close );
     { DOM: DOM_IsConnected }
     Value1 = DOM_IsConnected;
     { Dynamic_Arrays: Array_Contains }
@@ -1200,17 +1200,17 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Dynamic_Arrays: Array_Compare }
     Value1 = Array_Compare( pl_test_ints, 0, pl_test_ints, 0, 5 );
     { DOM: DOM_BidPrice }
-    Value1 = DOM_BidPrice;
+    Value1 = DOM_BidPrice( Close );
     { DLL_Calling: #Events }
     // #Events is a language construct (DLL_Calling); see official docs for usage.
     { DLL_Calling: WORD }
     // WORD is a language construct (DLL_Calling); see official docs for usage.
     { DOM: DOM_AskPrice }
-    Value1 = DOM_AskPrice;
+    Value1 = DOM_AskPrice( Close );
     { DOM: DOM_AskSize }
-    Value1 = DOM_AskSize;
+    Value1 = DOM_AskSize( Close );
     { DOM: DOM_AsksCount }
-    Value1 = DOM_AsksCount;
+    Value1 = DOM_AsksCount( Close );
     { DLL_Calling: Double }
     // Double is a language construct (DLL_Calling); see official docs for usage.
     { DLL_Calling: DefineDLLFunc }
@@ -1330,7 +1330,7 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Data_Information_General: SessionLastBar }
     Value1 = SessionLastBar;
     { Data_Information_General: ScrollToBar }
-    Value1 = ScrollToBar;
+    Value1 = ScrollToBar( Close, 14 );
     { Data_Information_General: PointValue }
     Value1 = PointValue;
     { Data_Information_General: OpenInt }
@@ -1346,43 +1346,43 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Data_Information_General: Today }
     // Today is a reserved syntactic token; see official docs for usage.
     { Date_and_Time_routines: FormatTime }
-    Value1 = FormatTime( "x" );
+    Value1 = FormatTime( "x", 14 );
     { Date_and_Time_routines: FormatDate }
-    Value1 = FormatDate( "x" );
+    Value1 = FormatDate( "x", 14 );
     { Date_and_Time_routines: Friday }
     Value1 = Friday;
     { Date_and_Time_routines: HoursFromDateTime }
-    Value1 = HoursFromDateTime;
+    Value1 = HoursFromDateTime( Close );
     { Date_and_Time_routines: GetTotalMilliseconds }
-    Value1 = GetTotalMilliseconds;
+    Value1 = GetTotalMilliseconds( Close );
     { Date_and_Time_routines: EncodeTime }
-    Value1 = EncodeTime;
+    Value1 = EncodeTime( Close, 14, 14, 14 );
     { Date_and_Time_routines: El_DateToDateTime }
     Value1 = El_DateToDateTime;
     { Date_and_Time_routines: El_DateStr }
-    Value1 = El_DateStr;
+    Value1 = El_DateStr( Close, 14, 14 );
     { Date_and_Time_routines: EL_TimeToDateTime }
     Value1 = EL_TimeToDateTime;
     { Date_and_Time_routines: EncodeDate }
-    Value1 = EncodeDate;
+    Value1 = EncodeDate( Close, 14, 14 );
     { Date_and_Time_routines: EL_TimeToDateTime_s }
     Value1 = EL_TimeToDateTime_s;
     { Date_and_Time_routines: MilliSecondsFromDateTime }
-    Value1 = MilliSecondsFromDateTime;
+    Value1 = MilliSecondsFromDateTime( Close );
     { Date_and_Time_routines: LastCalcSSTime }
     Value1 = LastCalcSSTime;
     { Date_and_Time_routines: MinutesFromDateTime }
-    Value1 = MinutesFromDateTime;
+    Value1 = MinutesFromDateTime( Close );
     { Date_and_Time_routines: Month }
-    Value1 = Month;
+    Value1 = Month( Close );
     { Date_and_Time_routines: Monday }
     Value1 = Monday;
     { Date_and_Time_routines: LastCalcmSTime }
     Value1 = LastCalcmSTime;
     { Date_and_Time_routines: JulianToDate }
-    Value1 = JulianToDate;
+    Value1 = JulianToDate( Close );
     { Date_and_Time_routines: IncMonth }
-    Value1 = IncMonth;
+    Value1 = IncMonth( Close, 14 );
     { Date_and_Time_routines: LastCalcDateTime }
     Value1 = LastCalcDateTime;
     { Date_and_Time_routines: LastCalcMMTime }
@@ -1396,9 +1396,9 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Date_and_Time_routines: CurrentTime_s }
     Value1 = CurrentTime_s;
     { Date_and_Time_routines: DateTime2ELTime_s }
-    Value1 = DateTime2ELTime_s;
+    Value1 = DateTime2ELTime_s( Close );
     { Date_and_Time_routines: DateTime2ELTime }
-    Value1 = DateTime2ELTime;
+    Value1 = DateTime2ELTime( Close );
     { Date_and_Time_routines: ComputerDateTime }
     Value1 = ComputerDateTime;
     { Data_Information_General: V }
@@ -1412,25 +1412,25 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Data_Information_General: Yesterday }
     // Yesterday is a reserved syntactic token; see official docs for usage.
     { Date_and_Time_routines: DayOfWeekFromDateTime }
-    Value1 = DayOfWeekFromDateTime;
+    Value1 = DayOfWeekFromDateTime( Close );
     { Date_and_Time_routines: DayOfWeek }
-    Value1 = DayOfWeek;
+    Value1 = DayOfWeek( Close );
     { Date_and_Time_routines: ELDateToDateTime }
-    Value1 = ELDateToDateTime;
+    Value1 = ELDateToDateTime( Close );
     { Date_and_Time_routines: ELTimeToDateTime_s }
-    Value1 = ELTimeToDateTime_s;
+    Value1 = ELTimeToDateTime_s( Close );
     { Date_and_Time_routines: ELTimeToDateTime }
-    Value1 = ELTimeToDateTime;
+    Value1 = ELTimeToDateTime( Close );
     { Date_and_Time_routines: DayOfMonth }
-    Value1 = DayOfMonth;
+    Value1 = DayOfMonth( Close );
     { Date_and_Time_routines: DateTimeToString_Ms }
-    Value1 = DateTimeToString_Ms;
+    Value1 = DateTimeToString_Ms( Close );
     { Date_and_Time_routines: DateTimeToString }
-    Value1 = DateTimeToString;
+    Value1 = DateTimeToString( Close );
     { Date_and_Time_routines: DateToJulian }
-    Value1 = DateToJulian;
+    Value1 = DateToJulian( Close );
     { Date_and_Time_routines: DayFromDateTime }
-    Value1 = DayFromDateTime;
+    Value1 = DayFromDateTime( Close );
     { Date_and_Time_routines: DateToString }
-    Value1 = DateToString;
+    Value1 = DateToString( Close );
 End;
