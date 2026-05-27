@@ -576,7 +576,7 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Sessions: SessionEndDayMS }
     Value1 = SessionEndDayMS( Close );
     { Sessions: SessionEndDay }
-    Value1 = SessionEndDay;
+    Value1 = SessionEndDay( Close, 14 );
     { Sessions: SessionEndTime }
     Value1 = SessionEndTime( Close, 14 );
     { Sessions: SessionStartDay }
