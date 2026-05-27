@@ -1167,27 +1167,27 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Declaration: Variables }
     // Variables is a language construct (Declaration); see official docs for usage.
     { DLL_Calling: Unsigned }
-    Value1 = Unsigned;
+    // Unsigned is a language construct (DLL_Calling); see official docs for usage.
     { DLL_Calling: ThreadSafe }
-    Value1 = ThreadSafe;
+    // ThreadSafe is a language construct (DLL_Calling); see official docs for usage.
     { DLL_Calling: VarSize }
-    Value1 = VarSize;
+    // VarSize is a language construct (DLL_Calling); see official docs for usage.
     { DLL_Calling: Void }
-    Value1 = Void;
+    // Void is a language construct (DLL_Calling); see official docs for usage.
     { DLL_Calling: VarStartAddr }
-    Value1 = VarStartAddr;
+    // VarStartAddr is a language construct (DLL_Calling); see official docs for usage.
     { DLL_Calling: Self }
-    Value1 = Self;
+    // Self is a language construct (DLL_Calling); see official docs for usage.
     { DLL_Calling: LPWORD }
-    Value1 = LPWORD;
+    // LPWORD is a language construct (DLL_Calling); see official docs for usage.
     { DLL_Calling: LPSTR }
-    Value1 = LPSTR;
+    // LPSTR is a language construct (DLL_Calling); see official docs for usage.
     { DLL_Calling: Method }
-    Value1 = Method;
+    // Method is a language construct (DLL_Calling); see official docs for usage.
     { DLL_Calling: OnDestroy }
-    Value1 = OnDestroy;
+    // OnDestroy is a language construct (DLL_Calling); see official docs for usage.
     { DLL_Calling: OnCreate }
-    Value1 = OnCreate;
+    // OnCreate is a language construct (DLL_Calling); see official docs for usage.
     { DOM: DOM_BidSize }
     Value1 = DOM_BidSize;
     { DOM: DOM_BidsCount }
@@ -1201,9 +1201,9 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { DOM: DOM_BidPrice }
     Value1 = DOM_BidPrice;
     { DLL_Calling: #Events }
-    // #Events is a preprocessor directive (#-prefixed); see official docs for usage.
+    // #Events is a language construct (DLL_Calling); see official docs for usage.
     { DLL_Calling: WORD }
-    Value1 = WORD;
+    // WORD is a language construct (DLL_Calling); see official docs for usage.
     { DOM: DOM_AskPrice }
     Value1 = DOM_AskPrice;
     { DOM: DOM_AskSize }
@@ -1211,49 +1211,49 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { DOM: DOM_AsksCount }
     Value1 = DOM_AsksCount;
     { DLL_Calling: Double }
-    Value1 = Double;
+    // Double is a language construct (DLL_Calling); see official docs for usage.
     { DLL_Calling: DefineDLLFunc }
-    Value1 = DefineDLLFunc;
+    // DefineDLLFunc is a language construct (DLL_Calling); see official docs for usage.
     { DLL_Calling: DWORD }
-    Value1 = DWORD;
+    // DWORD is a language construct (DLL_Calling); see official docs for usage.
     { DLL_Calling: Float }
-    Value1 = Float;
+    // Float is a language construct (DLL_Calling); see official docs for usage.
     { DLL_Calling: External }
-    Value1 = External;
+    // External is a language construct (DLL_Calling); see official docs for usage.
     { DLL_Calling: Char }
-    Value1 = Char;
+    // Char is a language construct (DLL_Calling); see official docs for usage.
     { DLL_Calling: ArraySize }
-    Value1 = ArraySize;
+    // ArraySize is a language construct (DLL_Calling); see official docs for usage.
     { Declaration: Vars }
     // Vars is a language construct (Declaration); see official docs for usage.
     { DLL_Calling: ArrayStartAddr }
-    Value1 = ArrayStartAddr;
+    // ArrayStartAddr is a language construct (DLL_Calling); see official docs for usage.
     { DLL_Calling: Byte }
-    Value1 = Byte;
+    // Byte is a language construct (DLL_Calling); see official docs for usage.
     { DLL_Calling: Bool }
-    Value1 = Bool;
+    // Bool is a language construct (DLL_Calling); see official docs for usage.
     { DLL_Calling: LPDWORD }
-    Value1 = LPDWORD;
+    // LPDWORD is a language construct (DLL_Calling); see official docs for usage.
     { DLL_Calling: LPDouble }
-    Value1 = LPDouble;
+    // LPDouble is a language construct (DLL_Calling); see official docs for usage.
     { DLL_Calling: LPFloat }
-    Value1 = LPFloat;
+    // LPFloat is a language construct (DLL_Calling); see official docs for usage.
     { DLL_Calling: LPLong }
-    Value1 = LPLong;
+    // LPLong is a language construct (DLL_Calling); see official docs for usage.
     { DLL_Calling: LPInt }
-    Value1 = LPInt;
+    // LPInt is a language construct (DLL_Calling); see official docs for usage.
     { DLL_Calling: LPByte }
-    Value1 = LPByte;
+    // LPByte is a language construct (DLL_Calling); see official docs for usage.
     { DLL_Calling: Int }
-    Value1 = Int;
+    // Int is a language construct (DLL_Calling); see official docs for usage.
     { DLL_Calling: iEasyLanguageObject }
-    Value1 = iEasyLanguageObject;
+    // iEasyLanguageObject is a language construct (DLL_Calling); see official docs for usage.
     { DLL_Calling: Int64 }
-    Value1 = Int64;
+    // Int64 is a language construct (DLL_Calling); see official docs for usage.
     { DLL_Calling: LPBool }
-    Value1 = LPBool;
+    // LPBool is a language construct (DLL_Calling); see official docs for usage.
     { DLL_Calling: Long }
-    Value1 = Long;
+    // Long is a language construct (DLL_Calling); see official docs for usage.
     { Data_Information_General: Symbol_Low }
     Value1 = Symbol_Low;
     { Data_Information_General: Symbol_Length }
