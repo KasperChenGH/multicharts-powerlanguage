@@ -100,9 +100,9 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Strategy_Performance: NumWinTrades }
     Value1 = NumWinTrades;
     { Strategy_Performance: SetCustomFitnessValue }
-    // SetCustomFitnessValue is a setter (takes at least one value argument); see official docs.
+    // SetCustomFitnessValue is a setter; see official docs.
     { Strategy_Performance: SetCustomFitnessNamedValue }
-    // SetCustomFitnessNamedValue is a setter (takes at least one value argument); see official docs.
+    // SetCustomFitnessNamedValue is a setter; see official docs.
     { Strategy_Performance: PercentProfit }
     Value1 = PercentProfit;
     { Strategy_Performance: MaxConsecLosers }
@@ -208,9 +208,9 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Strategy_Position: MaxPositionLoss_Checked }
     Value1 = MaxPositionLoss_Checked( Close );
     { Strategy_Position_Synchronization: PlaceMarketOrder }
-    Value1 = PlaceMarketOrder( Close, 14, 14 );
+    PlaceMarketOrder( 1, 0, 0 );
     { Strategy_Position_Synchronization: ChangeMarketPosition }
-    Value1 = ChangeMarketPosition( Close, 14, 14 );
+    ChangeMarketPosition( 1, 0, 0 );
     { Strategy_Position: PositionProfit_Checked }
     Value1 = PositionProfit_Checked( Close );
     { Strategy_Position_Trades: OpenEntriesCount }
@@ -246,9 +246,9 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Portfolio_Money_Management: pmms_strategy_symbol }
     // pmms_strategy_symbol returns a string; see official docs for usage.
     { Portfolio_Money_Management: pmms_strategy_set_status }
-    Value1 = pmms_strategy_set_status( Close, 14 );
+    // pmms_strategy_set_status is a setter; see official docs.
     { Portfolio_Money_Management: pmms_strategy_set_entry_contracts }
-    Value1 = pmms_strategy_set_entry_contracts( Close, 14 );
+    // pmms_strategy_set_entry_contracts is a setter; see official docs.
     { Portfolio_Money_Management: pmms_strategy_get_entry_contracts }
     Value1 = pmms_strategy_get_entry_contracts( Close );
     { Portfolio_Money_Management: pmms_strategy_entryprice }
@@ -268,9 +268,9 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Portfolio_Strategy_Performance: Portfolio_GrossLoss }
     Value1 = Portfolio_GrossLoss;
     { Portfolio_Money_Management: pmm_set_my_status }
-    Value1 = pmm_set_my_status( Close );
+    // pmm_set_my_status is a setter; see official docs.
     { Portfolio_Money_Management: pmm_set_my_named_str }
-    Value1 = pmm_set_my_named_str( Close, 14 );
+    // pmm_set_my_named_str is a setter; see official docs.
     { Portfolio_Strategy_Performance: Portfolio_GrossProfit }
     Value1 = Portfolio_GrossProfit;
     { Portfolio_Strategy_Performance: Portfolio_NetProfit }
@@ -288,11 +288,11 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Portfolio_Money_Management: pmm_get_my_named_str }
     Value1 = pmm_get_my_named_str( Close );
     { Portfolio_Money_Management: pmm_set_my_named_num }
-    Value1 = pmm_set_my_named_num( Close, 14 );
+    // pmm_set_my_named_num is a setter; see official docs.
     { Portfolio_Money_Management: pmm_set_global_named_str }
-    Value1 = pmm_set_global_named_str( Close, 14 );
+    // pmm_set_global_named_str is a setter; see official docs.
     { Portfolio_Money_Management: pmm_set_global_named_num }
-    Value1 = pmm_set_global_named_num( Close, 14 );
+    // pmm_set_global_named_num is a setter; see official docs.
     { Portfolio_Money_Management: pmms_strategies_in_positions_count }
     Value1 = pmms_strategies_in_positions_count( Close );
     { Portfolio_Money_Management: pmms_strategies_in_long_count }
@@ -302,19 +302,19 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Portfolio_Money_Management: pmms_strategies_in_short_count }
     Value1 = pmms_strategies_in_short_count( Close );
     { Portfolio_Money_Management: pmms_strategies_set_status_for_all }
-    Value1 = pmms_strategies_set_status_for_all( Close );
+    // pmms_strategies_set_status_for_all is a setter; see official docs.
     { Portfolio_Money_Management: pmms_strategies_resume_all }
     Value1 = pmms_strategies_resume_all;
     { Portfolio_Money_Management: pmms_strategies_pause_all }
     Value1 = pmms_strategies_pause_all;
     { Portfolio_Money_Management: pmms_set_strategy_named_num }
-    Value1 = pmms_set_strategy_named_num( Close, 14, 14 );
+    // pmms_set_strategy_named_num is a setter; see official docs.
     { Portfolio_Money_Management: pmms_get_strategy_named_str }
     Value1 = pmms_get_strategy_named_str( Close, 14 );
     { Portfolio_Money_Management: pmms_get_strategy_named_num }
     Value1 = pmms_get_strategy_named_num( Close, 14 );
     { Portfolio_Money_Management: pmms_set_strategy_named_str }
-    Value1 = pmms_set_strategy_named_str( Close, 14, 14 );
+    // pmms_set_strategy_named_str is a setter; see official docs.
     { Portfolio_Money_Management: pmms_strategies_deny_entries_all }
     Value1 = pmms_strategies_deny_entries_all;
     { Portfolio_Money_Management: pmms_strategies_count }
@@ -352,19 +352,19 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Portfolio_Money_Management: pmms_strategy_allow_short_entries }
     Value1 = pmms_strategy_allow_short_entries;
     { Strategy_Orders: SetBreakEven }
-    // SetBreakEven is a setter (takes at least one value argument); see official docs.
+    // SetBreakEven is a setter; see official docs.
     { Strategy_Orders: SellShort }
     SellShort ( "SellShort_T" ) 1 Contract Next Bar Market;
     { Strategy_Orders: Sell }
     Sell ( "Sell_T" ) 1 Contract Next Bar Market;
     { Strategy_Orders: SetBreakEven_pt }
-    // SetBreakEven_pt is a setter (takes at least one value argument); see official docs.
+    // SetBreakEven_pt is a setter; see official docs.
     { Strategy_Orders: SetPercentTrailing }
-    // SetPercentTrailing is a setter (takes at least one value argument); see official docs.
+    // SetPercentTrailing is a setter; see official docs.
     { Strategy_Orders: SetExitOnClose }
-    // SetExitOnClose is a setter (takes at least one value argument); see official docs.
+    // SetExitOnClose is a setter; see official docs.
     { Strategy_Orders: SetDollarTrailing }
-    // SetDollarTrailing is a setter (takes at least one value argument); see official docs.
+    // SetDollarTrailing is a setter; see official docs.
     { Strategy_Orders: Entry }
     // Entry -- see official docs
     { Strategy_Orders: Cover }
@@ -380,13 +380,13 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Strategy_Orders: Limit }
     Buy ( "MLS" ) 1 Contract Next Bar Market;
     { Strategy_Orders: SetPercentTrailing_pt }
-    // SetPercentTrailing_pt is a setter (takes at least one value argument); see official docs.
+    // SetPercentTrailing_pt is a setter; see official docs.
     { Strategy_Orders: Shares }
     // Shares -- see official docs
     { Strategy_Orders: Share }
     // Share -- see official docs
     { Strategy_Orders: SetTrailingStop_pt }
-    // SetTrailingStop_pt is a setter (takes at least one value argument); see official docs.
+    // SetTrailingStop_pt is a setter; see official docs.
     { Strategy_Orders: Short }
     // Short -- see official docs
     { Strategy_Performance: AvgBarsEvenTrade }
@@ -396,21 +396,21 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Strategy_Orders: Stop }
     Buy ( "MLS" ) 1 Contract Next Bar Market;
     { Strategy_Orders: SetStopContract }
-    // SetStopContract is a setter (takes at least one value argument); see official docs.
+    // SetStopContract is a setter; see official docs.
     { Strategy_Orders: SetProfitTarget_pt }
-    // SetProfitTarget_pt is a setter (takes at least one value argument); see official docs.
+    // SetProfitTarget_pt is a setter; see official docs.
     { Strategy_Orders: SetProfitTarget }
-    // SetProfitTarget is a setter (takes at least one value argument); see official docs.
+    // SetProfitTarget is a setter; see official docs.
     { Strategy_Orders: SetStopLoss }
-    // SetStopLoss is a setter (takes at least one value argument); see official docs.
+    // SetStopLoss is a setter; see official docs.
     { Strategy_Orders: SetStopShare }
-    // SetStopShare is a setter (takes at least one value argument); see official docs.
+    // SetStopShare is a setter; see official docs.
     { Strategy_Orders: SetStopPosition }
-    // SetStopPosition is a setter (takes at least one value argument); see official docs.
+    // SetStopPosition is a setter; see official docs.
     { Strategy_Orders: SetStopLoss_pt }
-    // SetStopLoss_pt is a setter (takes at least one value argument); see official docs.
+    // SetStopLoss_pt is a setter; see official docs.
     { Portfolio_Strategy_Position: Portfolio_SetMaxPotentialLossPerContract }
-    Value1 = Portfolio_SetMaxPotentialLossPerContract( Close );
+    // Portfolio_SetMaxPotentialLossPerContract is a setter; see official docs.
     { Portfolio_Strategy_Position: Portfolio_OpenPositionProfit }
     Value1 = Portfolio_OpenPositionProfit;
     { Portfolio_Strategy_Position: Portfolio_MaxOpenPositionPotentialLoss }

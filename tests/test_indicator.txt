@@ -4,15 +4,15 @@ Arrays: pl_test_bools[10]( false ), pl_test_floats[10]( 0.0 ), pl_test_ints[10](
 
 If False Then Begin    { wrap every statement in an unreachable If/Then to verify syntax only }
     { Plotting: SetPlotColor }
-    // SetPlotColor is a setter (takes at least one value argument); see official docs.
+    // SetPlotColor is a setter; see official docs.
     { Plotting: SetPlotBGColor }
-    // SetPlotBGColor is a setter (takes at least one value argument); see official docs.
+    // SetPlotBGColor is a setter; see official docs.
     { Plotting: setplotstyle }
-    // setplotstyle is a setter (takes at least one value argument); see official docs.
+    // setplotstyle is a setter; see official docs.
     { Quote_Fields: AskSize }
     Value1 = AskSize;
     { Plotting: SetPlotWidth }
-    // SetPlotWidth is a setter (takes at least one value argument); see official docs.
+    // SetPlotWidth is a setter; see official docs.
     { Plotting: PlotPB }
     // PlotPB -- see official docs
     { Plotting: I_setplotvalue }
@@ -186,7 +186,7 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Environment_Information: MaxBarsBack }
     Value1 = MaxBarsBack;
     { Environment_Information: SetMaxBarsBack }
-    // SetMaxBarsBack is a setter (takes at least one value argument); see official docs.
+    // SetMaxBarsBack is a setter; see official docs.
     { Execution_Control: Abort }
     // Abort is a language construct (Execution_Control); see official docs for usage.
     { Execution_Control: #Return }

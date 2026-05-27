@@ -161,11 +161,10 @@ function Get-KeywordStatement {
     return "// $name is a drawing-object accessor (takes a drawing-object ID); see official docs."
   }
 
-  # Setter functions (Set*) always take at least one argument — the value to
-  # set. Parse-Chm sometimes reports zero params for them. Statement-shaped,
-  # not value-returning. Skip with a safe comment.
-  if ($name -match '^Set[A-Z]') {
-    return "// $name is a setter (takes at least one value argument); see official docs."
+  # Setter functions (Set*, Portfolio_Set*, pmm_set_*, pmms_*_set_*) always
+  # take at least one argument. Statement-shaped, not value-returning.
+  if ($name -match '^Set[A-Z]' -or $name -match '^Portfolio_Set' -or $name -match '^pmm_set_' -or $name -match '_set_') {
+    return "// $name is a setter; see official docs."
   }
 
   # Lowercase-prefix get* (e.g. getTPOinfo, getappinfo) — non-standard
@@ -179,7 +178,8 @@ function Get-KeywordStatement {
   # return a value. Assigning them to Value1 causes "Function must have
   # a return value". Call as standalone statements instead.
   $procedureKeywords = @(
-    'ScrollToBar'
+    'ScrollToBar',
+    'PlaceMarketOrder','ChangeMarketPosition'
   )
   if ($procedureKeywords -contains $name) {
     $usageClean = $Kw.Usage -replace '\[\s*Data\s*\(\s*[^)]*\s*\)\s*\]', ''
