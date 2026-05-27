@@ -198,5 +198,22 @@ A common new-user mistake is to write `Value1 = SomeKeyword;` for a keyword that
 - A keyword name that contains a space in the official docs (e.g. `DateTime bar update`, `Cancel Alert`) cannot be used as a single identifier — PowerLanguage parses only the first word and chokes on the rest.
 - Single-letter aliases like `D` (Date) and `I` (loop index) are reserved tokens, not identifiers.
 - A handful of names in otherwise-value-rich categories are reserved syntactic tokens: `Data` (used as `Close of Data2`), `Call` / `Put` / `Strike` (option-context syntax), `Length`, `OptionType`, `DeltaType`, `RevSize`, `BoxSize`.
+- **Drawing-object accessors** (any `Rectangle*`, `TL_*`, `Arw_*`, `Text_*`, or `MC_TL_*`/`MC_Arw_*`/etc. function ending in `Get`/`Set`/`Delete`/`New`/…) take at least one drawing-object ID argument — never use them as bare values.
+- **`Set*` keywords** are setters (e.g. `SetMaxBarsBack`, `SetPlotColor`, `SetStopLoss`) — they always require at least one value argument.
+- **Lowercase-prefix functions** (e.g. `getTPOinfo`, `getplotstyle`) usually take parameters; the unusual lowercase naming is the signal.
+- **String-returning keywords** like `Description`, `Symbol`, `GetCurrency`, `BarType_uid`, anything ending in `Name` / `Description` / `Listed` / `ToStr` — can be assigned only to a string variable, not the numeric `Value1`.
+- **Boolean-returning keywords** like `Is64BitProcess`, `MouseClickShiftPressed`, `AlertEnabled` — use them inside an `If` condition (`If Is64BitProcess Then ...`); direct assignment to `Condition1` sometimes fails because PowerLanguage returns numeric 0/1 instead of `TrueFalse` for some "logical" functions.
+
+### Quick error → fix lookup
+
+If MultiCharts gives you one of these errors when using a keyword:
+
+| Compile error | Likely cause | Fix |
+|---|---|---|
+| `syntax error, unexpected 'X'` | `X` is a reserved syntactic token (declaration / control flow / connector) | Don't use it as a value; it belongs in a different syntactic position |
+| `Wrong syntax of 'X'` | `X` is a directive (e.g. `DefineDllFunc`) | Use the documented statement form, not as RHS |
+| `Commentary end is expected before end of file` | You used `#BeginCmtry` without `#EndCmtry` | Pair them, or skip the construct |
+| `Invalid number of parameters. N parameter(s) expected` | Function needs N args you didn't pass | Look up the signature in `powerlanguage-keywords-reference` and pass the right number |
+| `Types are not compatible` | RHS returns a type incompatible with the LHS variable | Assign string→string var, bool→bool var, numeric→`Value1` |
 
 When in doubt, look up the keyword in the `powerlanguage-keywords-reference` skill — the signature line shows whether it's used as `KeywordName(args)` (callable function) or in a larger construct (then it can't be the whole RHS).
