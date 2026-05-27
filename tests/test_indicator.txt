@@ -1124,7 +1124,7 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Date_and_Time_routines: Sunday }
     Value1 = Sunday;
     { Date_and_Time_routines: StringToTime }
-    Value1 = StringToTime( Close );
+    Value1 = StringToTime( "x" );
     { Date_and_Time_routines: Thursday }
     Value1 = Thursday;
     { Date_and_Time_routines: TimeToString }
@@ -1132,7 +1132,7 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Date_and_Time_routines: Time2Time_s }
     Value1 = Time2Time_s( Close );
     { Date_and_Time_routines: StringToDTFormatted }
-    Value1 = StringToDTFormatted( Close, 14 );
+    Value1 = StringToDTFormatted( "x", 14 );
     { Date_and_Time_routines: Saturday }
     Value1 = Saturday;
     { Date_and_Time_routines: MonthFromDateTime }
@@ -1140,9 +1140,9 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Date_and_Time_routines: SecondsFromDateTime }
     Value1 = SecondsFromDateTime( Close );
     { Date_and_Time_routines: StringToDateTime }
-    Value1 = StringToDateTime( Close );
+    Value1 = StringToDateTime( "x" );
     { Date_and_Time_routines: StringToDate }
-    Value1 = StringToDate( Close );
+    Value1 = StringToDate( "x" );
     { Declaration: Array }
     // Array is a language construct (Declaration); see official docs for usage.
     { Date_and_Time_routines: YearFromDateTime }
