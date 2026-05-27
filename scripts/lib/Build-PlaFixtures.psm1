@@ -218,12 +218,15 @@ function Get-KeywordStatement {
     default {
       # Derive arg count from the Usage signature commas (more reliable than
       # Parse-Chm's parameter detection, which misses inline-documented params).
+      # Strip decorative '[Data(N)]' specifiers first — those (N) parens are
+      # data-series references, not real arg lists.
+      $usageClean = $Kw.Usage -replace '\[\s*Data\s*\(\s*[^)]*\s*\)\s*\]', ''
       $argCount = 0
-      if ($Kw.Usage -match '\(([^)]*)\)') {
+      if ($usageClean -match '\(([^)]*)\)') {
         $inner = $Matches[1].Trim()
         if (-not [string]::IsNullOrEmpty($inner)) { $argCount = (($inner -split ',').Count) }
       } else {
-        # No parens in Usage — treat as zero-arg value reference.
+        # No parens in cleaned Usage — treat as zero-arg value reference.
         $argCount = $params.Count
       }
 

@@ -1192,7 +1192,7 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { DOM: DOM_BidSize }
     Value1 = DOM_BidSize( Close );
     { DOM: DOM_BidsCount }
-    Value1 = DOM_BidsCount( Close );
+    Value1 = DOM_BidsCount;
     { DOM: DOM_IsConnected }
     Value1 = DOM_IsConnected;
     { Dynamic_Arrays: Array_Contains }
@@ -1210,7 +1210,7 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { DOM: DOM_AskSize }
     Value1 = DOM_AskSize( Close );
     { DOM: DOM_AsksCount }
-    Value1 = DOM_AsksCount( Close );
+    Value1 = DOM_AsksCount;
     { DLL_Calling: Double }
     // Double is a language construct (DLL_Calling); see official docs for usage.
     { DLL_Calling: DefineDLLFunc }
