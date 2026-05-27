@@ -1360,7 +1360,7 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Date_and_Time_routines: El_DateToDateTime }
     // El_DateToDateTime is documented as an alias/redirect; see official docs for the canonical signature.
     { Date_and_Time_routines: El_DateStr }
-    Value1 = El_DateStr( Close, 14, 14 );
+    // El_DateStr returns a string; see official docs for usage.
     { Date_and_Time_routines: EL_TimeToDateTime }
     // EL_TimeToDateTime is documented as an alias/redirect; see official docs for the canonical signature.
     { Date_and_Time_routines: EncodeDate }
