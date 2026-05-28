@@ -7,7 +7,7 @@ The first public Claude Code plugin for [MultiCharts](https://www.multicharts.co
 Three skills that auto-activate based on what you're asking Claude to do:
 
 - **`multicharts-fundamentals`** — what MultiCharts is, when to use which script type (Indicator / Signal / Function), the execution model, multi-data series, order keywords, and the unique-signal-name compile rule.
-- **`powerlanguage-syntax`** — declarations, the `begin/end` semicolon rule, control flow, bar references, operators, comments, built-in trade-state variables, and the two main gotchas (`MarketPosition(N)` is position history not bar offset; bars are labeled by close time).
+- **`powerlanguage-syntax`** — declarations, the `begin/end` semicolon rule, control flow, bar references, operators, comments, built-in trade-state variables, 64 compile-verified built-in function signatures (Average, RSI, Stochastic, ADX, DirMovement, …), and code-generation gotchas (variable-name collisions with functions, single-letter aliases, loop-counter declarations, Length-only function signatures, order syntax).
 - **`powerlanguage-keywords-reference`** — a categorized reference covering 947 official PowerLanguage keywords (40 categories from MultiCharts's own help system). Each keyword has signature, parameters, a paraphrased description, and a link to the official wiki page.
 
 ## Install (Claude Code)
@@ -21,7 +21,19 @@ After install, the three skills auto-trigger when relevant. You don't have to in
 
 ## Verifying keyword signatures (maintainer only)
 
-`tests/test_indicator.txt`, `tests/test_signal.txt`, `tests/test_function.txt`, and `tests/test_builtins.txt` are plain-text PowerLanguage source files that exercise every keyword inside an unreachable `If False Then Begin … End;` block — so the compiler verifies syntax without executing anything. The first three cover the 947 CHM keywords; `test_builtins.txt` covers common built-in functions (`.elf` files) like Average, RSI, Stochastic, ADX, etc. They are NOT `.pla` archives; they cannot be imported via File → Import.
+The `tests/` directory contains 9 plain-text PowerLanguage source files that exercise keywords and code patterns inside unreachable `If False Then Begin … End;` blocks — so the compiler verifies syntax without executing anything. They are NOT `.pla` archives; they cannot be imported via File → Import.
+
+| File | Study type | What it covers |
+|---|---|---|
+| `test_indicator.txt` | Indicator | 947 CHM keywords |
+| `test_signal.txt` | Signal | 947 CHM keywords |
+| `test_function.txt` | Function | 947 CHM keywords |
+| `test_builtins.txt` | Signal | 64 built-in function (`.elf`) signatures |
+| `test_syntax.txt` | Signal | If/Else, For/While, Switch, Once, operators, crosses over/under |
+| `test_orders.txt` | Signal | Buy/Sell/SellShort/BuyToCover × Market/Limit/Stop/Close, SetStopLoss/SetProfitTarget |
+| `test_declarations.txt` | Signal | Inputs, Variables, Arrays, IntraBarPersist, multi-data, Value1–99 |
+| `test_plotting.txt` | Indicator | Plot1–4, SetPlotColor/Width/Style, TL/Text/Arw drawing |
+| `test_strategies.txt` | Signal | 5 mini-strategies combining indicators, conditions, and orders |
 
 To run the compile-test, for each file:
 
