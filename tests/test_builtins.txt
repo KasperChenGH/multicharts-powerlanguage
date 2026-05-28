@@ -1,0 +1,79 @@
+{ test_builtins.txt -- exercises every built-in function (.elf) documented in the syntax skill }
+{ Paste this whole file into a new Signal study in PowerLanguage Editor and Verify (F3). }
+{ Expected: 0 errors, 0 warnings. }
+
+Variables:
+    fk(0), fd(0), sk(0), sd(0);
+
+If False Then Begin
+
+    { === Moving averages and smoothing === }
+    { Average(Price, Length) }
+    Value1 = Average(Close, 14);
+    { XAverage(Price, Length) }
+    Value1 = XAverage(Close, 14);
+    { AverageFC(Price, Length) }
+    Value1 = AverageFC(Close, 14);
+    { WAverage(Price, Length) }
+    Value1 = WAverage(Close, 14);
+    { AdaptiveMovAvg(Price, Length) }
+    Value1 = AdaptiveMovAvg(Close, 14);
+
+    { === Oscillators and indicators === }
+    { RSI(Price, Length) }
+    Value1 = RSI(Close, 14);
+    { Stochastic -- 11 params: PriceH, PriceL, PriceC, StochLen, SmoothLen1, SmoothLen2, SmoothType, oFastK, oFastD, oSlowK, oSlowD }
+    Value1 = Stochastic(High, Low, Close, 14, 3, 3, 1, fk, fd, sk, sd);
+    { BollingerBand(Price, Length, NumDevs) -- positive for upper, negative for lower }
+    Value1 = BollingerBand(Close, 20, 2);
+    Value2 = BollingerBand(Close, 20, -2);
+    Value3 = BollingerBand(Close, 20, 0);
+    { MACD(Price, FastLen, SlowLen) }
+    Value1 = MACD(Close, 12, 26);
+    { CCI(Length) -- Length only, NO Price parameter }
+    Value1 = CCI(14);
+    { ADX(Length) -- Length only, NO Price parameter }
+    Value1 = ADX(14);
+    { DMIPlus(Length) -- Length only, NO Price parameter }
+    Value1 = DMIPlus(14);
+    { DMIMinus(Length) -- Length only, NO Price parameter }
+    Value1 = DMIMinus(14);
+
+    { === Volatility and range === }
+    { AvgTrueRange(Length) -- Length only, NO Price parameter }
+    Value1 = AvgTrueRange(14);
+    { TrueRange -- no arguments }
+    Value1 = TrueRange;
+    { StandardDev(Price, Length, DataType) -- DataType: 1=population, 2=sample }
+    Value1 = StandardDev(Close, 20, 1);
+    Value2 = StandardDev(Close, 20, 2);
+    { TrueHigh -- no arguments }
+    Value1 = TrueHigh;
+    { TrueLow -- no arguments }
+    Value1 = TrueLow;
+
+    { === Price extremes === }
+    { Highest(Price, Length) }
+    Value1 = Highest(High, 20);
+    { Lowest(Price, Length) }
+    Value1 = Lowest(Low, 20);
+    { HighestBar(Price, Length) -- returns bars ago }
+    Value1 = HighestBar(High, 20);
+    { LowestBar(Price, Length) -- returns bars ago }
+    Value1 = LowestBar(Low, 20);
+
+    { === Aggregation === }
+    { Summation(Price, Length) }
+    Value1 = Summation(Close, 14);
+    { Cum(Price) -- cumulative sum from bar 1 }
+    Value1 = Cum(Close - Close[1]);
+    { LinearRegValue(Price, Length, Offset) }
+    Value1 = LinearRegValue(Close, 20, 0);
+    Value2 = LinearRegValue(Close, 20, 1);
+
+    { === Naming gotcha: use idx not i for loops (I = OpenInterest) === }
+    For idx = 1 To 10 Begin
+        Value1 = Value1 + Close[idx];
+    End;
+
+End;

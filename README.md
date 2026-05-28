@@ -21,7 +21,7 @@ After install, the three skills auto-trigger when relevant. You don't have to in
 
 ## Verifying keyword signatures (maintainer only)
 
-`tests/test_indicator.txt`, `tests/test_signal.txt`, and `tests/test_function.txt` are plain-text PowerLanguage source files that exercise every keyword inside an unreachable `If False Then Begin … End;` block — so the compiler verifies syntax without executing anything. They are NOT `.pla` archives; they cannot be imported via File → Import.
+`tests/test_indicator.txt`, `tests/test_signal.txt`, `tests/test_function.txt`, and `tests/test_builtins.txt` are plain-text PowerLanguage source files that exercise every keyword inside an unreachable `If False Then Begin … End;` block — so the compiler verifies syntax without executing anything. The first three cover the 947 CHM keywords; `test_builtins.txt` covers common built-in functions (`.elf` files) like Average, RSI, Stochastic, ADX, etc. They are NOT `.pla` archives; they cannot be imported via File → Import.
 
 To run the compile-test, for each file:
 
