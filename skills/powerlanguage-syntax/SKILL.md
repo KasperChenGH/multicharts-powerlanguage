@@ -70,8 +70,8 @@ If x > 0 Then Begin ... End;
 
 If x > 0 Then ... Else If x = 0 Then ... Else ... ;
 
-For i = 1 To 10 Begin
-    sum = sum + i;
+For idx = 1 To 10 Begin
+    sum = sum + idx;
 End;
 
 While condition Begin ... End;
@@ -82,6 +82,8 @@ Switch (n) Begin
     Default: ... ;
 End;
 ```
+
+**`For` / `While` loop counters must be declared as Variables.** PowerLanguage does not auto-declare loop counters. Using an undeclared name gives "Invalid type operation."
 
 ## Bar references
 
