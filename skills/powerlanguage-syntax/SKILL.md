@@ -159,6 +159,8 @@ MultiCharts ships with hundreds of pre-built Functions (`.elf` files) that are N
 | `DMIPlus` | `DMIPlus(Length)` | numeric |
 | `DMIMinus` | `DMIMinus(Length)` | numeric |
 
+**"Length-only" gotcha:** `CCI`, `ADX`, `DMIPlus`, `DMIMinus`, and `AvgTrueRange` take **only a Length** — no Price parameter. This is unlike `Average(Price, Length)` or `RSI(Price, Length)`. Writing `ADX(Close, 14)` is a compile error; the correct call is `ADX(14)`.
+
 **`Stochastic` gotcha:** It takes **11 parameters**, not 3. The last 4 are output ref variables — you must declare Variables for them. The return value is just a status code (1 or -1), not the stochastic value itself. Typical usage:
 
 ```pascal
