@@ -16,8 +16,8 @@ If False Then Begin
     Value1 = AverageFC(Close, 14);
     { WAverage(Price, Length) }
     Value1 = WAverage(Close, 14);
-    { AdaptiveMovAvg(Price, Length) }
-    Value1 = AdaptiveMovAvg(Close, 14);
+    { AdaptiveMovAvg(Price, EffRatioLen, FastAvgLen, SlowAvgLen) }
+    Value1 = AdaptiveMovAvg(Close, 10, 2, 30);
 
     { === Oscillators and indicators === }
     { RSI(Price, Length) }

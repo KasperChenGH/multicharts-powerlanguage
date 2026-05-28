@@ -144,7 +144,7 @@ MultiCharts ships with hundreds of pre-built Functions (`.elf` files) that are N
 | `XAverage` | `XAverage(Price, Length)` | numeric (exponential MA) |
 | `AverageFC` | `AverageFC(Price, Length)` | numeric (fast calculation) |
 | `WAverage` | `WAverage(Price, Length)` | numeric (weighted MA) |
-| `AdaptiveMovAvg` | `AdaptiveMovAvg(Price, Length)` | numeric (Kaufman AMA) |
+| `AdaptiveMovAvg` | `AdaptiveMovAvg(Price, EffRatioLen, FastAvgLen, SlowAvgLen)` | numeric (Kaufman AMA) |
 
 ### Oscillators and indicators
 
