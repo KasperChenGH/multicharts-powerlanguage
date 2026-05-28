@@ -7,6 +7,7 @@ references/wiki_keyword_index.txt
 *.bak
 .vscode/
 .idea/
+.claude/
 
 # Build artifacts from the maintainer script — DO commit the final outputs under
 # skills/powerlanguage-keywords-reference/ and tests/ but never these working dirs:
