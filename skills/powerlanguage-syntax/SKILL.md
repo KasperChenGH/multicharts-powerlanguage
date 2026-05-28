@@ -147,6 +147,7 @@ MultiCharts ships with hundreds of pre-built Functions (`.elf` files) that are N
 | `AverageFC` | `AverageFC(Price, Length)` | numeric (fast calculation) |
 | `WAverage` | `WAverage(Price, Length)` | numeric (weighted MA) |
 | `AdaptiveMovAvg` | `AdaptiveMovAvg(Price, EffRatioLen, FastAvgLen, SlowAvgLen)` | numeric (Kaufman AMA) |
+| `MidPoint` | `MidPoint(Price, Length)` | numeric |
 
 ### Oscillators and indicators
 
@@ -154,14 +155,20 @@ MultiCharts ships with hundreds of pre-built Functions (`.elf` files) that are N
 |---|---|---|
 | `RSI` | `RSI(Price, Length)` | numeric (0–100) |
 | `Stochastic` | `Stochastic(PriceH, PriceL, PriceC, StochLen, SmoothLen1, SmoothLen2, SmoothType, oFastK, oFastD, oSlowK, oSlowD)` | numeric (1=ok, -1=error); populates 4 ref vars |
-| `BollingerBand` | `BollingerBand(Price, Length, NumDevs)` | numeric (use +NumDevs for upper, -NumDevs for lower) |
+| `BollingerBand` | `BollingerBand(Price, Length, NumDevs)` | numeric (+NumDevs for upper, -NumDevs for lower) |
 | `MACD` | `MACD(Price, FastLen, SlowLen)` | numeric |
+| `KeltnerChannel` | `KeltnerChannel(Price, Length, NumATRs)` | numeric |
 | `CCI` | `CCI(Length)` | numeric |
 | `ADX` | `ADX(Length)` | numeric |
 | `DMIPlus` | `DMIPlus(Length)` | numeric |
 | `DMIMinus` | `DMIMinus(Length)` | numeric |
+| `Momentum` | `Momentum(Price, Length)` | numeric |
+| `RateOfChange` | `RateOfChange(Price, Length)` | numeric |
+| `PercentR` | `PercentR(Length)` | numeric (Williams %R) |
+| `MoneyFlow` | `MoneyFlow(Length)` | numeric |
+| `Parabolic` | `Parabolic(AfStep)` | numeric (Parabolic SAR) |
 
-**"Length-only" gotcha:** `CCI`, `ADX`, `DMIPlus`, `DMIMinus`, and `AvgTrueRange` take **only a Length** — no Price parameter. This is unlike `Average(Price, Length)` or `RSI(Price, Length)`. Writing `ADX(Close, 14)` is a compile error; the correct call is `ADX(14)`.
+**"Length-only" gotcha:** `CCI`, `ADX`, `DMIPlus`, `DMIMinus`, `AvgTrueRange`, `PercentR`, and `MoneyFlow` take **only a Length** — no Price parameter. This is unlike `Average(Price, Length)` or `RSI(Price, Length)`. Writing `ADX(Close, 14)` is a compile error; the correct call is `ADX(14)`. `Parabolic` takes only an acceleration factor step — `Parabolic(0.02)`.
 
 **`Stochastic` gotcha:** It takes **11 parameters**, not 3. The last 4 are output ref variables — you must declare Variables for them. The return value is just a status code (1 or -1), not the stochastic value itself. Typical usage:
 
@@ -170,6 +177,15 @@ Variables: fastK(0), fastD(0), slowK(0), slowD(0);
 Value1 = Stochastic(High, Low, Close, 14, 3, 3, 1, fastK, fastD, slowK, slowD);
 // Use slowK and slowD for signals
 ```
+
+### Multi-output functions
+
+These functions populate output ref variables — you must declare Variables for each output parameter.
+
+| Function | Signature | Returns |
+|---|---|---|
+| `DirMovement` | `DirMovement(H, L, C, Length, oDMIp, oDMIm, oADX, oDIp, oDIm, oADXr)` | numeric; populates 6 ref vars |
+| `Extremes` | `Extremes(Price, Length, ExtrType, oExtUp, oExtDn)` | numeric; populates 2 ref vars |
 
 ### Volatility and range
 
@@ -180,8 +196,9 @@ Value1 = Stochastic(High, Low, Close, 14, 3, 3, 1, fastK, fastD, slowK, slowD);
 | `StandardDev` | `StandardDev(Price, Length, DataType)` | numeric (DataType: 1=population, 2=sample) |
 | `TrueHigh` | `TrueHigh` | numeric (no args) |
 | `TrueLow` | `TrueLow` | numeric (no args) |
+| `Range` | `Range` | numeric (no args; High - Low) |
 
-### Price extremes
+### Price extremes and Nth
 
 | Function | Signature | Returns |
 |---|---|---|
@@ -189,14 +206,60 @@ Value1 = Stochastic(High, Low, Close, 14, 3, 3, 1, fastK, fastD, slowK, slowD);
 | `Lowest` | `Lowest(Price, Length)` | numeric |
 | `HighestBar` | `HighestBar(Price, Length)` | numeric (bars ago) |
 | `LowestBar` | `LowestBar(Price, Length)` | numeric (bars ago) |
+| `NthHighest` | `NthHighest(Nth, Price, Length)` | numeric |
+| `NthLowest` | `NthLowest(Nth, Price, Length)` | numeric |
+| `NthHighestBar` | `NthHighestBar(Nth, Price, Length)` | numeric (bars ago) |
+| `NthLowestBar` | `NthLowestBar(Nth, Price, Length)` | numeric (bars ago) |
 
-### Aggregation
+### Swing detection
+
+| Function | Signature | Returns |
+|---|---|---|
+| `SwingHigh` | `SwingHigh(Occurrence, Price, Strength, Length)` | numeric (price at swing, or -1 if none) |
+| `SwingLow` | `SwingLow(Occurrence, Price, Strength, Length)` | numeric (price at swing, or -1 if none) |
+| `SwingHighBar` | `SwingHighBar(Occurrence, Price, Strength, Length)` | numeric (bars ago) |
+| `SwingLowBar` | `SwingLowBar(Occurrence, Price, Strength, Length)` | numeric (bars ago) |
+
+### Aggregation and linear regression
 
 | Function | Signature | Returns |
 |---|---|---|
 | `Summation` | `Summation(Price, Length)` | numeric |
 | `Cum` | `Cum(Price)` | numeric (cumulative sum from bar 1) |
 | `LinearRegValue` | `LinearRegValue(Price, Length, Offset)` | numeric |
+| `LinearRegAngle` | `LinearRegAngle(Price, Length)` | numeric |
+| `LinearRegSlope` | `LinearRegSlope(Price, Length)` | numeric |
+| `Correlation` | `Correlation(Price1, Price2, Length)` | numeric |
+
+### Price calculation shortcuts
+
+These take no arguments — they use the current bar's OHLC automatically.
+
+| Function | Signature | Returns |
+|---|---|---|
+| `AvgPrice` | `AvgPrice` | numeric |
+| `MedianPrice` | `MedianPrice` | numeric |
+| `TypicalPrice` | `TypicalPrice` | numeric |
+| `WeightedClose` | `WeightedClose` | numeric |
+
+### Counting and occurrence
+
+| Function | Signature | Returns |
+|---|---|---|
+| `CountIF` | `CountIF(Condition, Length)` | numeric |
+| `MRO` | `MRO(Condition, Length, Occurrence)` | numeric (bars ago of Nth occurrence) |
+
+### Volume-based
+
+| Function | Signature | Returns |
+|---|---|---|
+| `AccumDist` | `AccumDist(Length)` | numeric |
+
+### Utility
+
+| Function | Signature | Returns |
+|---|---|---|
+| `IFF` | `IFF(Condition, TrueVal, FalseVal)` | numeric (inline ternary) |
 
 ## Gotchas
 

@@ -55,8 +55,8 @@ If False Then Begin
     Value1 = PercentR(14);
     { MoneyFlow(Length) }
     Value1 = MoneyFlow(14);
-    { Parabolic(AfStep, AfLimit) }
-    Value1 = Parabolic(0.02, 0.2);
+    { Parabolic(AfStep) -- 1 param only }
+    Value1 = Parabolic(0.02);
     { KeltnerChannel(Price, Length, NumATRs) }
     Value1 = KeltnerChannel(Close, 20, 1.5);
 
@@ -82,8 +82,8 @@ If False Then Begin
     Value1 = TrueLow;
     { Range -- no arguments (High - Low) }
     Value1 = Range;
-    { Extremes(Price, Length, oExtUp, oExtDn) }
-    Value1 = Extremes(Close, 20, oExtUp, oExtDn);
+    { Extremes(Price, Length, ExtrType, oExtUp, oExtDn) -- 5 params }
+    Value1 = Extremes(Close, 20, 1, oExtUp, oExtDn);
 
     { ================================================================ }
     { === Price extremes and Nth === }
@@ -157,8 +157,8 @@ If False Then Begin
     { ================================================================ }
     { === Volume-based === }
     { ================================================================ }
-    { AccumDist -- no arguments }
-    Value1 = AccumDist;
+    { AccumDist(Length) -- 1 param }
+    Value1 = AccumDist(14);
 
     { ================================================================ }
     { === Utility === }
