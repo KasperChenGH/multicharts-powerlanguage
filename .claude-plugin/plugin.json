@@ -3,8 +3,8 @@
   "description": "MultiCharts PowerLanguage skills for Claude: platform fundamentals, language syntax, and a categorized reference for all 947 PowerLanguage keywords.",
   "version": "0.1.0",
   "author": { "name": "Yu-An Chen" },
-  "homepage": "https://github.com/KasperChenGH/Multicharts-Powerlanguage-skill",
-  "repository": "https://github.com/KasperChenGH/Multicharts-Powerlanguage-skill",
+  "homepage": "https://github.com/KasperChenGH/multicharts-powerlanguage",
+  "repository": "https://github.com/KasperChenGH/multicharts-powerlanguage",
   "license": "MIT",
   "keywords": ["multicharts", "powerlanguage", "trading", "skills", "easylanguage", "keywords-reference"]
 }
