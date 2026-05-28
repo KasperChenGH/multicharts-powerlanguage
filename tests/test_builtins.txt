@@ -59,6 +59,14 @@ If False Then Begin
     Value1 = Parabolic(0.02);
     { KeltnerChannel(Price, Length, NumATRs) }
     Value1 = KeltnerChannel(Close, 20, 1.5);
+    { Volatility(Length) -- Length only }
+    Value1 = Volatility(14);
+    { UltimateOscillator(Len1, Len2, Len3) }
+    Value1 = UltimateOscillator(7, 14, 28);
+    { ChaikinOsc(FastLen, SlowLen, SmoothType) }
+    Value1 = ChaikinOsc(3, 10, 1);
+    { PriceOscillator(Price, FastLen, SlowLen) }
+    Value1 = PriceOscillator(Close, 12, 26);
 
     { ================================================================ }
     { === Directional Movement (multi-output) === }
@@ -133,6 +141,22 @@ If False Then Begin
     Value1 = LinearRegSlope(Close, 20);
     { Correlation(Price1, Price2, Length) }
     Value1 = Correlation(Close, Volume, 20);
+    { RSquared(Length) -- Length only }
+    Value1 = RSquared(20);
+    { StdError(Price, Length) }
+    Value1 = StdError(Close, 20);
+    { Median(Price, Length) }
+    Value1 = Median(Close, 20);
+
+    { ================================================================ }
+    { === Date/Time conversion === }
+    { ================================================================ }
+    { ELDate(Month, Day, Year) }
+    Value1 = ELDate(1, 15, 2025);
+    { MinutesToTime(Minutes) }
+    Value1 = MinutesToTime(870);
+    { TimeToMinutes(Time) }
+    Value1 = TimeToMinutes(1430);
 
     { ================================================================ }
     { === Price calculation shortcuts === }

@@ -167,8 +167,12 @@ MultiCharts ships with hundreds of pre-built Functions (`.elf` files) that are N
 | `PercentR` | `PercentR(Length)` | numeric (Williams %R) |
 | `MoneyFlow` | `MoneyFlow(Length)` | numeric |
 | `Parabolic` | `Parabolic(AfStep)` | numeric (Parabolic SAR) |
+| `Volatility` | `Volatility(Length)` | numeric |
+| `UltimateOscillator` | `UltimateOscillator(Len1, Len2, Len3)` | numeric |
+| `ChaikinOsc` | `ChaikinOsc(FastLen, SlowLen, SmoothType)` | numeric |
+| `PriceOscillator` | `PriceOscillator(Price, FastLen, SlowLen)` | numeric |
 
-**"Length-only" gotcha:** `CCI`, `ADX`, `DMIPlus`, `DMIMinus`, `AvgTrueRange`, `PercentR`, and `MoneyFlow` take **only a Length** — no Price parameter. This is unlike `Average(Price, Length)` or `RSI(Price, Length)`. Writing `ADX(Close, 14)` is a compile error; the correct call is `ADX(14)`. `Parabolic` takes only an acceleration factor step — `Parabolic(0.02)`.
+**"Length-only" gotcha:** `CCI`, `ADX`, `DMIPlus`, `DMIMinus`, `AvgTrueRange`, `PercentR`, `MoneyFlow`, `Volatility`, and `RSquared` take **only a Length** — no Price parameter. This is unlike `Average(Price, Length)` or `RSI(Price, Length)`. Writing `ADX(Close, 14)` is a compile error; the correct call is `ADX(14)`. `Parabolic` takes only an acceleration factor step — `Parabolic(0.02)`.
 
 **`Stochastic` gotcha:** It takes **11 parameters**, not 3. The last 4 are output ref variables — you must declare Variables for them. The return value is just a status code (1 or -1), not the stochastic value itself. Typical usage:
 
@@ -230,6 +234,17 @@ These functions populate output ref variables — you must declare Variables for
 | `LinearRegAngle` | `LinearRegAngle(Price, Length)` | numeric |
 | `LinearRegSlope` | `LinearRegSlope(Price, Length)` | numeric |
 | `Correlation` | `Correlation(Price1, Price2, Length)` | numeric |
+| `RSquared` | `RSquared(Length)` | numeric |
+| `StdError` | `StdError(Price, Length)` | numeric |
+| `Median` | `Median(Price, Length)` | numeric |
+
+### Date/Time conversion
+
+| Function | Signature | Returns |
+|---|---|---|
+| `ELDate` | `ELDate(Month, Day, Year)` | numeric (EL date format) |
+| `MinutesToTime` | `MinutesToTime(Minutes)` | numeric (HHMM) |
+| `TimeToMinutes` | `TimeToMinutes(Time)` | numeric (total minutes) |
 
 ### Price calculation shortcuts
 
