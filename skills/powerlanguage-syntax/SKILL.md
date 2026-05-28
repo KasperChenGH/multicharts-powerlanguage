@@ -132,6 +132,68 @@ BuyToCover ("SX") 1 Contract Next Bar at Market;
 
 Quantities use `Contract` / `Contracts` (futures, FX) or `Share` / `Shares` (equities). The price-placement keyword (`Market`, `Limit`, `Stop`, `This Bar on Close`) determines when the fill happens. See `powerlanguage-keywords-reference` for each order keyword's full signature.
 
+## Common built-in functions
+
+MultiCharts ships with hundreds of pre-built Functions (`.elf` files) that are NOT in the keyword reference. These are the most commonly used ones — get the signatures right or you'll get compile errors.
+
+### Moving averages and smoothing
+
+| Function | Signature | Returns |
+|---|---|---|
+| `Average` | `Average(Price, Length)` | numeric |
+| `XAverage` | `XAverage(Price, Length)` | numeric (exponential MA) |
+| `AverageFC` | `AverageFC(Price, Length)` | numeric (fast calculation) |
+| `WAverage` | `WAverage(Price, Length)` | numeric (weighted MA) |
+| `AdaptiveMovAvg` | `AdaptiveMovAvg(Price, Length)` | numeric (Kaufman AMA) |
+
+### Oscillators and indicators
+
+| Function | Signature | Returns |
+|---|---|---|
+| `RSI` | `RSI(Price, Length)` | numeric (0–100) |
+| `Stochastic` | `Stochastic(PriceH, PriceL, PriceC, StochLen, SmoothLen1, SmoothLen2, SmoothType, oFastK, oFastD, oSlowK, oSlowD)` | numeric (1=ok, -1=error); populates 4 ref vars |
+| `BollingerBand` | `BollingerBand(Price, Length, NumDevs)` | numeric (use +NumDevs for upper, -NumDevs for lower) |
+| `MACD` | `MACD(Price, FastLen, SlowLen)` | numeric |
+| `CCI` | `CCI(Length)` | numeric |
+| `ADX` | `ADX(Length)` | numeric |
+| `DMIPlus` | `DMIPlus(Length)` | numeric |
+| `DMIMinus` | `DMIMinus(Length)` | numeric |
+
+**`Stochastic` gotcha:** It takes **11 parameters**, not 3. The last 4 are output ref variables — you must declare Variables for them. The return value is just a status code (1 or -1), not the stochastic value itself. Typical usage:
+
+```pascal
+Variables: fastK(0), fastD(0), slowK(0), slowD(0);
+Value1 = Stochastic(High, Low, Close, 14, 3, 3, 1, fastK, fastD, slowK, slowD);
+// Use slowK and slowD for signals
+```
+
+### Volatility and range
+
+| Function | Signature | Returns |
+|---|---|---|
+| `AvgTrueRange` | `AvgTrueRange(Length)` | numeric |
+| `TrueRange` | `TrueRange` | numeric (no args) |
+| `StandardDev` | `StandardDev(Price, Length, DataType)` | numeric (DataType: 1=population, 2=sample) |
+| `TrueHigh` | `TrueHigh` | numeric (no args) |
+| `TrueLow` | `TrueLow` | numeric (no args) |
+
+### Price extremes
+
+| Function | Signature | Returns |
+|---|---|---|
+| `Highest` | `Highest(Price, Length)` | numeric |
+| `Lowest` | `Lowest(Price, Length)` | numeric |
+| `HighestBar` | `HighestBar(Price, Length)` | numeric (bars ago) |
+| `LowestBar` | `LowestBar(Price, Length)` | numeric (bars ago) |
+
+### Aggregation
+
+| Function | Signature | Returns |
+|---|---|---|
+| `Summation` | `Summation(Price, Length)` | numeric |
+| `Cum` | `Cum(Price)` | numeric (cumulative sum from bar 1) |
+| `LinearRegValue` | `LinearRegValue(Price, Length, Offset)` | numeric |
+
 ## Gotchas
 
 ### `MarketPosition(N)` is position history, NOT bar offset
