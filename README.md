@@ -1,6 +1,39 @@
 # multicharts-powerlanguage
 
-The first public Claude Code plugin for [MultiCharts](https://www.multicharts.com/) PowerLanguage — gives Claude expert knowledge of the language used to write Indicators, Signals, and Functions. Works on Windows, macOS, and Linux.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-0.1.2-blue.svg)](https://github.com/KasperChenGH/multicharts-powerlanguage)
+[![Claude Code Plugin](https://img.shields.io/badge/Claude_Code-plugin-blueviolet.svg)](https://github.com/KasperChenGH/multicharts-powerlanguage)
+
+A public Claude Code plugin for [MultiCharts](https://www.multicharts.com/) PowerLanguage — gives Claude expert knowledge of the language used to write Indicators, Signals, and Functions. Works on Windows, macOS, and Linux.
+
+**947 keywords · 64 compile-verified functions · 3 auto-activating skills**
+
+## Example
+
+**Prompt:**
+> Write a MultiCharts signal that enters long when RSI crosses below 30 and exits when it crosses above 70, with a 2% stop loss.
+
+**Generated PowerLanguage (compiles with 0 errors):**
+```
+Inputs:
+    RSI_Length(14),
+    Oversold(30),
+    Overbought(70),
+    StopLossPct(2);
+
+Variables:
+    MyRSI(0);
+
+MyRSI = RSI(Close, RSI_Length);
+
+If MyRSI Crosses Below Oversold Then
+    Buy ("RSI Long") Next Bar at Market;
+
+If MyRSI Crosses Above Overbought Then
+    Sell ("RSI Exit") Next Bar at Market;
+
+SetStopLoss(StopLossPct * 0.01 * EntryPrice);
+```
 
 ## What's inside
 
