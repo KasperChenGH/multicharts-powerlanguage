@@ -9,7 +9,7 @@ Describe 'Plugin metadata files' {
     $p.version     | Should -Be '0.1.0'
     $p.license     | Should -Be 'MIT'
     $p.author.name | Should -Be 'Yu-An Chen'
-    $p.homepage    | Should -Match 'github.com/kappa123451/Multicharts-Powerlanguage-skill'
+    $p.homepage    | Should -Match 'github.com/KasperChenGH/Multicharts-Powerlanguage-skill'
     $p.keywords    | Should -Contain 'multicharts'
   }
 

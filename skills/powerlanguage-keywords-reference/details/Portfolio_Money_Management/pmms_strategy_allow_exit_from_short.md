@@ -1,7 +1,7 @@
 # pmms_strategy_allow_exit_from_short
 
 **Category:** Portfolio_Money_Management
-**Signature:** ``
+**Signature:** `pmms_strategy_allow_exit_from_short(StrategyIndex)`
 
 See the official MultiCharts documentation linked below for the full description and behavior of this keyword.
 

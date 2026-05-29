@@ -1,7 +1,0 @@
-{ test_function.pla -- function return idioms }
-Variables: Value1( 0 );
-Variables: result( 0 );
-result = Value1;
-
-If False Then Begin    { wrap every statement in an unreachable If/Then to verify syntax only }
-End;

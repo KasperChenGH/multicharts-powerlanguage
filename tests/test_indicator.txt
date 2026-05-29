@@ -1,0 +1,1436 @@
+{ test_indicator.txt -- exercises every keyword routed to Indicator script type }
+{ Paste this whole file into a new Indicator study in PowerLanguage Editor and Verify (F3). }
+Arrays: pl_test_bools[10]( false ), pl_test_floats[10]( 0.0 ), pl_test_ints[10]( 0 ), pl_test_strs[10]( "x" );
+
+If False Then Begin    { wrap every statement in an unreachable If/Then to verify syntax only }
+    { Plotting: SetPlotColor }
+    // SetPlotColor is a setter; see official docs.
+    { Plotting: SetPlotBGColor }
+    // SetPlotBGColor is a setter; see official docs.
+    { Plotting: setplotstyle }
+    // setplotstyle is a setter; see official docs.
+    { Quote_Fields: AskSize }
+    Value1 = AskSize;
+    { Plotting: SetPlotWidth }
+    // SetPlotWidth is a setter; see official docs.
+    { Plotting: PlotPB }
+    // PlotPB -- see official docs
+    { Plotting: I_setplotvalue }
+    // I_setplotvalue -- see official docs
+    { Plotting: I_getplotvalue }
+    // I_getplotvalue -- see official docs
+    { Plotting: NoPlot }
+    // NoPlot -- see official docs
+    { Plotting: PlotPaintBar }
+    // PlotPaintBar -- see official docs
+    { Plotting: Plot }
+    // Plot -- see official docs
+    { Quote_Fields: Description }
+    // Description returns a string; see official docs for usage.
+    { Quote_Fields: DailyVolume }
+    Value1 = DailyVolume;
+    { Quote_Fields: ExchListed }
+    // ExchListed returns a string; see official docs for usage.
+    { Quote_Fields: InsideBid }
+    Value1 = InsideBid;
+    { Quote_Fields: InsideAsk }
+    Value1 = InsideAsk;
+    { Quote_Fields: DailyOpen }
+    Value1 = DailyOpen;
+    { Quote_Fields: CurrentOpenInt }
+    Value1 = CurrentOpenInt;
+    { Quote_Fields: BidSize }
+    Value1 = BidSize;
+    { Quote_Fields: DailyClose }
+    Value1 = DailyClose;
+    { Quote_Fields: DailyLow }
+    Value1 = DailyLow;
+    { Quote_Fields: DailyHigh }
+    Value1 = DailyHigh;
+    { Multimedia: PlaySound }
+    // PlaySound is a language construct (Multimedia); see official docs for usage.
+    { MouseClickEvents: MouseClickShiftPressed }
+    If MouseClickShiftPressed Then Begin End;
+    { Output: ClearDebug }
+    // ClearDebug is a language construct (Output); see official docs for usage.
+    { Output: File }
+    // File is a language construct (Output); see official docs for usage.
+    { Output: ClearPrintLog }
+    // ClearPrintLog is a language construct (Output); see official docs for usage.
+    { MouseClickEvents: MouseClickPrice }
+    Value1 = MouseClickPrice;
+    { MouseClickEvents: MouseClickBarNumber }
+    Value1 = MouseClickBarNumber;
+    { Miscellaneous_keywords: Yesterday }
+    // Yesterday is a language construct (Miscellaneous_keywords); see official docs for usage.
+    { MouseClickEvents: MouseClickCtrlPressed }
+    If MouseClickCtrlPressed Then Begin End;
+    { MouseClickEvents: MouseClickDateTime }
+    Value1 = MouseClickDateTime;
+    { MouseClickEvents: MouseClickDataNumber }
+    Value1 = MouseClickDataNumber;
+    { Plotting: GetPlotBGColor }
+    // GetPlotBGColor -- see official docs
+    { Plotting: GetBackgroundColor }
+    // GetBackgroundColor -- see official docs
+    { Plotting: GetPlotColor }
+    // GetPlotColor -- see official docs
+    { Plotting: GetPlotWidth }
+    // GetPlotWidth -- see official docs
+    { Plotting: getplotstyle }
+    // getplotstyle (lowercase-prefix function, takes at least one argument); see official docs.
+    { Plotting: Default }
+    // Default -- see official docs
+    { Output: FileClose }
+    // FileClose is a language construct (Output); see official docs for usage.
+    { Output: FileAppend }
+    // FileAppend is a language construct (Output); see official docs for usage.
+    { Output: FileDelete }
+    // FileDelete is a language construct (Output); see official docs for usage.
+    { Output: Print }
+    // Print is a language construct (Output); see official docs for usage.
+    { Output: MessageLog }
+    // MessageLog is a language construct (Output); see official docs for usage.
+    { Quote_Fields: Last }
+    Value1 = Last;
+    { Rectangle_Drawing: RectangleGetBeginPrice }
+    // RectangleGetBeginPrice is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleGetBeginDate }
+    // RectangleGetBeginDate is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleGetBeginTime }
+    // RectangleGetBeginTime is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleGetBegin_BN }
+    // RectangleGetBegin_BN is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleGetBeginTime_s }
+    // RectangleGetBeginTime_s is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleGetAnchorToBars }
+    // RectangleGetAnchorToBars is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Quote_Fields: TradeVolume }
+    Value1 = TradeVolume;
+    { Quote_Fields: TradeTime }
+    Value1 = TradeTime;
+    { Rectangle_Drawing: RectangleAnchorToBars }
+    // RectangleAnchorToBars is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleGetActive }
+    // RectangleGetActive is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleDelete }
+    // RectangleDelete is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleGetEnd_DT }
+    // RectangleGetEnd_DT is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleGetEnd_BN }
+    // RectangleGetEnd_BN is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleGetFillColor }
+    // RectangleGetFillColor is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleGetLock }
+    // RectangleGetLock is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleGetFirst }
+    // RectangleGetFirst is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleGetEndTime_s }
+    // RectangleGetEndTime_s is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleGetColor }
+    // RectangleGetColor is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleGetBegin_DT }
+    // RectangleGetBegin_DT is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleGetEndDate }
+    // RectangleGetEndDate is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleGetEndTime }
+    // RectangleGetEndTime is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleGetEndPrice }
+    // RectangleGetEndPrice is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Quote_Fields: q_ExchangeListed }
+    // q_ExchangeListed returns a string; see official docs for usage.
+    { Quote_Fields: q_Date }
+    Value1 = q_Date;
+    { Quote_Fields: q_Last }
+    Value1 = q_Last;
+    { Quote_Fields: q_PreviousClose }
+    Value1 = q_PreviousClose;
+    { Quote_Fields: q_OpenInterest }
+    Value1 = q_OpenInterest;
+    { Quote_Fields: q_BigPointValue }
+    Value1 = q_BigPointValue;
+    { Quote_Fields: q_Ask }
+    Value1 = q_Ask;
+    { Quote_Fields: PrevClose }
+    Value1 = PrevClose;
+    { Quote_Fields: q_asksize }
+    Value1 = q_asksize;
+    { Quote_Fields: q_bidsize }
+    Value1 = q_bidsize;
+    { Quote_Fields: q_Bid }
+    Value1 = q_Bid;
+    { Quote_Fields: Symbol }
+    // Symbol returns a string; see official docs for usage.
+    { Quote_Fields: RTSymbolName }
+    // RTSymbolName returns a string; see official docs for usage.
+    { Quote_Fields: SymbolName }
+    // SymbolName returns a string; see official docs for usage.
+    { Quote_Fields: TradeDate }
+    // TradeDate returns a string; see official docs for usage.
+    { Quote_Fields: SymbolRoot }
+    // SymbolRoot returns a string; see official docs for usage.
+    { Quote_Fields: RTSymbol }
+    // RTSymbol returns a string; see official docs for usage.
+    { Quote_Fields: q_Time_Dt }
+    Value1 = q_Time_Dt;
+    { Quote_Fields: q_Time }
+    Value1 = q_Time;
+    { Quote_Fields: q_Time_s }
+    Value1 = q_Time_s;
+    { Quote_Fields: q_tradevolume }
+    Value1 = q_tradevolume;
+    { Quote_Fields: q_TotalVolume }
+    Value1 = q_TotalVolume;
+    { Environment_Information: MaxBarsForward }
+    Value1 = MaxBarsForward;
+    { Environment_Information: MaxBarsBack }
+    Value1 = MaxBarsBack;
+    { Environment_Information: SetMaxBarsBack }
+    // SetMaxBarsBack is a setter; see official docs.
+    { Execution_Control: Abort }
+    // Abort is a language construct (Execution_Control); see official docs for usage.
+    { Execution_Control: #Return }
+    // #Return is a language construct (Execution_Control); see official docs for usage.
+    { Environment_Information: Is64BitProcess }
+    If Is64BitProcess Then Begin End;
+    { Environment_Information: getTPOinfo }
+    // getTPOinfo (lowercase-prefix function, takes at least one argument); see official docs.
+    { Environment_Information: GetCurrency }
+    // GetCurrency returns a string; see official docs for usage.
+    { Environment_Information: GetUserID }
+    Value1 = GetUserID;
+    { Environment_Information: Is64BitOperatingSystem }
+    If Is64BitOperatingSystem Then Begin End;
+    { Environment_Information: GetUserName }
+    // GetUserName returns a string; see official docs for usage.
+    { Execution_Control: RaiseRunTimeError }
+    // RaiseRunTimeError is a language construct (Execution_Control); see official docs for usage.
+    { Execution_Control: fpcVeryLowAccuracy }
+    // fpcVeryLowAccuracy is a language construct (Execution_Control); see official docs for usage.
+    { Execution_Control: RecalcLastBarAfter }
+    // RecalcLastBarAfter is a language construct (Execution_Control); see official docs for usage.
+    { Execution_Control: SetFPCompareAccuracy }
+    // SetFPCompareAccuracy is a language construct (Execution_Control); see official docs for usage.
+    { Execution_Control: ReCalculate }
+    // ReCalculate is a language construct (Execution_Control); see official docs for usage.
+    { Execution_Control: fpcVeryHighAccuracy }
+    // fpcVeryHighAccuracy is a language construct (Execution_Control); see official docs for usage.
+    { Execution_Control: fpcExactAccuracy }
+    // fpcExactAccuracy is a language construct (Execution_Control); see official docs for usage.
+    { Execution_Control: CommandLine }
+    // CommandLine is a language construct (Execution_Control); see official docs for usage.
+    { Execution_Control: fpcHighAccuracy }
+    // fpcHighAccuracy is a language construct (Execution_Control); see official docs for usage.
+    { Execution_Control: fpcMedAccuracy }
+    // fpcMedAccuracy is a language construct (Execution_Control); see official docs for usage.
+    { Execution_Control: fpcLowAccuracy }
+    // fpcLowAccuracy is a language construct (Execution_Control); see official docs for usage.
+    { Dynamic_Arrays: Array_SetBooleanValue }
+    Array_SetBooleanValue( pl_test_bools, 0, True );
+    { Dynamic_Arrays: Array_IndexOf }
+    Value1 = Array_IndexOf( pl_test_ints, 5 );
+    { Dynamic_Arrays: Array_SetFloatValue }
+    Array_SetFloatValue( pl_test_floats, 0, 1.5 );
+    { Dynamic_Arrays: Array_SetMaxIndex }
+    Array_SetMaxIndex( pl_test_ints, 20 );
+    { Dynamic_Arrays: Array_SetIntegerValue }
+    Array_SetIntegerValue( pl_test_ints, 0, 42 );
+    { Dynamic_Arrays: Array_GetType }
+    Value1 = Array_GetType( pl_test_ints );
+    { Dynamic_Arrays: Array_GetFloatValue }
+    Value1 = Array_GetFloatValue( pl_test_floats, 0 );
+    { Dynamic_Arrays: Array_GetBooleanValue }
+    If Array_GetBooleanValue( pl_test_bools, 0 ) Then Begin End;
+    { Dynamic_Arrays: Array_GetIntegerValue }
+    Value1 = Array_GetIntegerValue( pl_test_ints, 0 );
+    { Dynamic_Arrays: Array_GetStringValue }
+    // Array_GetStringValue returns a string; see official docs.
+    { Dynamic_Arrays: Array_GetMaxIndex }
+    Value1 = Array_GetMaxIndex( pl_test_ints );
+    { Environment_Information: ExecOffset }
+    Value1 = ExecOffset;
+    { Environment_Information: CurrentDataNumber }
+    Value1 = CurrentDataNumber;
+    { Environment_Information: GetAppInfo }
+    // GetAppInfo returns a string; see official docs for usage.
+    { Environment_Information: GetCountry }
+    // GetCountry returns a string; see official docs for usage.
+    { Environment_Information: GetCDRomDrive }
+    // GetCDRomDrive returns a string; see official docs for usage.
+    { Environment_Information: BaseDataNumber }
+    Value1 = BaseDataNumber;
+    { Dynamic_Arrays: Array_SetValRange }
+    Array_SetValRange( pl_test_ints, 0, 5, 0 );
+    { Dynamic_Arrays: Array_SetStringValue }
+    Array_SetStringValue( pl_test_strs, 0, "x" );
+    { Dynamic_Arrays: Array_Sort }
+    Array_Sort( pl_test_ints, 0, 5, True );
+    { Dynamic_Arrays: Fill_Array }
+    Fill_Array( pl_test_ints, 0 );
+    { Dynamic_Arrays: Array_Sum }
+    Value1 = Array_Sum( pl_test_floats, 0, 5 );
+    { Execution_Control: VerifyLicense }
+    // VerifyLicense is a language construct (Execution_Control); see official docs for usage.
+    { Math_and_Trig: Sign }
+    Value1 = Sign( Close );
+    { Math_and_Trig: Round }
+    Value1 = Round( Close, 2 );
+    { Math_and_Trig: Sine }
+    Value1 = Sine( Close );
+    { Math_and_Trig: SquareRoot }
+    // SquareRoot returns a string; see official docs for usage.
+    { Math_and_Trig: Square }
+    Value1 = Square( Close );
+    { Math_and_Trig: Random }
+    Value1 = Random( Close );
+    { Math_and_Trig: NthMaxList }
+    Value1 = NthMaxList( Close, 2, 2, 2, 2 );
+    { Math_and_Trig: Neg }
+    Value1 = Neg( Close );
+    { Math_and_Trig: NthMinList }
+    Value1 = NthMinList( Close, 2, 2, 2, 2 );
+    { Math_and_Trig: Power }
+    Value1 = Power( Close, 2 );
+    { Math_and_Trig: Pos }
+    Value1 = Pos( Close );
+    { Miscellaneous_keywords: Market }
+    // Market is a language construct (Miscellaneous_keywords); see official docs for usage.
+    { Miscellaneous_keywords: Contracts }
+    // Contracts is a language construct (Miscellaneous_keywords); see official docs for usage.
+    { Miscellaneous_keywords: Next }
+    // Next is a language construct (Miscellaneous_keywords); see official docs for usage.
+    { Miscellaneous_keywords: Today }
+    // Today is a language construct (Miscellaneous_keywords); see official docs for usage.
+    { Miscellaneous_keywords: This }
+    // This is a language construct (Miscellaneous_keywords); see official docs for usage.
+    { Miscellaneous_keywords: Contract }
+    // Contract is a language construct (Miscellaneous_keywords); see official docs for usage.
+    { Math_and_Trig: Tangent }
+    Value1 = Tangent( Close );
+    { Math_and_Trig: SumList }
+    Value1 = SumList( Close, 2, 2, 2 );
+    { Miscellaneous_keywords: Ago }
+    // Ago is a language construct (Miscellaneous_keywords); see official docs for usage.
+    { Miscellaneous_keywords: Bars }
+    // Bars is a language construct (Miscellaneous_keywords); see official docs for usage.
+    { Miscellaneous_keywords: Bar }
+    // Bar is a language construct (Miscellaneous_keywords); see official docs for usage.
+    { Math_and_Trig: ArcTangent }
+    Value1 = ArcTangent( Close );
+    { Math_and_Trig: AbsValue }
+    Value1 = AbsValue( Close );
+    { Math_and_Trig: AvgList }
+    Value1 = AvgList( Close, 2, 2, 2 );
+    { Math_and_Trig: Cosine }
+    Value1 = Cosine( Close );
+    { Math_and_Trig: Ceiling }
+    Value1 = Ceiling( Close );
+    { ExpertCommentary: CommentaryEnabled }
+    // CommentaryEnabled is a language construct (ExpertCommentary); see official docs for usage.
+    { ExpertCommentary: AtCommentaryBar }
+    // AtCommentaryBar is a language construct (ExpertCommentary); see official docs for usage.
+    { ExpertCommentary: #BeginCmtry }
+    // #BeginCmtry is a language construct (ExpertCommentary); see official docs for usage.
+    { ExpertCommentary: CheckCommentary }
+    // CheckCommentary is a language construct (ExpertCommentary); see official docs for usage.
+    { ExpertCommentary: CommentaryCL }
+    // CommentaryCL is a language construct (ExpertCommentary); see official docs for usage.
+    { ExpertCommentary: Commentary }
+    // Commentary is a language construct (ExpertCommentary); see official docs for usage.
+    { Math_and_Trig: MaxList2 }
+    Value1 = MaxList2( Close, 2, 2, 2 );
+    { Math_and_Trig: MaxList }
+    Value1 = MaxList( Close, 2, 2, 2 );
+    { Math_and_Trig: MinList }
+    Value1 = MinList( Close, 2, 2, 2 );
+    { Math_and_Trig: Mod }
+    Value1 = Mod( Close, 2 );
+    { Math_and_Trig: MinList2 }
+    Value1 = MinList2( Close, 2, 2, 2 );
+    { Math_and_Trig: Log }
+    Value1 = Log( Close );
+    { Math_and_Trig: ExpValue }
+    Value1 = ExpValue( Close );
+    { Math_and_Trig: Cotangent }
+    Value1 = Cotangent( Close );
+    { Math_and_Trig: Floor }
+    Value1 = Floor( Close );
+    { Math_and_Trig: IntPortion }
+    Value1 = IntPortion( Close );
+    { Math_and_Trig: FracPortion }
+    Value1 = FracPortion( Close );
+    { Rectangle_Drawing: RectangleGetNext }
+    // RectangleGetNext is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: MC_TL_New_Self }
+    // MC_TL_New_Self is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: MC_TL_New_DT }
+    // MC_TL_New_DT is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: MC_TL_New_Self_BN }
+    // MC_TL_New_Self_BN is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_Anchor_to_Bars }
+    // TL_Anchor_to_Bars is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: MC_TL_New_Self_DT }
+    // MC_TL_New_Self_DT is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: MC_TL_New_BN }
+    // MC_TL_New_BN is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Manipulation: Text }
+    // Text is a language construct (Text_Manipulation); see official docs for usage.
+    { Text_Manipulation: StrToNum }
+    // StrToNum is a language construct (Text_Manipulation); see official docs for usage.
+    { Text_Manipulation: UpperStr }
+    // UpperStr is a language construct (Text_Manipulation); see official docs for usage.
+    { Trendline_Drawing: MC_TL_New }
+    // MC_TL_New is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: MC_TL_GetActive }
+    // MC_TL_GetActive is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_GetBegin_BN }
+    // TL_GetBegin_BN is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_GetBeginVal }
+    // TL_GetBeginVal is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_GetBegin_Dt }
+    // TL_GetBegin_Dt is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_GetEndDate }
+    // TL_GetEndDate is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_GetColor }
+    // TL_GetColor is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_GetBeginTime_s }
+    // TL_GetBeginTime_s is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_GetActive }
+    // TL_GetActive is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_Delete }
+    // TL_Delete is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_GetAlert }
+    // TL_GetAlert is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_GetBeginTime }
+    // TL_GetBeginTime is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_GetBeginDate }
+    // TL_GetBeginDate is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_SetLocation_s }
+    // Text_SetLocation_s is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_SetLocation_DT }
+    // Text_SetLocation_DT is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_SetSize }
+    // Text_SetSize is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_SetStyle }
+    // Text_SetStyle is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_SetString }
+    // Text_SetString is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_SetLocation_BN }
+    // Text_SetLocation_BN is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_SetBorder }
+    // Text_SetBorder is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_SetBGColor }
+    // Text_SetBGColor is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_SetColor }
+    // Text_SetColor is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_SetLocation }
+    // Text_SetLocation is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_SetFontName }
+    // Text_SetFontName returns a string; see official docs for usage.
+    { Text_Manipulation: NumToStr }
+    // NumToStr is a language construct (Text_Manipulation); see official docs for usage.
+    { Text_Manipulation: NewLine }
+    // NewLine is a language construct (Text_Manipulation); see official docs for usage.
+    { Text_Manipulation: RightStr }
+    // RightStr is a language construct (Text_Manipulation); see official docs for usage.
+    { Text_Manipulation: StrLen }
+    // StrLen is a language construct (Text_Manipulation); see official docs for usage.
+    { Text_Manipulation: Spaces }
+    // Spaces is a language construct (Text_Manipulation); see official docs for usage.
+    { Text_Manipulation: MidStr }
+    // MidStr is a language construct (Text_Manipulation); see official docs for usage.
+    { Text_Manipulation: DoubleQuote }
+    // DoubleQuote is a language construct (Text_Manipulation); see official docs for usage.
+    { Text_Drawing: Text_SetTransparent }
+    // Text_SetTransparent is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Manipulation: InStr }
+    // InStr is a language construct (Text_Manipulation); see official docs for usage.
+    { Text_Manipulation: LowerStr }
+    // LowerStr is a language construct (Text_Manipulation); see official docs for usage.
+    { Text_Manipulation: LeftStr }
+    // LeftStr is a language construct (Text_Manipulation); see official docs for usage.
+    { Trendline_Drawing: TL_GetEndTime }
+    // TL_GetEndTime is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_SetBegin_s }
+    // TL_SetBegin_s is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_SetBegin_DT }
+    // TL_SetBegin_DT is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_SetColor }
+    // TL_SetColor is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_SetEnd_BN }
+    // TL_SetEnd_BN is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_SetEnd }
+    // TL_SetEnd is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_SetBegin_BN }
+    // TL_SetBegin_BN is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_New_Self_Dt }
+    // TL_New_Self_Dt is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_New_Self_BN }
+    // TL_New_Self_BN is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_New_Self_s }
+    // TL_New_Self_s is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_SetBegin }
+    // TL_SetBegin is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_SetAlert }
+    // TL_SetAlert is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: Tool_Dashed2 }
+    Value1 = Tool_Dashed2( Close, 14 );
+    { Trendline_Drawing: Tool_Dashed }
+    Value1 = Tool_Dashed( Close, 14 );
+    { Trendline_Drawing: Tool_Dashed3 }
+    Value1 = Tool_Dashed3( Close, 14 );
+    { Trendline_Drawing: Tool_Solid }
+    Value1 = Tool_Solid( Close, 14 );
+    { Trendline_Drawing: Tool_Dotted }
+    Value1 = Tool_Dotted( Close, 14 );
+    { Trendline_Drawing: TL_SetStyle }
+    // TL_SetStyle is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_SetEnd_s }
+    // TL_SetEnd_s is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_SetEnd_Dt }
+    // TL_SetEnd_Dt is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_SetExtLeft }
+    // TL_SetExtLeft is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_SetSize }
+    // TL_SetSize is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_SetExtRight }
+    // TL_SetExtRight is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_GetLock }
+    // TL_GetLock is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_GetFirst }
+    // TL_GetFirst is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_GetNext }
+    // TL_GetNext is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_GetStyle }
+    // TL_GetStyle is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_GetSize }
+    // TL_GetSize is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_GetExtRight }
+    // TL_GetExtRight is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_GetEndVal }
+    // TL_GetEndVal is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_GetEndTime_s }
+    // TL_GetEndTime_s is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_GetEnd_BN }
+    // TL_GetEnd_BN is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_GetExtLeft }
+    // TL_GetExtLeft is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_GetEnd_Dt }
+    // TL_GetEnd_Dt is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_New_BN }
+    // TL_New_BN is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_New }
+    // TL_New is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_New_Dt }
+    // TL_New_Dt is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_New_self }
+    // TL_New_self is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_New_s }
+    // TL_New_s is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_Lock }
+    // TL_Lock is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_GetValue_BN }
+    // TL_GetValue_BN is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_GetValue }
+    // TL_GetValue is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_GetValue_Dt }
+    // TL_GetValue_Dt is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_Get_Anchor_to_Bars }
+    // TL_Get_Anchor_to_Bars is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Trendline_Drawing: TL_GetValue_s }
+    // TL_GetValue_s is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Sessions: Sess2FirstBarTime }
+    Value1 = Sess2FirstBarTime;
+    { Sessions: Sess2EndTime }
+    Value1 = Sess2EndTime;
+    { Sessions: Sess2StartTime }
+    Value1 = Sess2StartTime;
+    { Sessions: SessionCountMS }
+    Value1 = SessionCountMS;
+    { Sessions: SessionCount }
+    Value1 = SessionCount( Close );
+    { Sessions: Sess1StartTime }
+    Value1 = Sess1StartTime;
+    { Sessions: AutoSession }
+    Value1 = AutoSession;
+    { Rectangle_Drawing: RectangleSetStyle }
+    // RectangleSetStyle is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Sessions: RegularSession }
+    Value1 = RegularSession;
+    { Sessions: Sess1FirstBarTime }
+    Value1 = Sess1FirstBarTime;
+    { Sessions: Sess1EndTime }
+    Value1 = Sess1EndTime;
+    { Sessions: SessionStartTimeMS }
+    Value1 = SessionStartTimeMS( Close );
+    { Sessions: SessionStartTime }
+    Value1 = SessionStartTime( Close, 14 );
+    { Skip_Words: A }
+    // A appears inside other constructs.
+    { Skip_Words: At }
+    // At appears inside other constructs.
+    { Skip_Words: An }
+    // An appears inside other constructs.
+    { Sessions: SessionStartDayMS }
+    Value1 = SessionStartDayMS( Close );
+    { Sessions: SessionEndDayMS }
+    Value1 = SessionEndDayMS( Close );
+    { Sessions: SessionEndDay }
+    Value1 = SessionEndDay( Close, 14 );
+    { Sessions: SessionEndTime }
+    Value1 = SessionEndTime( Close, 14 );
+    { Sessions: SessionStartDay }
+    Value1 = SessionStartDay( Close, 14 );
+    { Sessions: SessionEndTimeMS }
+    Value1 = SessionEndTimeMS( Close );
+    { Rectangle_Drawing: RectangleNewSelf_s }
+    // RectangleNewSelf_s is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleNewSelf_DT }
+    // RectangleNewSelf_DT is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleNew_BN }
+    // RectangleNew_BN is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleNew_s }
+    // RectangleNew_s is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleNew_DT }
+    // RectangleNew_DT is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleNewSelf_BN }
+    // RectangleNewSelf_BN is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleGetStyle }
+    // RectangleGetStyle is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleGetSize }
+    // RectangleGetSize is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleLock }
+    // RectangleLock is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleNewSelf }
+    // RectangleNewSelf is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleNew }
+    // RectangleNew is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleSetEnd_DT }
+    // RectangleSetEnd_DT is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleSetEnd_BN }
+    // RectangleSetEnd_BN is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleSetEnd_s }
+    // RectangleSetEnd_s is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleSetSize }
+    // RectangleSetSize is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleSetFillColor }
+    // RectangleSetFillColor is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleSetEnd }
+    // RectangleSetEnd is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleSetBegin_BN }
+    // RectangleSetBegin_BN is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleSetBegin }
+    // RectangleSetBegin is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleSetBegin_DT }
+    // RectangleSetBegin_DT is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleSetColor }
+    // RectangleSetColor is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Rectangle_Drawing: RectangleSetBegin_s }
+    // RectangleSetBegin_s is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Skip_Words: Based }
+    // Based appears inside other constructs.
+    { Text_Drawing: Text_GetTime_s }
+    // Text_GetTime_s is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_GetTime_DT }
+    // Text_GetTime_DT is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_GetValue }
+    // Text_GetValue is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_Get_Anchor_to_Bars }
+    // Text_Get_Anchor_to_Bars is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_GetVStyle }
+    // Text_GetVStyle is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_GetTime }
+    // Text_GetTime is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_GetLock }
+    // Text_GetLock is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_GetHStyle }
+    // Text_GetHStyle is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_GetNext }
+    // Text_GetNext is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_GetString }
+    // Text_GetString is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_GetSize }
+    // Text_GetSize is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_New_Self_DT }
+    // Text_New_Self_DT is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_New_Self_BN }
+    // Text_New_Self_BN is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_New_self_s }
+    // Text_New_self_s is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_SetBarNumber }
+    // Text_SetBarNumber is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_SetAttribute }
+    // Text_SetAttribute is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_New_self }
+    // Text_New_self is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_New }
+    // Text_New is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_Lock }
+    // Text_Lock is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_New_BN }
+    // Text_New_BN is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_New_s }
+    // Text_New_s is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_New_Dt }
+    // Text_New_Dt is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Skip_Words: Than }
+    // Than appears inside other constructs.
+    { Skip_Words: Place }
+    // Place appears inside other constructs.
+    { Skip_Words: The }
+    // The appears inside other constructs.
+    { Text_Drawing: MC_Text_GetActive }
+    // MC_Text_GetActive is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Skip_Words: Was }
+    // Was appears inside other constructs.
+    { Skip_Words: On }
+    // On appears inside other constructs.
+    { Skip_Words: Does }
+    // Does appears inside other constructs.
+    { Skip_Words: By }
+    // By appears inside other constructs.
+    { Skip_Words: From }
+    // From appears inside other constructs.
+    { Skip_Words: Of }
+    // Of appears inside other constructs.
+    { Skip_Words: Is }
+    // Is appears inside other constructs.
+    { Text_Drawing: Text_GetColor }
+    // Text_GetColor is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_GetBorder }
+    // Text_GetBorder is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_GetDate }
+    // Text_GetDate is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_GetFontName }
+    // Text_GetFontName returns a string; see official docs for usage.
+    { Text_Drawing: Text_GetFirst }
+    // Text_GetFirst is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_GetBGColor }
+    // Text_GetBGColor is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_Delete }
+    // Text_Delete is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_Anchor_to_Bars }
+    // Text_Anchor_to_Bars is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_GetActive }
+    // Text_GetActive is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_GetBarNumber }
+    // Text_GetBarNumber is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Text_Drawing: Text_GetAttribute }
+    // Text_GetAttribute is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Dynamic_Arrays: Array_Copy }
+    Array_Copy( pl_test_ints, 0, pl_test_ints, 0, 5 );
+    { Comparison_and_Loops: For }
+    // For is a language construct (Comparison_and_Loops); see official docs for usage.
+    { Comparison_and_Loops: False }
+    // False is a language construct (Comparison_and_Loops); see official docs for usage.
+    { Comparison_and_Loops: If }
+    // If is a language construct (Comparison_and_Loops); see official docs for usage.
+    { Comparison_and_Loops: Or }
+    // Or is a language construct (Comparison_and_Loops); see official docs for usage.
+    { Comparison_and_Loops: Not }
+    // Not is a language construct (Comparison_and_Loops); see official docs for usage.
+    { Comparison_and_Loops: End }
+    // End is a language construct (Comparison_and_Loops); see official docs for usage.
+    { Comparison_and_Loops: Cross }
+    // Cross is a language construct (Comparison_and_Loops); see official docs for usage.
+    { Comparison_and_Loops: case }
+    // case is a language construct (Comparison_and_Loops); see official docs for usage.
+    { Comparison_and_Loops: Crosses }
+    // Crosses is a language construct (Comparison_and_Loops); see official docs for usage.
+    { Comparison_and_Loops: Else }
+    // Else is a language construct (Comparison_and_Loops); see official docs for usage.
+    { Comparison_and_Loops: DownTo }
+    // DownTo is a language construct (Comparison_and_Loops); see official docs for usage.
+    { Currency_Codes: AUD }
+    Value1 = AUD;
+    { Comparison_and_Loops: While }
+    // While is a language construct (Comparison_and_Loops); see official docs for usage.
+    { Currency_Codes: CAD }
+    Value1 = CAD;
+    { Currency_Codes: Convert_Currency }
+    Value1 = Convert_Currency( Close, 14, 14, 14 );
+    { Currency_Codes: CHF }
+    Value1 = CHF;
+    { Comparison_and_Loops: Under }
+    // Under is a language construct (Comparison_and_Loops); see official docs for usage.
+    { Comparison_and_Loops: switch }
+    // switch is a language construct (Comparison_and_Loops); see official docs for usage.
+    { Comparison_and_Loops: Over }
+    // Over is a language construct (Comparison_and_Loops); see official docs for usage.
+    { Comparison_and_Loops: Then }
+    // Then is a language construct (Comparison_and_Loops); see official docs for usage.
+    { Comparison_and_Loops: True }
+    // True is a language construct (Comparison_and_Loops); see official docs for usage.
+    { Comparison_and_Loops: To }
+    // To is a language construct (Comparison_and_Loops); see official docs for usage.
+    { Colors: Green }
+    Value1 = Green;
+    { Colors: GradientColor }
+    Value1 = GradientColor( Close, 14, 14, 14, 14 );
+    { Colors: LegacyColorToRGB }
+    Value1 = LegacyColorToRGB( Close );
+    { Colors: Magenta }
+    Value1 = Magenta;
+    { Colors: LightGray }
+    Value1 = LightGray;
+    { Colors: GetRValue }
+    Value1 = GetRValue( Close );
+    { Colors: DarkYellow }
+    Value1 = DarkYellow;
+    { Colors: DarkRed }
+    Value1 = DarkRed;
+    { Colors: GetAValue }
+    Value1 = GetAValue( Close );
+    { Colors: GetGValue }
+    Value1 = GetGValue( Close );
+    { Colors: GetBValue }
+    Value1 = GetBValue( Close );
+    { Comparison_and_Loops: And }
+    // And is a language construct (Comparison_and_Loops); see official docs for usage.
+    { Comparison_and_Loops: Above }
+    // Above is a language construct (Comparison_and_Loops); see official docs for usage.
+    { Comparison_and_Loops: Begin }
+    // Begin is a language construct (Comparison_and_Loops); see official docs for usage.
+    { Comparison_and_Loops: Break }
+    // Break is a language construct (Comparison_and_Loops); see official docs for usage.
+    { Comparison_and_Loops: Below }
+    // Below is a language construct (Comparison_and_Loops); see official docs for usage.
+    { Colors: Yellow }
+    Value1 = Yellow;
+    { Colors: RGB }
+    Value1 = RGB( Close, 14, 14 );
+    { Colors: Red }
+    Value1 = Red;
+    { Colors: RGBToLegacyColor }
+    Value1 = RGBToLegacyColor( Close );
+    { Colors: White }
+    Value1 = White;
+    { Colors: Transparent }
+    Value1 = Transparent;
+    { Currency_Codes: CurrencyCodeToStr }
+    // CurrencyCodeToStr returns a string; see official docs for usage.
+    { Data_Information_General: CurrentBar }
+    Value1 = CurrentBar;
+    { Data_Information_General: Close }
+    Value1 = Close;
+    { Data_Information_General: D }
+    // D is a reserved syntactic token; see official docs for usage.
+    { Data_Information_General: Data }
+    // Data is a reserved syntactic token; see official docs for usage.
+    { Data_Information_General: DailyLimit }
+    Value1 = DailyLimit;
+    { Data_Information_General: Category }
+    Value1 = Category;
+    { Data_Information_General: BigPointValue }
+    Value1 = BigPointValue;
+    { Data_Information_General: BarType_uid }
+    // BarType_uid returns a string; see official docs for usage.
+    { Data_Information_General: BoxSize }
+    // BoxSize is a reserved syntactic token; see official docs for usage.
+    { Data_Information_General: Call }
+    // Call is a reserved syntactic token; see official docs for usage.
+    { Data_Information_General: C }
+    // C is a reserved syntactic token; see official docs for usage.
+    { Data_Information_General: DownTicks }
+    Value1 = DownTicks;
+    { Data_Information_General: DeltaType }
+    // DeltaType is a reserved syntactic token; see official docs for usage.
+    { Data_Information_General: ExpirationDate }
+    Value1 = ExpirationDate;
+    { Data_Information_General: GetExchangeName }
+    // GetExchangeName returns a string; see official docs for usage.
+    { Data_Information_General: ExpirationDateFromVendor }
+    Value1 = ExpirationDateFromVendor;
+    { Data_Information_General: Days }
+    // Days is a reserved syntactic token; see official docs for usage.
+    { Data_Information_General: Date }
+    Value1 = Date;
+    { Data_Information_General: DataCompression }
+    Value1 = DataCompression;
+    { Data_Information_General: DateTime bar update }
+    // DateTime bar update (multi-word keyword); see official docs for usage.
+    { Data_Information_General: Day }
+    // Day is a reserved syntactic token; see official docs for usage.
+    { Data_Information_General: DateTime }
+    Value1 = DateTime;
+    { Currency_Codes: Portfolio_CurrencyCode }
+    // Portfolio_CurrencyCode is signal/portfolio-only; not applicable to Indicator studies.
+    { Currency_Codes: NZD }
+    Value1 = NZD;
+    { Currency_Codes: SEK }
+    Value1 = SEK;
+    { Currency_Codes: StrategyCurrencyCode }
+    // StrategyCurrencyCode is signal/portfolio-only; not applicable to Indicator studies.
+    { Currency_Codes: SGD }
+    Value1 = SGD;
+    { Currency_Codes: None }
+    Value1 = None;
+    { Currency_Codes: GBP }
+    Value1 = GBP;
+    { Currency_Codes: EUR }
+    Value1 = EUR;
+    { Currency_Codes: HKD }
+    Value1 = HKD;
+    { Currency_Codes: NOK }
+    Value1 = NOK;
+    { Currency_Codes: JPY }
+    Value1 = JPY;
+    { Data_Information_General: Bars }
+    // Bars is a reserved syntactic token; see official docs for usage.
+    { Data_Information_General: BarInterval }
+    Value1 = BarInterval;
+    { Data_Information_General: BarStatus }
+    Value1 = BarStatus( Close );
+    { Data_Information_General: BarType_ex }
+    // BarType_ex returns a string; see official docs for usage.
+    { Data_Information_General: BarType }
+    // BarType returns a string; see official docs for usage.
+    { Data_Information_General: Bar }
+    // Bar is a reserved syntactic token; see official docs for usage.
+    { Currency_Codes: TRY_ }
+    Value1 = TRY_;
+    { Currency_Codes: SymbolCurrencyCode }
+    // SymbolCurrencyCode returns a string; see official docs for usage.
+    { Currency_Codes: USD }
+    Value1 = USD;
+    { Data_Information_General: Ago }
+    // Ago is a reserved syntactic token; see official docs for usage.
+    { Currency_Codes: ZAR }
+    Value1 = ZAR;
+    { Arrow_Drawing: Arw_GetSize }
+    // Arw_GetSize is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_GetNext }
+    // Arw_GetNext is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_GetStyle }
+    // Arw_GetStyle is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_GetTextAttribute }
+    // Arw_GetTextAttribute is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_GetText }
+    // Arw_GetText is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_GetLock }
+    // Arw_GetLock is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_GetColor }
+    // Arw_GetColor is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_GetBarNumber }
+    // Arw_GetBarNumber is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_GetDate }
+    // Arw_GetDate is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_GetFirst }
+    // Arw_GetFirst is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_GetDirection }
+    // Arw_GetDirection is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_GetVal }
+    // Arw_GetVal is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_GetTime_s }
+    // Arw_GetTime_s is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_Get_Anchor_to_Bars }
+    // Arw_Get_Anchor_to_Bars is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_New }
+    // Arw_New is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_Lock }
+    // Arw_Lock is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_GetTime_DT }
+    // Arw_GetTime_DT is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_GetTextColor }
+    // Arw_GetTextColor is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_GetTextBGColor }
+    // Arw_GetTextBGColor is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_GetTextFontName }
+    // Arw_GetTextFontName returns a string; see official docs for usage.
+    { Arrow_Drawing: Arw_GetTime }
+    // Arw_GetTime is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_GetTextSize }
+    // Arw_GetTextSize is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { AccountsPositions: GetPositionQuantity }
+    Value1 = GetPositionQuantity( "x", "x" );
+    { AccountsPositions: GetPositionOpenPL }
+    Value1 = GetPositionOpenPL( "x", "x" );
+    { AccountsPositions: GetPositionSymbol }
+    // GetPositionSymbol returns a string; see official docs for usage.
+    { AccountsPositions: GetRTAccountEquity }
+    Value1 = GetRTAccountEquity( "x" );
+    { AccountsPositions: GetPositionTotalCost }
+    Value1 = GetPositionTotalCost( "x", "x" );
+    { AccountsPositions: GetPositionBrokerSymbol }
+    // GetPositionBrokerSymbol returns a string; see official docs for usage.
+    { AccountsPositions: GetAccountID }
+    // GetAccountID returns a string; see official docs for usage.
+    { AccountsPositions: GetAccount }
+    // GetAccount returns a string; see official docs for usage.
+    { AccountsPositions: GetNumAccounts }
+    Value1 = GetNumAccounts;
+    { AccountsPositions: GetPositionAveragePrice }
+    Value1 = GetPositionAveragePrice( "x", "x" );
+    { AccountsPositions: GetNumPositions }
+    Value1 = GetNumPositions( "x" );
+    { Alerts: CheckAlert }
+    If CheckAlert Then Begin End;
+    { Alerts: Cancel Alert }
+    // Cancel Alert (multi-word keyword); see official docs for usage.
+    { Arrow_Drawing: Arw_Anchor_to_Bars }
+    // Arw_Anchor_to_Bars is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_GetActive }
+    // Arw_GetActive is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_Delete }
+    // Arw_Delete is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Alerts: AlertEx }
+    // AlertEx is a reserved syntactic token; see official docs for usage.
+    { AccountsPositions: GetRTUnrealizedPL }
+    Value1 = GetRTUnrealizedPL( "x" );
+    { AccountsPositions: GetRTAccountNetWorth }
+    Value1 = GetRTAccountNetWorth( "x" );
+    { AccountsPositions: InitialCapital }
+    // InitialCapital is signal/portfolio-only; not applicable to Indicator studies.
+    { Alerts: AlertEnabled }
+    If AlertEnabled Then Begin End;
+    { Alerts: Alert }
+    // Alert is a reserved syntactic token; see official docs for usage.
+    { Arrow_Drawing: Arw_New_BN }
+    // Arw_New_BN is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Attributes: IntraBarOrderGeneration }
+    // IntraBarOrderGeneration is a language construct (Attributes); see official docs for usage.
+    { Attributes: AllowSendOrdersOnTimer }
+    // AllowSendOrdersOnTimer is a language construct (Attributes); see official docs for usage.
+    { Attributes: LegacyColorValue }
+    // LegacyColorValue is a language construct (Attributes); see official docs for usage.
+    { Attributes: RecoverDrawings }
+    // RecoverDrawings is a language construct (Attributes); see official docs for usage.
+    { Attributes: ProcessMouseEvents }
+    // ProcessMouseEvents is a language construct (Attributes); see official docs for usage.
+    { Attributes: AllowSendOrdersOnTick }
+    // AllowSendOrdersOnTick is a language construct (Attributes); see official docs for usage.
+    { Attributes: AllowSendOrdersOnMouseEvents }
+    // AllowSendOrdersOnMouseEvents is a language construct (Attributes); see official docs for usage.
+    { Attributes: AllowSendOrdersOnBrokerPositionChange }
+    // AllowSendOrdersOnBrokerPositionChange is a language construct (Attributes); see official docs for usage.
+    { Attributes: AllowSendOrdersOnOrderFilled }
+    // AllowSendOrdersOnOrderFilled is a language construct (Attributes); see official docs for usage.
+    { Attributes: AllowSendOrdersOnPortfolioCloseButton }
+    // AllowSendOrdersOnPortfolioCloseButton is a language construct (Attributes); see official docs for usage.
+    { Attributes: AllowSendOrdersOnOrderReject }
+    // AllowSendOrdersOnOrderReject is a language construct (Attributes); see official docs for usage.
+    { Colors: DarkCyan }
+    Value1 = DarkCyan;
+    { Colors: DarkBrown }
+    Value1 = DarkBrown;
+    { Colors: DarkGray }
+    Value1 = DarkGray;
+    { Colors: DarkMagenta }
+    Value1 = DarkMagenta;
+    { Colors: DarkGreen }
+    Value1 = DarkGreen;
+    { Colors: DarkBlue }
+    Value1 = DarkBlue;
+    { Colors: ARGB }
+    Value1 = ARGB( Close, 14, 14, 14 );
+    { Attributes: SameExitFromOneEntryOnce }
+    // SameExitFromOneEntryOnce is a language construct (Attributes); see official docs for usage.
+    { Colors: Black }
+    Value1 = Black;
+    { Colors: Cyan }
+    Value1 = Cyan;
+    { Colors: Blue }
+    Value1 = Blue;
+    { Arrow_Drawing: Arw_SetColor }
+    // Arw_SetColor is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_SetBarNumber }
+    // Arw_SetBarNumber is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_SetLocation }
+    // Arw_SetLocation is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_SetLocation_DT }
+    // Arw_SetLocation_DT is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_SetLocation_BN }
+    // Arw_SetLocation_BN is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_New_self_s }
+    // Arw_New_self_s is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_New_s }
+    // Arw_New_s is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_New_DT }
+    // Arw_New_DT is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_New_self }
+    // Arw_New_self is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_New_Self_DT }
+    // Arw_New_Self_DT is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: ARW_New_Self_BN }
+    // ARW_New_Self_BN is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_SetTextFontName }
+    // Arw_SetTextFontName returns a string; see official docs for usage.
+    { Arrow_Drawing: Arw_SetTextColor }
+    // Arw_SetTextColor is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_SetTextSize }
+    // Arw_SetTextSize is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Attributes: AllowSendOrdersAlways }
+    // AllowSendOrdersAlways is a language construct (Attributes); see official docs for usage.
+    { Arrow_Drawing: MC_Arw_GetActive }
+    // MC_Arw_GetActive is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_SetTextBGColor }
+    // Arw_SetTextBGColor is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_SetSize }
+    // Arw_SetSize is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_SetLocation_s }
+    // Arw_SetLocation_s is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_SetStyle }
+    // Arw_SetStyle is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_SetTextAttribute }
+    // Arw_SetTextAttribute is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Arrow_Drawing: Arw_SetText }
+    // Arw_SetText is a drawing-object accessor (takes a drawing-object ID); see official docs.
+    { Data_Information_General: GetRTSymbolName }
+    // GetRTSymbolName returns a string; see official docs for usage.
+    { Declaration: RecalcPersist }
+    // RecalcPersist is a language construct (Declaration); see official docs for usage.
+    { Declaration: NumericSimple }
+    // NumericSimple is a language construct (Declaration); see official docs for usage.
+    { Declaration: String }
+    // String is a language construct (Declaration); see official docs for usage.
+    { Declaration: StringArrayRef }
+    // StringArrayRef is a language construct (Declaration); see official docs for usage.
+    { Declaration: StringArray }
+    // StringArray is a language construct (Declaration); see official docs for usage.
+    { Declaration: NumericSeries }
+    // NumericSeries is a language construct (Declaration); see official docs for usage.
+    { Declaration: Numeric }
+    // Numeric is a language construct (Declaration); see official docs for usage.
+    { Declaration: IntraBarPersist }
+    // IntraBarPersist is a language construct (Declaration); see official docs for usage.
+    { Declaration: NumericArray }
+    // NumericArray is a language construct (Declaration); see official docs for usage.
+    { Declaration: NumericRef }
+    // NumericRef is a language construct (Declaration); see official docs for usage.
+    { Declaration: NumericArrayRef }
+    // NumericArrayRef is a language construct (Declaration); see official docs for usage.
+    { Declaration: TrueFalseSeries }
+    // TrueFalseSeries is a language construct (Declaration); see official docs for usage.
+    { Declaration: TrueFalseRef }
+    // TrueFalseRef is a language construct (Declaration); see official docs for usage.
+    { Declaration: TrueFalseSimple }
+    // TrueFalseSimple is a language construct (Declaration); see official docs for usage.
+    { Declaration: Variable }
+    // Variable is a language construct (Declaration); see official docs for usage.
+    { Declaration: Var }
+    // Var is a language construct (Declaration); see official docs for usage.
+    { Declaration: TrueFalseArrayRef }
+    // TrueFalseArrayRef is a language construct (Declaration); see official docs for usage.
+    { Declaration: StringSeries }
+    // StringSeries is a language construct (Declaration); see official docs for usage.
+    { Declaration: StringRef }
+    // StringRef is a language construct (Declaration); see official docs for usage.
+    { Declaration: StringSimple }
+    // StringSimple is a language construct (Declaration); see official docs for usage.
+    { Declaration: TrueFalseArray }
+    // TrueFalseArray is a language construct (Declaration); see official docs for usage.
+    { Declaration: TrueFalse }
+    // TrueFalse is a language construct (Declaration); see official docs for usage.
+    { Date_and_Time_routines: Sunday }
+    Value1 = Sunday;
+    { Date_and_Time_routines: StringToTime }
+    Value1 = StringToTime( "x" );
+    { Date_and_Time_routines: Thursday }
+    Value1 = Thursday;
+    { Date_and_Time_routines: TimeToString }
+    // TimeToString returns a string; see official docs for usage.
+    { Date_and_Time_routines: Time2Time_s }
+    Value1 = Time2Time_s( Close );
+    { Date_and_Time_routines: StringToDTFormatted }
+    Value1 = StringToDTFormatted( "x", "x" );
+    { Date_and_Time_routines: Saturday }
+    Value1 = Saturday;
+    { Date_and_Time_routines: MonthFromDateTime }
+    Value1 = MonthFromDateTime( Close );
+    { Date_and_Time_routines: SecondsFromDateTime }
+    Value1 = SecondsFromDateTime( Close );
+    { Date_and_Time_routines: StringToDateTime }
+    Value1 = StringToDateTime( "x" );
+    { Date_and_Time_routines: StringToDate }
+    Value1 = StringToDate( "x" );
+    { Declaration: Array }
+    // Array is a language construct (Declaration); see official docs for usage.
+    { Date_and_Time_routines: YearFromDateTime }
+    Value1 = YearFromDateTime( Close );
+    { Declaration: Arrays }
+    // Arrays is a language construct (Declaration); see official docs for usage.
+    { Declaration: Inputs }
+    // Inputs is a language construct (Declaration); see official docs for usage.
+    { Declaration: Input }
+    // Input is a language construct (Declaration); see official docs for usage.
+    { Date_and_Time_routines: Year }
+    Value1 = Year( Close );
+    { Date_and_Time_routines: Time_s2Time }
+    Value1 = Time_s2Time( Close );
+    { Date_and_Time_routines: TimeToString_ms }
+    // TimeToString_ms returns a string; see official docs for usage.
+    { Date_and_Time_routines: Tuesday }
+    Value1 = Tuesday;
+    { Date_and_Time_routines: Wednesday }
+    Value1 = Wednesday;
+    { Date_and_Time_routines: updatedatetime }
+    Value1 = updatedatetime;
+    { Declaration: Variables }
+    // Variables is a language construct (Declaration); see official docs for usage.
+    { DLL_Calling: ThreadSafe }
+    // ThreadSafe is a language construct (DLL_Calling); see official docs for usage.
+    { DLL_Calling: Self }
+    // Self is a language construct (DLL_Calling); see official docs for usage.
+    { DLL_Calling: Unsigned }
+    // Unsigned is a language construct (DLL_Calling); see official docs for usage.
+    { DLL_Calling: VarStartAddr }
+    // VarStartAddr is a language construct (DLL_Calling); see official docs for usage.
+    { DLL_Calling: VarSize }
+    // VarSize is a language construct (DLL_Calling); see official docs for usage.
+    { DLL_Calling: OnDestroy }
+    // OnDestroy is a language construct (DLL_Calling); see official docs for usage.
+    { DLL_Calling: LPSTR }
+    // LPSTR is a language construct (DLL_Calling); see official docs for usage.
+    { DLL_Calling: LPLong }
+    // LPLong is a language construct (DLL_Calling); see official docs for usage.
+    { DLL_Calling: LPWORD }
+    // LPWORD is a language construct (DLL_Calling); see official docs for usage.
+    { DLL_Calling: OnCreate }
+    // OnCreate is a language construct (DLL_Calling); see official docs for usage.
+    { DLL_Calling: Method }
+    // Method is a language construct (DLL_Calling); see official docs for usage.
+    { DOM: DOM_BidSize }
+    Value1 = DOM_BidSize( Close );
+    { DOM: DOM_BidsCount }
+    Value1 = DOM_BidsCount;
+    { DOM: DOM_IsConnected }
+    If DOM_IsConnected Then Begin End;
+    { Dynamic_Arrays: Array_Contains }
+    If Array_Contains( pl_test_ints, 5 ) Then Begin End;
+    { Dynamic_Arrays: Array_Compare }
+    Value1 = Array_Compare( pl_test_ints, 0, pl_test_ints, 0, 5 );
+    { DOM: DOM_BidPrice }
+    Value1 = DOM_BidPrice( Close );
+    { DLL_Calling: WORD }
+    // WORD is a language construct (DLL_Calling); see official docs for usage.
+    { DLL_Calling: Void }
+    // Void is a language construct (DLL_Calling); see official docs for usage.
+    { DOM: DOM_AskPrice }
+    Value1 = DOM_AskPrice( Close );
+    { DOM: DOM_AskSize }
+    Value1 = DOM_AskSize( Close );
+    { DOM: DOM_AsksCount }
+    Value1 = DOM_AsksCount;
+    { DLL_Calling: DefineDLLFunc }
+    // DefineDLLFunc is a language construct (DLL_Calling); see official docs for usage.
+    { DLL_Calling: Char }
+    // Char is a language construct (DLL_Calling); see official docs for usage.
+    { DLL_Calling: Double }
+    // Double is a language construct (DLL_Calling); see official docs for usage.
+    { DLL_Calling: External }
+    // External is a language construct (DLL_Calling); see official docs for usage.
+    { DLL_Calling: DWORD }
+    // DWORD is a language construct (DLL_Calling); see official docs for usage.
+    { DLL_Calling: Byte }
+    // Byte is a language construct (DLL_Calling); see official docs for usage.
+    { DLL_Calling: #Events }
+    // #Events is a language construct (DLL_Calling); see official docs for usage.
+    { Declaration: Vars }
+    // Vars is a language construct (Declaration); see official docs for usage.
+    { DLL_Calling: ArraySize }
+    // ArraySize is a language construct (DLL_Calling); see official docs for usage.
+    { DLL_Calling: Bool }
+    // Bool is a language construct (DLL_Calling); see official docs for usage.
+    { DLL_Calling: ArrayStartAddr }
+    // ArrayStartAddr is a language construct (DLL_Calling); see official docs for usage.
+    { DLL_Calling: LPDouble }
+    // LPDouble is a language construct (DLL_Calling); see official docs for usage.
+    { DLL_Calling: LPByte }
+    // LPByte is a language construct (DLL_Calling); see official docs for usage.
+    { DLL_Calling: LPDWORD }
+    // LPDWORD is a language construct (DLL_Calling); see official docs for usage.
+    { DLL_Calling: LPInt }
+    // LPInt is a language construct (DLL_Calling); see official docs for usage.
+    { DLL_Calling: LPFloat }
+    // LPFloat is a language construct (DLL_Calling); see official docs for usage.
+    { DLL_Calling: LPBool }
+    // LPBool is a language construct (DLL_Calling); see official docs for usage.
+    { DLL_Calling: iEasyLanguageObject }
+    // iEasyLanguageObject is a language construct (DLL_Calling); see official docs for usage.
+    { DLL_Calling: Float }
+    // Float is a language construct (DLL_Calling); see official docs for usage.
+    { DLL_Calling: Int }
+    // Int is a language construct (DLL_Calling); see official docs for usage.
+    { DLL_Calling: Long }
+    // Long is a language construct (DLL_Calling); see official docs for usage.
+    { DLL_Calling: Int64 }
+    // Int64 is a language construct (DLL_Calling); see official docs for usage.
+    { Data_Information_General: Symbol_Low }
+    Value1 = Symbol_Low;
+    { Data_Information_General: Symbol_Length }
+    Value1 = Symbol_Length;
+    { Data_Information_General: Symbol_Open }
+    Value1 = Symbol_Open;
+    { Data_Information_General: Symbol_TickID }
+    Value1 = Symbol_TickID;
+    { Data_Information_General: Symbol_OpenInt }
+    Value1 = Symbol_OpenInt;
+    { Data_Information_General: Symbol_High }
+    Value1 = Symbol_High;
+    { Data_Information_General: Symbol_Close }
+    Value1 = Symbol_Close;
+    { Data_Information_General: Strike }
+    // Strike is a reserved syntactic token; see official docs for usage.
+    { Data_Information_General: Symbol_CurrentBar }
+    Value1 = Symbol_CurrentBar;
+    { Data_Information_General: Symbol_DownTicks }
+    Value1 = Symbol_DownTicks;
+    { Data_Information_General: Symbol_Date }
+    Value1 = Symbol_Date;
+    { Data_Information_General: TickID }
+    Value1 = TickID;
+    { Data_Information_General: This }
+    // This is a reserved syntactic token; see official docs for usage.
+    { Data_Information_General: Ticks }
+    // Ticks is a reserved syntactic token; see official docs for usage.
+    { Data_Information_General: Time_s }
+    Value1 = Time_s;
+    { Data_Information_General: Time }
+    Value1 = Time;
+    { Data_Information_General: T }
+    // T is a reserved syntactic token; see official docs for usage.
+    { Data_Information_General: Symbol_Time }
+    Value1 = Symbol_Time;
+    { Data_Information_General: Symbol_Ticks }
+    Value1 = Symbol_Ticks;
+    { Data_Information_General: Symbol_Time_S }
+    Value1 = Symbol_Time_S;
+    { Data_Information_General: Symbol_Volume }
+    Value1 = Symbol_Volume;
+    { Data_Information_General: Symbol_UpTicks }
+    Value1 = Symbol_UpTicks;
+    { Data_Information_General: Low }
+    Value1 = Low;
+    { Data_Information_General: L }
+    // L is a reserved syntactic token; see official docs for usage.
+    { Data_Information_General: MinMove }
+    Value1 = MinMove;
+    { Data_Information_General: O }
+    // O is a reserved syntactic token; see official docs for usage.
+    { Data_Information_General: Next }
+    // Next is a reserved syntactic token; see official docs for usage.
+    { Data_Information_General: IntervalType_ex }
+    Value1 = IntervalType_ex;
+    { Data_Information_General: H }
+    // H is a reserved syntactic token; see official docs for usage.
+    { Data_Information_General: GetSymbolName }
+    // GetSymbolName returns a string; see official docs for usage.
+    { Data_Information_General: High }
+    Value1 = High;
+    { Data_Information_General: IntervalType }
+    Value1 = IntervalType;
+    { Data_Information_General: I }
+    // I is a reserved syntactic token; see official docs for usage.
+    { Data_Information_General: Put }
+    // Put is a reserved syntactic token; see official docs for usage.
+    { Data_Information_General: PriceScale }
+    Value1 = PriceScale;
+    { Data_Information_General: RevSize }
+    // RevSize is a reserved syntactic token; see official docs for usage.
+    { Data_Information_General: SessionLastBar }
+    If SessionLastBar Then Begin End;
+    { Data_Information_General: ScrollToBar }
+    ScrollToBar( 1, 0 );
+    { Data_Information_General: PointValue }
+    Value1 = PointValue;
+    { Data_Information_General: OpenInt }
+    Value1 = OpenInt;
+    { Data_Information_General: Open }
+    Value1 = Open;
+    { Data_Information_General: OptionType }
+    // OptionType is a reserved syntactic token; see official docs for usage.
+    { Data_Information_General: Points }
+    // Points is a reserved syntactic token; see official docs for usage.
+    { Data_Information_General: Point }
+    // Point is a reserved syntactic token; see official docs for usage.
+    { Data_Information_General: Today }
+    // Today is a reserved syntactic token; see official docs for usage.
+    { Date_and_Time_routines: FormatTime }
+    // FormatTime returns a string; see official docs for usage.
+    { Date_and_Time_routines: FormatDate }
+    // FormatDate returns a string; see official docs for usage.
+    { Date_and_Time_routines: Friday }
+    Value1 = Friday;
+    { Date_and_Time_routines: HoursFromDateTime }
+    Value1 = HoursFromDateTime( Close );
+    { Date_and_Time_routines: GetTotalMilliseconds }
+    Value1 = GetTotalMilliseconds( Close );
+    { Date_and_Time_routines: EncodeTime }
+    Value1 = EncodeTime( Close, 14, 14, 14 );
+    { Date_and_Time_routines: El_DateToDateTime }
+    Value1 = El_DateToDateTime( Close );
+    { Date_and_Time_routines: El_DateStr }
+    // El_DateStr returns a string; see official docs for usage.
+    { Date_and_Time_routines: EL_TimeToDateTime }
+    Value1 = EL_TimeToDateTime( Close );
+    { Date_and_Time_routines: EncodeDate }
+    Value1 = EncodeDate( Close, 14, 14 );
+    { Date_and_Time_routines: EL_TimeToDateTime_s }
+    Value1 = EL_TimeToDateTime_s( Close );
+    { Date_and_Time_routines: MilliSecondsFromDateTime }
+    Value1 = MilliSecondsFromDateTime( Close );
+    { Date_and_Time_routines: LastCalcSSTime }
+    Value1 = LastCalcSSTime;
+    { Date_and_Time_routines: MinutesFromDateTime }
+    Value1 = MinutesFromDateTime( Close );
+    { Date_and_Time_routines: Month }
+    Value1 = Month( Close );
+    { Date_and_Time_routines: Monday }
+    Value1 = Monday;
+    { Date_and_Time_routines: LastCalcmSTime }
+    Value1 = LastCalcmSTime;
+    { Date_and_Time_routines: JulianToDate }
+    Value1 = JulianToDate( Close );
+    { Date_and_Time_routines: IncMonth }
+    Value1 = IncMonth( Close, 14 );
+    { Date_and_Time_routines: LastCalcDateTime }
+    Value1 = LastCalcDateTime;
+    { Date_and_Time_routines: LastCalcMMTime }
+    Value1 = LastCalcMMTime;
+    { Date_and_Time_routines: LastCalcJDate }
+    Value1 = LastCalcJDate;
+    { Date_and_Time_routines: CurrentTime }
+    Value1 = CurrentTime;
+    { Date_and_Time_routines: CurrentDate }
+    Value1 = CurrentDate;
+    { Date_and_Time_routines: CurrentTime_s }
+    Value1 = CurrentTime_s;
+    { Date_and_Time_routines: DateTime2ELTime_s }
+    Value1 = DateTime2ELTime_s( Close );
+    { Date_and_Time_routines: DateTime2ELTime }
+    Value1 = DateTime2ELTime( Close );
+    { Date_and_Time_routines: ComputerDateTime }
+    Value1 = ComputerDateTime;
+    { Data_Information_General: V }
+    // V is a reserved syntactic token; see official docs for usage.
+    { Data_Information_General: UpTicks }
+    Value1 = UpTicks;
+    { Data_Information_General: Volume }
+    Value1 = Volume;
+    { Date_and_Time_routines: calcdatetime }
+    Value1 = calcdatetime;
+    { Data_Information_General: Yesterday }
+    // Yesterday is a reserved syntactic token; see official docs for usage.
+    { Date_and_Time_routines: DayOfWeekFromDateTime }
+    Value1 = DayOfWeekFromDateTime( Close );
+    { Date_and_Time_routines: DayOfWeek }
+    Value1 = DayOfWeek( Close );
+    { Date_and_Time_routines: ELDateToDateTime }
+    Value1 = ELDateToDateTime( Close );
+    { Date_and_Time_routines: ELTimeToDateTime_s }
+    Value1 = ELTimeToDateTime_s( Close );
+    { Date_and_Time_routines: ELTimeToDateTime }
+    Value1 = ELTimeToDateTime( Close );
+    { Date_and_Time_routines: DayOfMonth }
+    Value1 = DayOfMonth( Close );
+    { Date_and_Time_routines: DateTimeToString_Ms }
+    // DateTimeToString_Ms returns a string; see official docs for usage.
+    { Date_and_Time_routines: DateTimeToString }
+    // DateTimeToString returns a string; see official docs for usage.
+    { Date_and_Time_routines: DateToJulian }
+    Value1 = DateToJulian( Close );
+    { Date_and_Time_routines: DayFromDateTime }
+    Value1 = DayFromDateTime( Close );
+    { Date_and_Time_routines: DateToString }
+    // DateToString returns a string; see official docs for usage.
+End;

@@ -1,0 +1,5 @@
+{ test_function.txt -- function return idioms }
+{ Paste this whole file into a new Function in PowerLanguage Editor and Verify (F3). }
+
+If False Then Begin    { wrap every statement in an unreachable If/Then to verify syntax only }
+End;

@@ -36,10 +36,10 @@ Describe 'Orchestrator smoke test (Buy + Sell only)' {
     Test-Path "$script:tmp/out/keywords-index.md" | Should -BeTrue
   }
 
-  It 'produces three .pla files' {
-    Test-Path "$script:tmp/out/tests/test_indicator.pla" | Should -BeTrue
-    Test-Path "$script:tmp/out/tests/test_signal.pla"    | Should -BeTrue
-    Test-Path "$script:tmp/out/tests/test_function.pla"  | Should -BeTrue
+  It 'produces three .txt files' {
+    Test-Path "$script:tmp/out/tests/test_indicator.txt" | Should -BeTrue
+    Test-Path "$script:tmp/out/tests/test_signal.txt"    | Should -BeTrue
+    Test-Path "$script:tmp/out/tests/test_function.txt"  | Should -BeTrue
   }
 
   It 'Buy.md verbatim-lint passes (no 9-word verbatim run)' {

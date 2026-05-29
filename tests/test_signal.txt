@@ -1,5 +1,6 @@
-{ test_signal.pla -- exercises every keyword routed to Signal script type }
-Variables: Value1( 0 );
+{ test_signal.txt -- exercises every keyword routed to Signal script type }
+{ Paste this whole file into a new Signal study in PowerLanguage Editor and Verify (F3). }
+Arrays: pl_test_bools[10]( false ), pl_test_floats[10]( 0.0 ), pl_test_ints[10]( 0 ), pl_test_strs[10]( "x" );
 
 If False Then Begin    { wrap every statement in an unreachable If/Then to verify syntax only }
     { Strategy_Position: CurrentContracts }
@@ -7,13 +8,13 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Strategy_Position: ContractProfit }
     Value1 = ContractProfit;
     { Strategy_Position: BarsSinceExit_Checked }
-    Value1 = BarsSinceExit_Checked;
+    Value1 = BarsSinceExit_Checked( Close );
     { Strategy_Position: CurrentEntries }
     Value1 = CurrentEntries;
     { Strategy_Position: EntryDateTime }
-    Value1 = EntryDateTime;
+    Value1 = EntryDateTime( Close );
     { Strategy_Position: EntryDate }
-    Value1 = EntryDate;
+    Value1 = EntryDate( Close );
     { Strategy_Position: CurrentShares }
     Value1 = CurrentShares;
     { Strategy_Performance: TotalBarsWinTrades }
@@ -25,41 +26,41 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Strategy_Performance: TotalTrades }
     Value1 = TotalTrades;
     { Strategy_Position: BarsSinceExit }
-    Value1 = BarsSinceExit;
+    Value1 = BarsSinceExit( Close );
     { Strategy_Position: BarsSinceEntry_Checked }
-    Value1 = BarsSinceEntry_Checked;
+    Value1 = BarsSinceEntry_Checked( Close );
     { Strategy_Position: BarsSinceEntry }
-    Value1 = BarsSinceEntry;
+    Value1 = BarsSinceEntry( Close );
     { Strategy_Position: EntryDateTime_Checked }
-    Value1 = EntryDateTime_Checked;
+    Value1 = EntryDateTime_Checked( Close );
     { Strategy_Position: ExitDate_Checked }
-    Value1 = ExitDate_Checked;
+    Value1 = ExitDate_Checked( Close );
     { Strategy_Position: ExitDateTime_Checked }
-    Value1 = ExitDateTime_Checked;
+    Value1 = ExitDateTime_Checked( Close );
     { Strategy_Position: ExitDateTime }
-    Value1 = ExitDateTime;
+    Value1 = ExitDateTime( Close );
     { Strategy_Position: ExitName }
-    Value1 = ExitName;
+    // ExitName returns a string; see official docs for usage.
     { Strategy_Position: ExitTime }
-    Value1 = ExitTime;
+    Value1 = ExitTime( Close );
     { Strategy_Position: ExitPrice_Checked }
-    Value1 = ExitPrice_Checked;
+    Value1 = ExitPrice_Checked( Close );
     { Strategy_Position: ExitPrice }
-    Value1 = ExitPrice;
+    Value1 = ExitPrice( Close );
     { Strategy_Position: EntryPrice }
-    Value1 = EntryPrice;
+    Value1 = EntryPrice( Close );
     { Strategy_Position: EntryName }
-    Value1 = EntryName;
+    // EntryName returns a string; see official docs for usage.
     { Strategy_Position: EntryDate_Checked }
-    Value1 = EntryDate_Checked;
+    Value1 = EntryDate_Checked( Close );
     { Strategy_Position: EntryPrice_Checked }
-    Value1 = EntryPrice_Checked;
+    Value1 = EntryPrice_Checked( Close );
     { Strategy_Position: ExitDate }
-    Value1 = ExitDate;
+    Value1 = ExitDate( Close );
     { Strategy_Position: EntryTime_Checked }
-    Value1 = EntryTime_Checked;
+    Value1 = EntryTime_Checked( Close );
     { Strategy_Position: EntryTime }
-    Value1 = EntryTime;
+    Value1 = EntryTime( Close );
     { Strategy_Performance: i_AvgEntryPrice_at_Broker_for_The_Strategy }
     Value1 = i_AvgEntryPrice_at_Broker_for_The_Strategy;
     { Strategy_Performance: i_AvgEntryPrice_at_Broker }
@@ -99,9 +100,9 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Strategy_Performance: NumWinTrades }
     Value1 = NumWinTrades;
     { Strategy_Performance: SetCustomFitnessValue }
-    Value1 = SetCustomFitnessValue;
+    // SetCustomFitnessValue is a setter; see official docs.
     { Strategy_Performance: SetCustomFitnessNamedValue }
-    Value1 = SetCustomFitnessNamedValue;
+    // SetCustomFitnessNamedValue is a setter; see official docs.
     { Strategy_Performance: PercentProfit }
     Value1 = PercentProfit;
     { Strategy_Performance: MaxConsecLosers }
@@ -119,43 +120,43 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Strategy_Performance: MaxContractsHeld }
     Value1 = MaxContractsHeld;
     { Strategy_Position_Trades: PosTradeCount }
-    Value1 = PosTradeCount;
+    Value1 = PosTradeCount( Close );
     { Strategy_Position_Trades: PosTradeCommission }
-    Value1 = PosTradeCommission;
+    Value1 = PosTradeCommission( Close, 14 );
     { Strategy_Position_Trades: OpenEntryTime }
-    Value1 = OpenEntryTime;
+    Value1 = OpenEntryTime( Close );
     { Strategy_Position_Trades: PosTradeEntryBar }
-    Value1 = PosTradeEntryBar;
+    Value1 = PosTradeEntryBar( Close, 14 );
     { Strategy_Position_Trades: PosTradeEntryName }
-    Value1 = PosTradeEntryName;
+    // PosTradeEntryName returns a string; see official docs for usage.
     { Strategy_Position_Trades: PosTradeEntryDateTime }
-    Value1 = PosTradeEntryDateTime;
+    Value1 = PosTradeEntryDateTime( Close, 14 );
     { Strategy_Position_Trades: PosTradeEntryCategory }
-    Value1 = PosTradeEntryCategory;
+    Value1 = PosTradeEntryCategory( Close, 14 );
     { Strategy_Position_Trades: OpenEntryMinProfit }
-    Value1 = OpenEntryMinProfit;
+    Value1 = OpenEntryMinProfit( Close );
     { Strategy_Position_Trades: OpenEntryMaxProfitPerContract }
-    Value1 = OpenEntryMaxProfitPerContract;
+    Value1 = OpenEntryMaxProfitPerContract( Close );
     { Strategy_Position_Trades: OpenEntryMaxProfit }
-    Value1 = OpenEntryMaxProfit;
+    Value1 = OpenEntryMaxProfit( Close );
     { Strategy_Position_Trades: OpenEntryMinProfitPerContract }
-    Value1 = OpenEntryMinProfitPerContract;
+    Value1 = OpenEntryMinProfitPerContract( Close );
     { Strategy_Position_Trades: OpenEntryProfitPerContract }
-    Value1 = OpenEntryProfitPerContract;
+    Value1 = OpenEntryProfitPerContract( Close );
     { Strategy_Position_Trades: OpenEntryProfit }
-    Value1 = OpenEntryProfit;
+    Value1 = OpenEntryProfit( Close );
     { Strategy_Position_Trades: OpenEntryPrice }
-    Value1 = OpenEntryPrice;
+    Value1 = OpenEntryPrice( Close );
     { Strategy_Position_Trades: PosTradeEntryPrice }
-    Value1 = PosTradeEntryPrice;
+    Value1 = PosTradeEntryPrice( Close, 14 );
     { Strategy_Properties: Commission }
     Value1 = Commission;
     { Strategy_Position_Trades: PosTradeSize }
-    Value1 = PosTradeSize;
+    Value1 = PosTradeSize( Close, 14 );
     { Strategy_Position_Trades: PosTradeProfit }
-    Value1 = PosTradeProfit;
+    Value1 = PosTradeProfit( Close, 14 );
     { Strategy_Properties: GetStrategyName }
-    Value1 = GetStrategyName;
+    // GetStrategyName returns a string; see official docs for usage.
     { Strategy_Properties: Slippage }
     Value1 = Slippage;
     { Strategy_Properties: Margin }
@@ -163,113 +164,113 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Strategy_Properties: InterestRate }
     Value1 = InterestRate;
     { Strategy_Position_Trades: PosTradeExitDateTime }
-    Value1 = PosTradeExitDateTime;
+    Value1 = PosTradeExitDateTime( Close, 14 );
     { Strategy_Position_Trades: PosTradeExitCategory }
-    Value1 = PosTradeExitCategory;
+    Value1 = PosTradeExitCategory( Close, 14 );
     { Strategy_Position_Trades: PosTradeExitBar }
-    Value1 = PosTradeExitBar;
+    Value1 = PosTradeExitBar( Close, 14 );
     { Strategy_Position_Trades: PosTradeExitName }
-    Value1 = PosTradeExitName;
+    // PosTradeExitName returns a string; see official docs for usage.
     { Strategy_Position_Trades: PosTradeIsOpen }
-    Value1 = PosTradeIsOpen;
+    If PosTradeIsOpen( 1, 0 ) Then Begin End;
     { Strategy_Position_Trades: PosTradeIsLong }
-    Value1 = PosTradeIsLong;
+    If PosTradeIsLong( 1, 0 ) Then Begin End;
     { Strategy_Position_Trades: PosTradeExitPrice }
-    Value1 = PosTradeExitPrice;
+    Value1 = PosTradeExitPrice( Close, 14 );
     { Strategy_Position: MaxContracts }
-    Value1 = MaxContracts;
+    Value1 = MaxContracts( Close );
     { Strategy_Position: MaxContractProfit_Checked }
     Value1 = MaxContractProfit_Checked;
     { Strategy_Position: MaxContractProfit }
     Value1 = MaxContractProfit;
     { Strategy_Position: MaxContracts_Checked }
-    Value1 = MaxContracts_Checked;
+    Value1 = MaxContracts_Checked( Close );
     { Strategy_Position: MaxPositionLoss }
-    Value1 = MaxPositionLoss;
+    Value1 = MaxPositionLoss( Close );
     { Strategy_Position: MaxEntries_Checked }
-    Value1 = MaxEntries_Checked;
+    Value1 = MaxEntries_Checked( Close );
     { Strategy_Position: MaxEntries }
-    Value1 = MaxEntries;
+    Value1 = MaxEntries( Close );
     { Strategy_Position: i_MarketPosition_at_Broker_for_The_Strategy }
     Value1 = i_MarketPosition_at_Broker_for_The_Strategy;
     { Strategy_Position: i_MarketPosition_at_Broker }
     Value1 = i_MarketPosition_at_Broker;
     { Strategy_Position: ExitTime_Checked }
-    Value1 = ExitTime_Checked;
+    Value1 = ExitTime_Checked( Close );
     { Strategy_Position: MarketPosition }
-    Value1 = MarketPosition;
+    Value1 = MarketPosition( Close );
     { Strategy_Position: MarketPosition_Checked }
-    Value1 = MarketPosition_Checked;
+    Value1 = MarketPosition_Checked( Close );
     { Strategy_Position: MarketPosition_at_Broker_for_The_Strategy }
     Value1 = MarketPosition_at_Broker_for_The_Strategy;
     { Strategy_Position: MarketPosition_at_Broker }
     Value1 = MarketPosition_at_Broker;
     { Strategy_Position: MaxPositionLoss_Checked }
-    Value1 = MaxPositionLoss_Checked;
+    Value1 = MaxPositionLoss_Checked( Close );
     { Strategy_Position_Synchronization: PlaceMarketOrder }
-    Value1 = PlaceMarketOrder;
+    PlaceMarketOrder( True, True, 1 );
     { Strategy_Position_Synchronization: ChangeMarketPosition }
-    Value1 = ChangeMarketPosition;
+    ChangeMarketPosition( 1, Close, "x" );
     { Strategy_Position: PositionProfit_Checked }
-    Value1 = PositionProfit_Checked;
+    Value1 = PositionProfit_Checked( Close );
     { Strategy_Position_Trades: OpenEntriesCount }
     Value1 = OpenEntriesCount;
     { Strategy_Position_Trades: OpenEntryDate }
-    Value1 = OpenEntryDate;
+    Value1 = OpenEntryDate( Close );
     { Strategy_Position_Trades: OpenEntryContracts }
-    Value1 = OpenEntryContracts;
+    Value1 = OpenEntryContracts( Close );
     { Strategy_Position_Trades: OpenEntryComission }
-    Value1 = OpenEntryComission;
+    Value1 = OpenEntryComission( Close );
     { Strategy_Position: MaxPositionsAgo }
     Value1 = MaxPositionsAgo;
     { Strategy_Position: MaxPositionProfit_Checked }
-    Value1 = MaxPositionProfit_Checked;
+    Value1 = MaxPositionProfit_Checked( Close );
     { Strategy_Position: MaxPositionProfit }
-    Value1 = MaxPositionProfit;
+    Value1 = MaxPositionProfit( Close );
     { Strategy_Position: MaxShares }
     Value1 = MaxShares;
     { Strategy_Position: PositionProfit }
-    Value1 = PositionProfit;
+    Value1 = PositionProfit( Close );
     { Strategy_Position: OpenPositionProfit }
     Value1 = OpenPositionProfit;
     { Strategy_Position: MaxShares_Checked }
     Value1 = MaxShares_Checked;
     { Portfolio_Money_Management: pmms_strategy_resume }
-    Value1 = pmms_strategy_resume( 14 );
+    pmms_strategy_resume( 1 );
     { Portfolio_Money_Management: pmms_strategy_pause }
-    Value1 = pmms_strategy_pause( 14 );
+    pmms_strategy_pause( 1 );
     { Portfolio_Money_Management: pmms_strategy_openprofit }
-    Value1 = pmms_strategy_openprofit( 14 );
+    Value1 = pmms_strategy_openprofit( Close );
     { Portfolio_Money_Management: pmms_strategy_riskcapital }
-    Value1 = pmms_strategy_riskcapital( 14 );
+    Value1 = pmms_strategy_riskcapital( Close );
     { Portfolio_Money_Management: pmms_strategy_symbol }
-    Value1 = pmms_strategy_symbol( 14 );
+    // pmms_strategy_symbol returns a string; see official docs for usage.
     { Portfolio_Money_Management: pmms_strategy_set_status }
-    Value1 = pmms_strategy_set_status( 14, "x" );
+    // pmms_strategy_set_status is a setter; see official docs.
     { Portfolio_Money_Management: pmms_strategy_set_entry_contracts }
-    Value1 = pmms_strategy_set_entry_contracts( 14, 14 );
+    // pmms_strategy_set_entry_contracts is a setter; see official docs.
     { Portfolio_Money_Management: pmms_strategy_get_entry_contracts }
-    Value1 = pmms_strategy_get_entry_contracts( 14 );
+    Value1 = pmms_strategy_get_entry_contracts( Close );
     { Portfolio_Money_Management: pmms_strategy_entryprice }
-    Value1 = pmms_strategy_entryprice( 14 );
+    Value1 = pmms_strategy_entryprice( Close );
     { Portfolio_Money_Management: pmms_strategy_deny_short_entries }
-    Value1 = pmms_strategy_deny_short_entries;
+    pmms_strategy_deny_short_entries( 1 );
     { Portfolio_Money_Management: pmms_strategy_is_paused }
-    Value1 = pmms_strategy_is_paused( 14 );
+    If pmms_strategy_is_paused( 1 ) Then Begin End;
     { Portfolio_Money_Management: pmms_strategy_netprofit }
-    Value1 = pmms_strategy_netprofit( 14 );
+    Value1 = pmms_strategy_netprofit( Close );
     { Portfolio_Money_Management: pmms_strategy_maxiddrawdown }
-    Value1 = pmms_strategy_maxiddrawdown( 14 );
+    Value1 = pmms_strategy_maxiddrawdown( Close );
     { Portfolio_Money_Management: pmms_strategy_marketposition }
-    Value1 = pmms_strategy_marketposition( 14 );
+    Value1 = pmms_strategy_marketposition( Close );
     { Portfolio_Money_Management: pmm_get_global_named_num }
     Value1 = pmm_get_global_named_num( "x" );
     { Portfolio_Strategy_Performance: Portfolio_GrossLoss }
     Value1 = Portfolio_GrossLoss;
     { Portfolio_Money_Management: pmm_set_my_status }
-    Value1 = pmm_set_my_status( "x" );
+    // pmm_set_my_status is a setter; see official docs.
     { Portfolio_Money_Management: pmm_set_my_named_str }
-    Value1 = pmm_set_my_named_str( "x", "x" );
+    // pmm_set_my_named_str is a setter; see official docs.
     { Portfolio_Strategy_Performance: Portfolio_GrossProfit }
     Value1 = Portfolio_GrossProfit;
     { Portfolio_Strategy_Performance: Portfolio_NetProfit }
@@ -283,87 +284,87 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Portfolio_Money_Management: pmm_get_my_index }
     Value1 = pmm_get_my_index;
     { Portfolio_Money_Management: pmm_get_global_named_str }
-    Value1 = pmm_get_global_named_str( "x" );
+    // pmm_get_global_named_str returns a string; see official docs for usage.
     { Portfolio_Money_Management: pmm_get_my_named_str }
-    Value1 = pmm_get_my_named_str( "x" );
+    // pmm_get_my_named_str returns a string; see official docs for usage.
     { Portfolio_Money_Management: pmm_set_my_named_num }
-    Value1 = pmm_set_my_named_num( "x", 14 );
+    // pmm_set_my_named_num is a setter; see official docs.
     { Portfolio_Money_Management: pmm_set_global_named_str }
-    Value1 = pmm_set_global_named_str( "x", "x" );
+    // pmm_set_global_named_str is a setter; see official docs.
     { Portfolio_Money_Management: pmm_set_global_named_num }
-    Value1 = pmm_set_global_named_num( "x", 14 );
+    // pmm_set_global_named_num is a setter; see official docs.
     { Portfolio_Money_Management: pmms_strategies_in_positions_count }
-    Value1 = pmms_strategies_in_positions_count( Close );
+    Value1 = pmms_strategies_in_positions_count( pl_test_ints );
     { Portfolio_Money_Management: pmms_strategies_in_long_count }
-    Value1 = pmms_strategies_in_long_count( Close );
+    Value1 = pmms_strategies_in_long_count( pl_test_ints );
     { Portfolio_Money_Management: pmms_strategies_get_by_symbol_name }
-    Value1 = pmms_strategies_get_by_symbol_name( "x" );
+    // pmms_strategies_get_by_symbol_name returns a string; see official docs for usage.
     { Portfolio_Money_Management: pmms_strategies_in_short_count }
-    Value1 = pmms_strategies_in_short_count( Close );
+    Value1 = pmms_strategies_in_short_count( pl_test_ints );
     { Portfolio_Money_Management: pmms_strategies_set_status_for_all }
-    Value1 = pmms_strategies_set_status_for_all( "x" );
+    // pmms_strategies_set_status_for_all is a setter; see official docs.
     { Portfolio_Money_Management: pmms_strategies_resume_all }
-    Value1 = pmms_strategies_resume_all;
+    pmms_strategies_resume_all;
     { Portfolio_Money_Management: pmms_strategies_pause_all }
-    Value1 = pmms_strategies_pause_all;
+    pmms_strategies_pause_all;
     { Portfolio_Money_Management: pmms_set_strategy_named_num }
-    Value1 = pmms_set_strategy_named_num( 14, "x", 14 );
+    // pmms_set_strategy_named_num is a setter; see official docs.
     { Portfolio_Money_Management: pmms_get_strategy_named_str }
-    Value1 = pmms_get_strategy_named_str( 14, "x" );
+    // pmms_get_strategy_named_str returns a string; see official docs for usage.
     { Portfolio_Money_Management: pmms_get_strategy_named_num }
-    Value1 = pmms_get_strategy_named_num( 14, "x" );
+    Value1 = pmms_get_strategy_named_num( 1, "x" );
     { Portfolio_Money_Management: pmms_set_strategy_named_str }
-    Value1 = pmms_set_strategy_named_str( 14, "x", "x" );
+    // pmms_set_strategy_named_str is a setter; see official docs.
     { Portfolio_Money_Management: pmms_strategies_deny_entries_all }
-    Value1 = pmms_strategies_deny_entries_all;
+    pmms_strategies_deny_entries_all;
     { Portfolio_Money_Management: pmms_strategies_count }
     Value1 = pmms_strategies_count;
     { Portfolio_Money_Management: pmms_strategies_allow_entries_all }
-    Value1 = pmms_strategies_allow_entries_all;
+    pmms_strategies_allow_entries_all;
     { Portfolio_Money_Management: pmms_strategy_allow_entries }
-    Value1 = pmms_strategy_allow_entries( 14 );
+    pmms_strategy_allow_entries( 1 );
     { Portfolio_Money_Management: pmms_strategy_deny_entries }
-    Value1 = pmms_strategy_deny_entries( 14 );
+    pmms_strategy_deny_entries( 1 );
     { Portfolio_Money_Management: pmms_strategy_currentcontracts }
-    Value1 = pmms_strategy_currentcontracts( 14 );
+    Value1 = pmms_strategy_currentcontracts( Close );
     { Portfolio_Money_Management: pmms_strategy_close_position_partial }
-    Value1 = pmms_strategy_close_position_partial( 14, True, 14 );
+    pmms_strategy_close_position_partial( 1, True, 1 );
     { Portfolio_Money_Management: pmms_strategy_deny_exits }
-    Value1 = pmms_strategy_deny_exits( 14 );
+    pmms_strategy_deny_exits( 1 );
     { Portfolio_Money_Management: pmms_strategy_deny_long_entries }
-    Value1 = pmms_strategy_deny_long_entries;
+    pmms_strategy_deny_long_entries( 1 );
     { Portfolio_Money_Management: pmms_strategy_deny_exit_from_short }
-    Value1 = pmms_strategy_deny_exit_from_short;
+    pmms_strategy_deny_exit_from_short( 1 );
     { Portfolio_Money_Management: pmms_strategy_deny_exit_from_long }
-    Value1 = pmms_strategy_deny_exit_from_long;
+    pmms_strategy_deny_exit_from_long( 1 );
     { Portfolio_Money_Management: pmms_strategy_allow_exit_from_short }
-    Value1 = pmms_strategy_allow_exit_from_short;
+    pmms_strategy_allow_exit_from_short( 1 );
     { Portfolio_Money_Management: pmms_strategy_allow_exit_from_long }
-    Value1 = pmms_strategy_allow_exit_from_long;
+    pmms_strategy_allow_exit_from_long( 1 );
     { Portfolio_Money_Management: pmms_strategy_allow_exits }
-    Value1 = pmms_strategy_allow_exits( 14 );
+    pmms_strategy_allow_exits( 1 );
     { Portfolio_Money_Management: pmms_strategy_allow_long_entries }
-    Value1 = pmms_strategy_allow_long_entries;
+    pmms_strategy_allow_long_entries( 1 );
     { Portfolio_Money_Management: pmms_strategy_close_position }
-    Value1 = pmms_strategy_close_position( 14 );
+    pmms_strategy_close_position( 1 );
     { Portfolio_Money_Management: pmms_strategy_avgentryprice }
-    Value1 = pmms_strategy_avgentryprice( 14 );
+    Value1 = pmms_strategy_avgentryprice( Close );
     { Portfolio_Money_Management: pmms_strategy_allow_short_entries }
-    Value1 = pmms_strategy_allow_short_entries;
+    pmms_strategy_allow_short_entries( 1 );
     { Strategy_Orders: SetBreakEven }
-    // SetBreakEven -- see official docs
+    // SetBreakEven is a setter; see official docs.
     { Strategy_Orders: SellShort }
     SellShort ( "SellShort_T" ) 1 Contract Next Bar Market;
     { Strategy_Orders: Sell }
     Sell ( "Sell_T" ) 1 Contract Next Bar Market;
     { Strategy_Orders: SetBreakEven_pt }
-    // SetBreakEven_pt -- see official docs
+    // SetBreakEven_pt is a setter; see official docs.
     { Strategy_Orders: SetPercentTrailing }
-    // SetPercentTrailing -- see official docs
+    // SetPercentTrailing is a setter; see official docs.
     { Strategy_Orders: SetExitOnClose }
-    // SetExitOnClose -- see official docs
+    // SetExitOnClose is a setter; see official docs.
     { Strategy_Orders: SetDollarTrailing }
-    // SetDollarTrailing -- see official docs
+    // SetDollarTrailing is a setter; see official docs.
     { Strategy_Orders: Entry }
     // Entry -- see official docs
     { Strategy_Orders: Cover }
@@ -379,13 +380,13 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Strategy_Orders: Limit }
     Buy ( "MLS" ) 1 Contract Next Bar Market;
     { Strategy_Orders: SetPercentTrailing_pt }
-    // SetPercentTrailing_pt -- see official docs
+    // SetPercentTrailing_pt is a setter; see official docs.
     { Strategy_Orders: Shares }
     // Shares -- see official docs
     { Strategy_Orders: Share }
     // Share -- see official docs
     { Strategy_Orders: SetTrailingStop_pt }
-    // SetTrailingStop_pt -- see official docs
+    // SetTrailingStop_pt is a setter; see official docs.
     { Strategy_Orders: Short }
     // Short -- see official docs
     { Strategy_Performance: AvgBarsEvenTrade }
@@ -395,27 +396,27 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Strategy_Orders: Stop }
     Buy ( "MLS" ) 1 Contract Next Bar Market;
     { Strategy_Orders: SetStopContract }
-    // SetStopContract -- see official docs
+    // SetStopContract is a setter; see official docs.
     { Strategy_Orders: SetProfitTarget_pt }
-    // SetProfitTarget_pt -- see official docs
+    // SetProfitTarget_pt is a setter; see official docs.
     { Strategy_Orders: SetProfitTarget }
-    // SetProfitTarget -- see official docs
+    // SetProfitTarget is a setter; see official docs.
     { Strategy_Orders: SetStopLoss }
-    // SetStopLoss -- see official docs
+    // SetStopLoss is a setter; see official docs.
     { Strategy_Orders: SetStopShare }
-    // SetStopShare -- see official docs
+    // SetStopShare is a setter; see official docs.
     { Strategy_Orders: SetStopPosition }
-    // SetStopPosition -- see official docs
+    // SetStopPosition is a setter; see official docs.
     { Strategy_Orders: SetStopLoss_pt }
-    // SetStopLoss_pt -- see official docs
+    // SetStopLoss_pt is a setter; see official docs.
     { Portfolio_Strategy_Position: Portfolio_SetMaxPotentialLossPerContract }
-    Value1 = Portfolio_SetMaxPotentialLossPerContract;
+    // Portfolio_SetMaxPotentialLossPerContract is a setter; see official docs.
     { Portfolio_Strategy_Position: Portfolio_OpenPositionProfit }
     Value1 = Portfolio_OpenPositionProfit;
     { Portfolio_Strategy_Position: Portfolio_MaxOpenPositionPotentialLoss }
     Value1 = Portfolio_MaxOpenPositionPotentialLoss;
     { Portfolio_Strategy_Properties: PortfolioEntriesPriority }
-    Value1 = PortfolioEntriesPriority;
+    // PortfolioEntriesPriority is a reserved syntactic token; see official docs for usage.
     { Portfolio_Strategy_Properties: Portfolio_InterestRate }
     Value1 = Portfolio_InterestRate;
     { Portfolio_Strategy_Properties: Portfolio_GetMaxPotentialLossPerContract }
@@ -433,7 +434,7 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Portfolio_Strategy_Position: Portfolio_CurrentEntries }
     Value1 = Portfolio_CurrentEntries;
     { Portfolio_Strategy_Position: Portfolio_CalcMaxPotentialLossForEntry }
-    Value1 = Portfolio_CalcMaxPotentialLossForEntry;
+    Value1 = Portfolio_CalcMaxPotentialLossForEntry( Close, 14, 14 );
     { Portfolio_Strategy_Performance: Portfolio_TotalTrades }
     Value1 = Portfolio_TotalTrades;
     { Portfolio_Strategy_Properties: Portfolio_MaxRiskEquityPerPosPercent }

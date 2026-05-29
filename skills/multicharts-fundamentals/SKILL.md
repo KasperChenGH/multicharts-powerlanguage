@@ -11,7 +11,7 @@ MultiCharts is a Windows trading platform from MCT Limited (Gibraltar). It conne
 
 ## What PowerLanguage is
 
-PowerLanguage (PL) is the scripting language inside MultiCharts. Files use the `.pla` extension. PowerLanguage is functionally compatible with TradeStation's EasyLanguage — most EasyLanguage scripts run unmodified in MultiCharts, and MultiCharts adds a few of its own keywords (FileAppend, PMM, FormatDate, …) that don't exist in EasyLanguage.
+PowerLanguage (PL) is the scripting language inside MultiCharts. Source code is edited inside the PowerLanguage Editor and stored in MultiCharts's internal studio database — it doesn't have a standalone source-file extension. Exported study bundles use the `.pla` extension (PowerLanguage Archive — a ZIP-based binary format), and these are brought into another machine via PowerLanguage Editor → File → Import. When sharing or pasting raw source code outside the studio, plain text (`.txt`) is the convention. PowerLanguage is functionally compatible with TradeStation's EasyLanguage — most EasyLanguage scripts run unmodified in MultiCharts, and MultiCharts adds a few of its own keywords (FileAppend, PMM, FormatDate, …) that don't exist in EasyLanguage.
 
 Key characteristics:
 - Pascal-flavored syntax (begin/end blocks, semicolon statement terminators).

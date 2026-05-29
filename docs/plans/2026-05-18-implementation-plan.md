@@ -226,7 +226,7 @@ Describe 'Plugin metadata files' {
     $p.version     | Should -Be '0.1.0'
     $p.license     | Should -Be 'MIT'
     $p.author.name | Should -Be 'Yu-An Chen'
-    $p.homepage    | Should -Match 'github.com/kappa123451/Multicharts-Powerlanguage-skill'
+    $p.homepage    | Should -Match 'github.com/KasperChenGH/Multicharts-Powerlanguage-skill'
     $p.keywords    | Should -Contain 'multicharts'
   }
 
@@ -269,8 +269,8 @@ Write `.claude-plugin/plugin.json`:
   "description": "MultiCharts PowerLanguage skills for Claude: platform fundamentals, language syntax, and a categorized reference for all 951 PowerLanguage keywords.",
   "version": "0.1.0",
   "author": { "name": "Yu-An Chen" },
-  "homepage": "https://github.com/kappa123451/Multicharts-Powerlanguage-skill",
-  "repository": "https://github.com/kappa123451/Multicharts-Powerlanguage-skill",
+  "homepage": "https://github.com/KasperChenGH/Multicharts-Powerlanguage-skill",
+  "repository": "https://github.com/KasperChenGH/Multicharts-Powerlanguage-skill",
   "license": "MIT",
   "keywords": ["multicharts", "powerlanguage", "trading", "skills", "easylanguage", "keywords-reference"]
 }
@@ -2417,7 +2417,7 @@ Three skills that auto-activate based on what you're asking Claude to do:
 ## Install (Claude Code)
 
 ```bash
-/plugin marketplace add kappa123451/Multicharts-Powerlanguage-skill
+/plugin marketplace add KasperChenGH/Multicharts-Powerlanguage-skill
 /plugin install multicharts-powerlanguage@multicharts-powerlanguage-dev
 ```
 
@@ -2439,7 +2439,7 @@ MIT — see `LICENSE`.
 
 ## Source
 
-https://github.com/kappa123451/Multicharts-Powerlanguage-skill
+https://github.com/KasperChenGH/Multicharts-Powerlanguage-skill
 ```
 
 - [ ] **Step 2: Write the NOTICE**
@@ -2588,7 +2588,7 @@ git tag -a v0.1.0 -m "v0.1.0 — initial release"
 git push origin main --tags
 ```
 
-(Replace `origin` with your remote name. If the repo isn't yet on GitHub, run `gh repo create kappa123451/Multicharts-Powerlanguage-skill --public --source=. --remote=origin --push` first.)
+(Replace `origin` with your remote name. If the repo isn't yet on GitHub, run `gh repo create KasperChenGH/Multicharts-Powerlanguage-skill --public --source=. --remote=origin --push` first.)
 
 ---
 

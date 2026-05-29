@@ -4,7 +4,7 @@
 .DESCRIPTION
   Walks the CHM-extracted HTML files, parses each, generates an original
   paraphrased markdown summary + a generated example, writes details/<Cat>/<Kw>.md,
-  rebuilds keywords-index.md, and emits tests/test_*.pla fixtures.
+  rebuilds keywords-index.md, and emits tests/test_*.txt fixtures.
 
   Maintainer-only. End users never run this — they get the committed outputs.
 .PARAMETER ChmExtractedRoot
@@ -16,7 +16,7 @@
 .PARAMETER IndexPath
   Output path for keywords-index.md.
 .PARAMETER TestsDir
-  Output dir for test_*.pla fixtures.
+  Output dir for test_*.txt fixtures.
 .PARAMETER ChmPath
   Path to PowerLanguage.chm. If set and ChmExtractedRoot is empty, the script
   decompiles via hh.exe first.
@@ -159,10 +159,10 @@ foreach ($f in $htmFiles) {
 New-KeywordsIndex -DetailsRoot $DetailsRoot -OutputPath $IndexPath | Out-Null
 Write-Host "Wrote index: $IndexPath"
 
-# Build the .pla fixtures
+# Build the .txt compile-test fixtures
 if (-not (Test-Path $TestsDir)) { New-Item -ItemType Directory -Path $TestsDir -Force | Out-Null }
 New-PlaFixtures -Keywords $parsedKeywords -OutputDir $TestsDir
-Write-Host "Wrote .pla fixtures in: $TestsDir"
+Write-Host "Wrote .txt compile-test fixtures in: $TestsDir"
 
 # Report stats
 Write-Host ""
