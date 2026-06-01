@@ -797,3 +797,791 @@ bar_col  = rsi > 70 ? color.new(color.red, 20)
 
 bgcolor(bar_col, title = "RSI zone background")
 ```
+
+---
+
+## 6. Plotting
+
+Pine Script's plotting functions are the primary way to render visual output on the chart. All plotting calls execute on every bar, but the display is driven by the series values they receive.
+
+### `plot()` — lines and value series
+
+```pine
+//@version=5
+indicator("plot() demo", overlay = true)
+
+ma_fast = ta.ema(close, 9)
+ma_slow = ta.ema(close, 21)
+
+// Full signature:
+// plot(series, title, color, linewidth, style, trackprice, histbase, offset, join, editable, show_last, display)
+plot(ma_fast, title = "EMA 9",  color = color.blue,   linewidth = 2)
+plot(ma_slow, title = "EMA 21", color = color.orange,  linewidth = 1,
+     style = plot.style_line)
+```
+
+**Plot styles:**
+
+| Constant | Appearance |
+|---|---|
+| `plot.style_line` | Continuous line (default) |
+| `plot.style_linebr` | Line that breaks at `na` values |
+| `plot.style_histogram` | Vertical bars from a baseline (default 0) |
+| `plot.style_columns` | Filled columns from a baseline |
+| `plot.style_area` | Filled area below the line |
+| `plot.style_areabr` | Filled area, breaks at `na` |
+| `plot.style_circles` | Dots at each bar |
+| `plot.style_cross` | Cross marks at each bar |
+| `plot.style_stepline` | Staircase (holds value until next bar) |
+
+### `plotshape()` — marker shapes at specific bars
+
+```pine
+//@version=5
+indicator("plotshape demo", overlay = true)
+
+buy  = ta.crossover(ta.ema(close, 9), ta.ema(close, 21))
+sell = ta.crossunder(ta.ema(close, 9), ta.ema(close, 21))
+
+// plotshape(series, title, shape, location, color, offset, text, textcolor, size)
+plotshape(buy,  title = "Buy signal",  shape = shape.triangleup,
+          location = location.belowbar, color = color.green,
+          text = "BUY", textcolor = color.white, size = size.small)
+
+plotshape(sell, title = "Sell signal", shape = shape.triangledown,
+          location = location.abovebar, color = color.red,
+          text = "SELL", textcolor = color.white, size = size.small)
+```
+
+Common `shape.*` constants: `shape.triangleup`, `shape.triangledown`, `shape.circle`, `shape.square`, `shape.diamond`, `shape.cross`, `shape.xcross`, `shape.arrowup`, `shape.arrowdown`, `shape.flag`, `shape.labelup`, `shape.labeldown`.
+
+Common `location.*` constants: `location.abovebar`, `location.belowbar`, `location.top`, `location.bottom`, `location.absolute`.
+
+### `plotchar()` — single Unicode character as marker
+
+```pine
+//@version=5
+indicator("plotchar demo", overlay = true)
+
+gap_up = open > high[1]
+
+// plotchar(series, title, char, location, color, offset, text, textcolor, size)
+plotchar(gap_up, title = "Gap up", char = "▲",
+         location = location.abovebar, color = color.teal,
+         size = size.tiny)
+```
+
+`plotchar` accepts any single Unicode character, making it useful for custom symbols the built-in `shape.*` set does not cover.
+
+### `plotarrow()` — directional arrows scaled by value
+
+```pine
+//@version=5
+indicator("plotarrow demo", overlay = true)
+
+momentum = close - close[5]
+
+// plotarrow(series, title, colorup, colordown, offset, minheight, maxheight, show_last, display)
+// Positive values → up arrows; negative values → down arrows
+// Arrow height scales with the absolute value of series
+plotarrow(momentum, title = "Momentum arrow",
+          colorup = color.green, colordown = color.red)
+```
+
+### `bgcolor()` — color the chart background
+
+```pine
+//@version=5
+indicator("bgcolor demo", overlay = true)
+
+rsi = ta.rsi(close, 14)
+
+// Tint the background when RSI is extreme
+overbought_zone = rsi > 70
+oversold_zone   = rsi < 30
+
+// bgcolor(color, offset, editable, show_last, title, display)
+bgcolor(overbought_zone ? color.new(color.red,   85) : na, title = "Overbought")
+bgcolor(oversold_zone   ? color.new(color.green, 85) : na, title = "Oversold")
+```
+
+### `barcolor()` — recolor the price bars themselves
+
+```pine
+//@version=5
+indicator("barcolor demo", overlay = true)
+
+// barcolor(color, offset, editable, show_last, title)
+// Overrides the default bar/candle color for each bar
+barcolor(close > open ? color.new(color.teal, 20)
+       : close < open ? color.new(color.maroon, 20)
+       :                color.gray)
+```
+
+`barcolor()` affects only the primary chart bars — it has no effect in a sub-pane indicator (`overlay = false`).
+
+### `fill()` — shade the area between two plots
+
+```pine
+// fill(plot1, plot2, color, title, editable, fillgaps, display)
+// The two plots must have been created with plot() in the same script
+p_upper = plot(ta.bb(close, 20, 2)[1], "BB Upper", color = color.blue, display = display.none)
+p_lower = plot(ta.bb(close, 20, 2)[2], "BB Lower", color = color.blue, display = display.none)
+
+fill(p_upper, p_lower, color = color.new(color.blue, 88), title = "BB fill")
+```
+
+A common pattern is to create "invisible" helper plots (`display = display.none`) solely for use as `fill()` boundaries, keeping the chart clean.
+
+### `hline()` — static horizontal reference line
+
+```pine
+//@version=5
+indicator("hline demo", overlay = false)
+
+rsi = ta.rsi(close, 14)
+plot(rsi, "RSI")
+
+// hline(price, title, color, linestyle, linewidth, editable, display)
+hline(70,  "Overbought", color = color.red,   linestyle = hline.style_dashed)
+hline(50,  "Midpoint",   color = color.gray,  linestyle = hline.style_dotted)
+hline(30,  "Oversold",   color = color.green, linestyle = hline.style_dashed)
+```
+
+`hline.style_solid`, `hline.style_dashed`, `hline.style_dotted` are the available line styles. Unlike `plot()`, `hline()` takes a `simple float` — the price level cannot vary bar by bar.
+
+### Comprehensive plotting example
+
+```pine
+//@version=5
+indicator("Combined plot showcase", overlay = false, precision = 2)
+
+length = input.int(14, "RSI length", minval = 2)
+src    = input.source(close, "Source")
+
+rsi      = ta.rsi(src, length)
+rsi_sma  = ta.sma(rsi, 5)           // smoothed signal
+momentum = rsi - rsi_sma            // divergence from signal
+
+// -- Horizontal reference lines --
+ob_line  = hline(70, "OB",  color = color.new(color.red,   40), linestyle = hline.style_dashed)
+mid_line = hline(50, "Mid", color = color.new(color.gray,  50), linestyle = hline.style_dotted)
+os_line  = hline(30, "OS",  color = color.new(color.green, 40), linestyle = hline.style_dashed)
+
+// Fill OB/OS zones
+fill(ob_line,  mid_line, color = color.new(color.red,   92))
+fill(mid_line, os_line,  color = color.new(color.green, 92))
+
+// -- RSI line --
+p_rsi = plot(rsi,     "RSI",        color = color.blue,  linewidth = 2)
+p_sig = plot(rsi_sma, "RSI Signal", color = color.orange, linewidth = 1,
+             style = plot.style_line)
+
+// Fill between RSI and its signal line
+fill(p_rsi, p_sig,
+     color = rsi > rsi_sma ? color.new(color.blue, 80)
+                            : color.new(color.orange, 80))
+
+// -- Momentum histogram below the RSI line --
+plot(momentum, "Momentum", color = momentum >= 0 ? color.teal : color.maroon,
+     style = plot.style_histogram, histbase = 0)
+
+// -- Markers at extremes --
+plotshape(ta.crossunder(rsi, 70), "OB cross", shape.xcross,
+          location.absolute, color.red,   offset = 0)
+plotshape(ta.crossover(rsi, 30),  "OS cross", shape.xcross,
+          location.absolute, color.green, offset = 0)
+
+// -- Background tint on confirmed extremes --
+bgcolor(rsi > 70 ? color.new(color.red,   92) : na, title = "OB zone")
+bgcolor(rsi < 30 ? color.new(color.green, 92) : na, title = "OS zone")
+```
+
+---
+
+## 7. Control Flow
+
+Pine Script uses **indentation** to delimit blocks — there are no `begin`/`end` keywords and no curly braces. Two or four spaces per level are both accepted; just be consistent.
+
+### `if` / `else if` / `else`
+
+```pine
+//@version=5
+indicator("if/else demo")
+
+rsi = ta.rsi(close, 14)
+
+// Single-line if (no indented block needed when there is exactly one expression)
+signal = if rsi > 70
+    "overbought"
+else if rsi < 30
+    "oversold"
+else
+    "neutral"
+
+// if block that executes side effects (no value assignment)
+var int streak = 0
+if close > close[1]
+    streak := streak + 1
+else
+    streak := 0
+
+plot(streak, "Bull streak")
+```
+
+An `if` block can be used as an **expression** (it returns the last evaluated value from the taken branch). When all branches return values of the same type, the result can be assigned directly.
+
+### `for ... to` — index-based loop
+
+```pine
+//@version=5
+indicator("for...to demo")
+
+// Sum the last N bars of close manually
+n = 10
+var float manual_sum = 0.0
+manual_sum := 0.0
+for i = 0 to n - 1       // i goes from 0 to n-1 inclusive
+    manual_sum += close[i]
+
+manual_avg = manual_sum / n
+plot(manual_avg, "Manual avg")
+```
+
+- Bounds are **inclusive** on both ends — `for i = 0 to 4` iterates i = 0, 1, 2, 3, 4.
+- Optional `by` step: `for i = 0 to 20 by 2` increments by 2.
+- `break` exits the loop immediately; `continue` skips to the next iteration.
+
+### `for ... in` — array iteration
+
+```pine
+//@version=5
+indicator("for...in demo")
+
+var float[] vals = array.new_float(0)
+array.push(vals, close)
+if array.size(vals) > 20
+    array.shift(vals)
+
+// Iterate over elements — val is each element's value
+float total = 0.0
+for val in vals
+    total += val
+
+avg = array.size(vals) > 0 ? total / array.size(vals) : na
+plot(avg, "Iterative avg")
+```
+
+`for val in myArray` gives a copy of each element. To modify elements in place you still need `array.set()` with an index loop.
+
+### `while` — condition-based loop
+
+```pine
+//@version=5
+indicator("while demo")
+
+// Binary search for the first bar where ta.highest crosses a threshold
+// (contrived example to show while syntax)
+threshold = ta.sma(high, 50)
+
+var int bars_above = 0
+bars_above := 0
+int i = 0
+while i < 50 and i < bar_index
+    if high[i] > threshold
+        bars_above += 1
+    i += 1
+
+plot(bars_above, "Bars above threshold in last 50")
+```
+
+**Warning:** Pine enforces a per-bar execution time limit. Loops with a large iteration count or expensive body can trigger a "Script took too long to execute" runtime error.
+
+### `switch` — multi-branch dispatch
+
+```pine
+//@version=5
+indicator("switch demo")
+
+mode = input.string("RSI", "Indicator", options = ["RSI", "CCI", "MFI"])
+
+// switch expression — each branch uses => and returns a value
+osc = switch mode
+    "RSI" => ta.rsi(close, 14)
+    "CCI" => ta.cci(close, 20)
+    "MFI" => ta.mfi(close, 14)
+    =>       ta.rsi(close, 14)   // default branch (bare =>)
+
+plot(osc, "Selected oscillator")
+```
+
+Each arm uses `value => expression`. The bare `=>` at the end is the default branch (equivalent to `else`). The entire `switch` block is an expression and can be assigned to a variable.
+
+### Ternary operator `? :`
+
+```pine
+//@version=5
+indicator("Ternary demo", overlay = true)
+
+// condition ? valueIfTrue : valueIfFalse
+trend_color = close > ta.sma(close, 50) ? color.green : color.red
+
+// Ternary chains (right-associative — reads top to bottom)
+zone = ta.rsi(close, 14) > 70 ? "OB"
+     : ta.rsi(close, 14) < 30 ? "OS"
+     :                           "Neutral"
+
+barcolor(trend_color)
+```
+
+The ternary operator is a single expression — it cannot contain statements or side effects. For more complex branching use `if` blocks.
+
+---
+
+## 8. User-Defined Functions & Types
+
+### Function syntax
+
+Functions are declared using `=>`. A single-expression function fits on one line; a multi-statement function uses an indented block.
+
+```pine
+//@version=5
+indicator("UDF demo")
+
+// Single-line function
+percent_change(current, previous) =>
+    (current - previous) / previous * 100.0
+
+// Multi-line function — last expression is the implicit return value
+zscore(src, length) =>
+    avg  = ta.sma(src, length)
+    dev  = ta.stdev(src, length)
+    safe = math.max(dev, syminfo.mintick)   // avoid division by zero
+    (src - avg) / safe                      // returned value
+
+pct  = percent_change(close, close[1])
+z    = zscore(close, 20)
+
+plot(pct, "Pct change")
+plot(z,   "Z-score", display = display.pane)
+```
+
+Functions capture their outer scope — they can read variables declared before them, but they cannot modify `var` variables declared outside (each call has its own local state).
+
+### Tuple returns with destructuring
+
+A function (or built-in) can return multiple values wrapped in square brackets. The caller destructures with `[a, b] = f(...)`.
+
+```pine
+//@version=5
+indicator("Tuple return demo")
+
+// Function returning two values
+minmax(src, len) =>
+    [ta.lowest(src, len), ta.highest(src, len)]
+
+[lo, hi]    = minmax(close, 20)
+[bb_mid, bb_upper, bb_lower] = ta.bb(close, 20, 2.0)  // built-in tuple
+
+range_pct = (hi - lo) / lo * 100
+plot(range_pct, "20-bar range %")
+```
+
+### User-Defined Types (UDTs)
+
+The `type` keyword declares a named composite type, similar to a struct or record.
+
+```pine
+//@version=5
+indicator("UDT demo", overlay = true)
+
+// Declare a type — fields can have default values
+type Signal
+    int   bar       = 0
+    float price     = na
+    bool  is_long   = false
+    color sig_color = color.gray
+
+// Create an instance with type.new() or using field= syntax
+var Signal last_sig = Signal.new()
+
+fast = ta.ema(close, 9)
+slow = ta.ema(close, 21)
+
+if ta.crossover(fast, slow)
+    last_sig := Signal.new(
+         bar       = bar_index,
+         price     = close,
+         is_long   = true,
+         sig_color = color.green)
+
+if ta.crossunder(fast, slow)
+    last_sig := Signal.new(
+         bar       = bar_index,
+         price     = close,
+         is_long   = false,
+         sig_color = color.red)
+
+// Access fields with dot notation
+if barstate.islast
+    label.new(last_sig.bar, last_sig.price,
+              last_sig.is_long ? "Last BUY" : "Last SELL",
+              color = last_sig.sig_color,
+              style = label.style_label_up)
+```
+
+### Methods on UDTs
+
+The `method` keyword attaches a function to a type. Inside the method, `this` refers to the instance.
+
+```pine
+//@version=5
+indicator("Method demo", overlay = false)
+
+type PriceBuffer
+    float[] data     = array.new_float(0)
+    int     capacity = 20
+
+// method defined on PriceBuffer
+method push(PriceBuffer this, float val) =>
+    array.push(this.data, val)
+    if array.size(this.data) > this.capacity
+        array.shift(this.data)
+
+method average(PriceBuffer this) =>
+    array.size(this.data) > 0 ? array.avg(this.data) : na
+
+var PriceBuffer buf = PriceBuffer.new()
+
+buf.push(close)           // call the method with dot notation
+plot(buf.average(), "Buffer avg")
+```
+
+### `export` and `import` for library functions
+
+In a `library()` script, mark public functions with `export`. Callers import the library using a version-qualified path.
+
+```pine
+// ---- In a library script titled "MathUtils" ----
+//@version=5
+library("MathUtils", overlay = false)
+
+// export makes the function available to importers
+export zscore(series float src, simple int len) =>
+    avg = ta.sma(src, len)
+    dev = ta.stdev(src, len)
+    (src - avg) / math.max(dev, 1e-10)
+
+export clamp(series float x, simple float lo, simple float hi) =>
+    math.max(lo, math.min(hi, x))
+```
+
+```pine
+// ---- In a consuming script ----
+//@version=5
+indicator("Library consumer")
+
+import username/MathUtils/1 as MU   // version number at the end
+
+z = MU.zscore(close, 20)
+plot(z, "Z-score from library")
+```
+
+The import path follows the format `<TradingView_username>/<LibraryTitle>/<version>`. Libraries must be published (or in an organization) before they can be imported by other users.
+
+---
+
+## 9. Bar State & Time
+
+### Bar state variables
+
+These read-only boolean variables let you detect where in the script's execution you are. They are most useful for logic that should run only once (e.g., drawing a final label) or that behaves differently on live vs. historical data.
+
+| Variable | Type | True when |
+|---|---|---|
+| `barstate.isfirst` | `series bool` | Currently executing the very first historical bar |
+| `barstate.islast` | `series bool` | Currently executing the last bar on the chart (historical or live) |
+| `barstate.isrealtime` | `series bool` | The current bar is a live, unconfirmed bar (not yet closed) |
+| `barstate.isconfirmed` | `series bool` | The current bar has just closed — its OHLCV values are final |
+| `barstate.isnew` | `series bool` | This is the first tick of a new bar (bar just opened) |
+| `barstate.ishistory` | `series bool` | The current bar is a historical bar (complement of `isrealtime`) |
+| `bar_index` | `series int` | 0-based index of the current bar (0 = oldest visible bar) |
+| `last_bar_index` | `series int` | Index of the last available bar |
+
+```pine
+//@version=5
+indicator("Bar state demo", overlay = true)
+
+// Draw a label only at the very last bar (updates as new bars arrive)
+if barstate.islast
+    label.new(bar_index, high * 1.002,
+              "← latest bar\n" + str.tostring(bar_index) + " bars loaded",
+              style = label.style_label_left,
+              color = color.new(color.blue, 70),
+              textcolor = color.white)
+
+// Count how many realtime ticks have been seen on the live bar
+var int live_ticks = 0
+if barstate.isrealtime
+    live_ticks += 1
+```
+
+### Time variables
+
+| Variable | Type | Description |
+|---|---|---|
+| `time` | `series int` | Unix timestamp (milliseconds) of the bar's **open** |
+| `time_close` | `series int` | Unix timestamp (milliseconds) of the bar's **close** |
+| `year` | `series int` | Year of the bar's open time (e.g. 2025) |
+| `month` | `series int` | Month 1–12 |
+| `dayofmonth` | `series int` | Day of the month 1–31 |
+| `dayofweek` | `series int` | Day of the week: `dayofweek.sunday` = 1, ..., `dayofweek.saturday` = 7 |
+| `hour` | `series int` | Hour 0–23 of the bar's open |
+| `minute` | `series int` | Minute 0–59 of the bar's open |
+| `second` | `series int` | Second 0–59 of the bar's open |
+
+```pine
+//@version=5
+indicator("Time demo", overlay = true)
+
+// Highlight Monday opens (after a weekend gap)
+is_monday = dayofweek == dayofweek.monday and hour == 0 and minute == 0
+
+bgcolor(is_monday ? color.new(color.yellow, 85) : na, title = "Monday open")
+
+// Display timestamp of latest bar in a label
+if barstate.islast
+    ts = str.format("{0}-{1,number,00}-{2,number,00} {3,number,00}:{4,number,00}",
+                    year, month, dayofmonth, hour, minute)
+    label.new(bar_index, low, ts,
+              style = label.style_label_up, size = size.small,
+              color = color.new(color.gray, 60))
+```
+
+### Timeframe variables
+
+| Variable | Type | Description |
+|---|---|---|
+| `timeframe.period` | `simple string` | The chart's current timeframe as a string (e.g. `"60"`, `"D"`, `"W"`) |
+| `timeframe.multiplier` | `simple int` | The numeric part of the period (e.g. `60` for a 60-minute chart) |
+| `timeframe.isdaily` | `simple bool` | True when chart timeframe is daily |
+| `timeframe.isintraday` | `simple bool` | True when chart timeframe is sub-daily |
+| `timeframe.isweekly` | `simple bool` | True when chart timeframe is weekly |
+| `timeframe.ismonthly` | `simple bool` | True when chart timeframe is monthly |
+
+```pine
+//@version=5
+indicator("Timeframe guard demo")
+
+// Warn the user if the script is applied to the wrong timeframe
+if barstate.isfirst
+    if not timeframe.isintraday
+        label.new(bar_index, close, "⚠ This script is designed for intraday charts.",
+                  color = color.red, textcolor = color.white,
+                  style = label.style_label_right)
+```
+
+### Symbol info variables
+
+| Variable | Type | Description |
+|---|---|---|
+| `syminfo.ticker` | `simple string` | Ticker symbol without exchange prefix (e.g. `"AAPL"`) |
+| `syminfo.tickerid` | `simple string` | Fully qualified symbol including exchange (e.g. `"NASDAQ:AAPL"`) |
+| `syminfo.currency` | `simple string` | Currency the instrument is quoted in (e.g. `"USD"`) |
+| `syminfo.pointvalue` | `simple float` | Dollar value of one full point of price movement (contract size) |
+| `syminfo.mintick` | `simple float` | Smallest valid price increment (tick size) |
+| `syminfo.type` | `simple string` | Instrument type: `"stock"`, `"futures"`, `"forex"`, `"crypto"`, etc. |
+| `syminfo.description` | `simple string` | Full name/description of the symbol |
+| `syminfo.timezone` | `simple string` | Exchange timezone string (e.g. `"America/New_York"`) |
+
+```pine
+//@version=5
+indicator("Symbol info demo", overlay = true)
+
+// Compute position size using point value
+risk_per_trade  = 500.0                   // dollars at risk
+stop_ticks      = 20                      // stop distance in ticks
+stop_points     = stop_ticks * syminfo.mintick
+dollar_per_tick = syminfo.pointvalue * syminfo.mintick
+contracts       = risk_per_trade / (stop_ticks * dollar_per_tick)
+
+if barstate.islast
+    label.new(bar_index, high,
+              str.format("{0} | {1} | min tick: {2}\nContracts for ${3} risk: {4,number,#.##}",
+                         syminfo.ticker, syminfo.type, syminfo.mintick,
+                         risk_per_trade, contracts),
+              style = label.style_label_left, size = size.normal,
+              color = color.new(color.navy, 50), textcolor = color.white)
+```
+
+---
+
+## 10. Common Gotchas
+
+### Gotcha 1 — Repainting with `request.security()`
+
+**The problem:** On the live, unconfirmed bar, `request.security()` returns the higher-timeframe bar's current in-progress value — not its final closed value. A signal fired on this value may disappear or change direction once that bar closes.
+
+```pine
+//@version=5
+indicator("Repainting demo")
+
+// REPAINT-PRONE: uses the current unfinished daily bar
+daily_rsi_live = request.security(syminfo.tickerid, "D", ta.rsi(close, 14))
+plot(daily_rsi_live, "Daily RSI (repaints)", color = color.red)
+
+// REPAINT-SAFE option 1: request the confirmed (previous) bar's value
+daily_rsi_safe = request.security(syminfo.tickerid, "D", ta.rsi(close, 14)[1])
+plot(daily_rsi_safe, "Daily RSI (no repaint, lagged)", color = color.green)
+
+// REPAINT-SAFE option 2: guard signal execution on the current bar
+if barstate.isconfirmed
+    // any logic here only runs once the bar has fully closed
+    if daily_rsi_live > 70
+        label.new(bar_index, high, "OB confirmed", style = label.style_label_down)
+```
+
+**Rule of thumb:** If a signal is derived from a higher-timeframe series and must be stable on historical bars, use `close[1]` with `barmerge.lookahead_off` (the default) or gate it with `barstate.isconfirmed`.
+
+---
+
+### Gotcha 2 — `na` propagation
+
+**The problem:** Almost every arithmetic or comparison operation involving `na` returns `na`. Silent `na` propagation can zero out indicators or make conditions permanently false.
+
+```pine
+//@version=5
+indicator("na propagation demo")
+
+var float acc = na    // starts as na
+
+// BUG: acc stays na forever because na + close == na
+acc := acc + close   // ← wrong if you wanted a running sum
+
+// FIX: use nz() to substitute a safe default before the operation
+var float acc2 = 0.0
+acc2 := nz(acc2, 0.0) + close   // nz returns 0.0 if acc2 is na, else acc2
+
+// Checking for na explicitly before branching
+var float last_known = na
+if not na(close)
+    last_known := close
+
+// fixnan() forward-fills — replaces na with most recent non-na value
+filled = fixnan(acc2)
+
+plot(acc2,  "Running sum")
+plot(filled,"Forward-filled")
+```
+
+Diagnostics: plot a suspect variable and look for a flat line at zero or a gap. A flat zero usually means `na` was converted to 0 somewhere (e.g., by `plot()` clipping), while a gap means the value is genuinely `na` through those bars.
+
+---
+
+### Gotcha 3 — Series vs. simple context
+
+**The problem:** Many built-in functions require their `length` (or other configuration) argument to be `simple int` — a value fixed at bar 0. Passing a `series int` (one that changes bar by bar) causes a compile error.
+
+```pine
+//@version=5
+indicator("Series vs simple demo")
+
+// This COMPILES — input.int() produces input int, which satisfies simple int
+length = input.int(14, "Length")
+rsi_ok = ta.rsi(close, length)   // OK
+
+// This FAILS TO COMPILE — bar_index is a series int (changes every bar)
+// rsi_bad = ta.rsi(close, bar_index)
+// ERROR: "Argument 'length' of type 'series int' used where 'simple int' is expected"
+
+// Workaround: if you genuinely need a dynamic length, you must write the
+// calculation manually instead of using the built-in
+dyn_len = math.min(bar_index + 1, 50)   // still series int
+var float custom_sum = 0.0
+// ... (manual rolling calculation)
+```
+
+**When you encounter this error:** Check whether the argument that changes each bar can be replaced with an `input.*` value. If it truly must vary, you need a manual implementation or a different algorithm.
+
+---
+
+### Gotcha 4 — `max_bars_back` for large historical offsets
+
+**The problem:** Pine pre-allocates a history buffer for each series. By default the buffer holds 300–500 bars. Referencing `close[500]` or more triggers a runtime error: "Index N is too large. Maximum allowed is M."
+
+```pine
+//@version=5
+// FIX 1: declare max_bars_back in the indicator() call
+indicator("max_bars_back demo", max_bars_back = 1000)
+
+// FIX 2: set it for a specific series at runtime
+max_bars_back(close, 1000)
+
+lookback = 750
+old_close = close[lookback]   // works once max_bars_back is raised
+
+// FIX 3: for request.security() expressions that look back far,
+// set max_bars_back inside the security call's expression
+// (the buffer limit applies to expressions evaluated inside request.security too)
+```
+
+**When you hit this error:** Add `max_bars_back = <N>` to the `indicator()` / `strategy()` declaration, or call `max_bars_back(series, N)` for specific series. Set `N` to at least the largest offset you reference.
+
+---
+
+### Gotcha 5 — Strategy vs. indicator restrictions
+
+Some features are exclusive to one script type. Confusing them causes compile errors that can be hard to diagnose.
+
+| Feature | `indicator()` | `strategy()` | `library()` |
+|---|---|---|---|
+| `strategy.entry/exit/close` | No — compile error | Yes | No — compile error |
+| `alertcondition()` | Yes | No — compile error | No |
+| `alert()` | Yes | Yes | No |
+| Backtest Strategy Tester tab | No | Yes | No |
+| `export` functions/types | No | No | Yes |
+| Can be `import`-ed | No | No | Yes |
+| `plot()`, `plotshape()`, etc. | Yes | Yes (overlay only for price plots) | No |
+| `hline()` | Yes | Yes | No |
+| `table.new()` / `label.new()` | Yes | Yes | No |
+
+**Tip:** If you intend to backtest, start with `strategy()`. If you only need to display data, use `indicator()`. You cannot do both in a single script — split them into two files that share a library if needed.
+
+---
+
+### Gotcha 6 — Execution model: historical vs. realtime
+
+**The problem:** Developers coming from MultiCharts PowerLanguage expect bar-by-bar execution to follow the same model they are used to. Pine's model differs in two important ways.
+
+**Historical bars (replay mode):**
+- The script executes exactly once per bar, called at the bar's **close**.
+- OHLCV values are final — there is no tick-by-tick variation.
+- `barstate.ishistory` is true; `barstate.isrealtime` is false.
+
+**Realtime bar (live market):**
+- The script re-executes on **every incoming tick** (every price update).
+- `open`, `high`, `low`, `close`, `volume` are all live values that change each tick.
+- `barstate.isrealtime` is true; `barstate.isconfirmed` is false until the bar closes.
+- When the bar closes and becomes a historical bar, the script executes one final time with `barstate.isconfirmed = true` and the permanent OHLCV values.
+
+```pine
+//@version=5
+indicator("Execution model demo", overlay = true)
+
+// Variables declared with var persist; those without are reset each execution
+var int confirmed_bars = 0     // accumulates once per confirmed close
+var int realtime_ticks = 0     // accumulates every live tick
+
+if barstate.isconfirmed
+    confirmed_bars += 1         // increments exactly once per closed bar
+
+if barstate.isrealtime
+    realtime_ticks += 1         // increments every live price update
+
+// Without var: recomputed on every execution (history: once/bar; live: every tick)
+mid = (high + low) / 2
+
+plot(mid, "Mid (live, ticks)")
+```
+
+**Contrast with PowerLanguage:** In MultiCharts, `CalcAtMarketClose` and `CalcOnTick` are explicit per-indicator settings that the user controls from the Properties dialog. In Pine, the behavior is always: once per historical bar at close, every tick on the live bar — with no per-indicator switch to change it. To suppress intra-bar noise, gate your logic with `if barstate.isconfirmed`.
