@@ -1,0 +1,241 @@
+// =============================================================================
+// test_pine_from_pl.txt
+// Pine Script (v5) conversions of the 5 PowerLanguage strategies in
+// tests/test_strategies.txt.
+//
+// NOTE: TradingView does not allow multiple strategy() scripts in a single
+// file.  Each block below is a self-contained script meant to be copied into
+// its own TradingView Pine Editor tab and compiled/back-tested individually.
+// Separator lines mark where one script ends and the next begins.
+// =============================================================================
+
+
+// =============================================================================
+// STRATEGY 1 — MA Crossover
+// PL source: lines 17-24 of test_strategies.txt
+//
+// Conversion notes:
+//   Average(Close, N)          → ta.sma(close, N)
+//   crosses over               → ta.crossover()
+//   crosses under              → ta.crossunder()
+//   Buy ... Next Bar at Market → strategy.entry("S1_LE", strategy.long)
+//   Sell ... Next Bar at Market→ strategy.close("S1_LE")   ← NOT strategy.short
+// =============================================================================
+//@version=5
+strategy("S1 MA Crossover", overlay=true)
+
+// Converted from: fastMA = Average(Close, 10)
+//                 slowMA = Average(Close, 20)
+fastMA = ta.sma(close, 10)
+slowMA = ta.sma(close, 20)
+
+// Converted from: If fastMA crosses over slowMA Then Buy ("S1_LE") ...
+if ta.crossover(fastMA, slowMA)
+    strategy.entry("S1_LE", strategy.long)
+
+// Converted from: If fastMA crosses under slowMA Then Sell ("S1_LX") ...
+// PL "Sell" closes an existing long — use strategy.close(), not strategy.short
+if ta.crossunder(fastMA, slowMA)
+    strategy.close("S1_LE", comment="S1_LX")
+
+plot(fastMA, color=color.blue,  title="Fast MA (10)")
+plot(slowMA, color=color.orange, title="Slow MA (20)")
+// END STRATEGY 1
+// =============================================================================
+
+
+// =============================================================================
+// STRATEGY 2 — RSI + ATR Stop + Position Detection
+// PL source: lines 29-46 of test_strategies.txt
+//
+// Conversion notes:
+//   RSI(Close, 14)             → ta.rsi(close, 14)
+//   AvgTrueRange(14)           → ta.atr(14)
+//   MarketPosition = 0         → strategy.position_size == 0
+//   MarketPosition = 1         → strategy.position_size > 0
+//   EntryPrice                 → strategy.position_avg_price
+//   Sell ... at stopPx Stop    → strategy.exit() with stop= parameter
+//   Sell ... at Market (target)→ strategy.close()
+//
+//   PL position-transition pattern (prevMP) has no direct Pine equivalent;
+//   equivalent logic is shown via strategy.position_size change detection.
+// =============================================================================
+//@version=5
+strategy("S2 RSI + ATR Stop", overlay=true)
+
+rsiVal = ta.rsi(close, 14)
+atrVal = ta.atr(14)
+
+// Converted from: If MarketPosition <> prevMP Then Value1 = MarketPosition
+// Pine equivalent: detect position change via prev_pos variable
+var float prevPos = 0.0
+if strategy.position_size != prevPos
+    prevPos := strategy.position_size  // position just changed
+
+// Converted from: If MarketPosition = 0 and rsiVal < 30 Then Buy ("S2_LE") ...
+if strategy.position_size == 0 and rsiVal < 30
+    strategy.entry("S2_LE", strategy.long)
+
+// Converted from: If MarketPosition = 1 Then Begin
+//                     stopPx = EntryPrice - 2 * atrVal
+//                     Sell ("S2_STP") ... at stopPx Stop
+//                     If rsiVal > 70 Then Sell ("S2_TGT") ... at Market
+//                 End
+if strategy.position_size > 0
+    stopPx = strategy.position_avg_price - 2 * atrVal
+    // ATR stop exit — converted from Sell ("S2_STP") at stopPx Stop
+    strategy.exit("S2_STP", from_entry="S2_LE", stop=stopPx)
+    // RSI overbought exit — converted from Sell ("S2_TGT") at Market
+    if rsiVal > 70
+        strategy.close("S2_LE", comment="S2_TGT")
+// END STRATEGY 2
+// =============================================================================
+
+
+// =============================================================================
+// STRATEGY 3 — Bollinger Band Breakout + Volume Filter
+// PL source: lines 51-65 of test_strategies.txt
+//
+// Conversion notes:
+//   BollingerBand(Close, 20,  2) → upper band from ta.bb(close, 20, 2)
+//   BollingerBand(Close, 20, -2) → lower band from ta.bb(close, 20, 2)
+//     ta.bb returns [middle, upper, lower]; PL's ±2 calls map to the same
+//     ta.bb call — upper and lower are both included in the tuple.
+//   Average(Volume, 20)          → ta.sma(volume, 20)
+//   Buy ... at Market            → strategy.entry("S3_LE", strategy.long)
+//   SellShort ... at Market      → strategy.entry("S3_SE", strategy.short)
+//   Sell ... at lowerBB Stop     → strategy.exit() with stop=lowerBB
+//   BuyToCover ... at upperBB Stop→ strategy.exit() with stop=upperBB
+// =============================================================================
+//@version=5
+strategy("S3 BB Breakout + Volume", overlay=true)
+
+// Converted from: BollingerBand(Close, 20, 2) / BollingerBand(Close, 20, -2)
+// ta.bb returns a tuple [middle, upper, lower]
+[bbMiddle, upperBB, lowerBB] = ta.bb(close, 20, 2)
+
+// Converted from: volAvg = Average(Volume, 20)
+volAvg = ta.sma(volume, 20)
+
+// Converted from: If Close > upperBB and Volume > volAvg * 1.5 Then Buy ...
+if close > upperBB and volume > volAvg * 1.5
+    strategy.entry("S3_LE", strategy.long)
+
+// Converted from: If Close < lowerBB and Volume > volAvg * 1.5 Then SellShort ...
+if close < lowerBB and volume > volAvg * 1.5
+    strategy.entry("S3_SE", strategy.short)
+
+// Converted from: If MarketPosition = 1 Then Sell ("S3_LX") ... at lowerBB Stop
+// strategy.exit stop= accepts a price level directly
+if strategy.position_size > 0
+    strategy.exit("S3_LX", from_entry="S3_LE", stop=lowerBB)
+
+// Converted from: If MarketPosition = -1 Then BuyToCover ("S3_SX") ... at upperBB Stop
+if strategy.position_size < 0
+    strategy.exit("S3_SX", from_entry="S3_SE", stop=upperBB)
+
+plot(upperBB, color=color.red,   title="Upper BB")
+plot(lowerBB, color=color.green, title="Lower BB")
+plot(bbMiddle, color=color.gray, title="BB Middle")
+// END STRATEGY 3
+// =============================================================================
+
+
+// =============================================================================
+// STRATEGY 4 — Multi-Indicator + Risk Management
+// PL source: lines 70-81 of test_strategies.txt
+//
+// Conversion notes:
+//   ADX(14)                    → ta.dmi(14, 14) returns [diplus, diminus, adxValue]
+//   CCI(20)                    → ta.cci(close, 20)
+//   crosses over -100          → ta.crossover(cciVal, -100)
+//   crosses under 100          → ta.crossunder(cciVal, 100)
+//   SetStopLoss(500)           → strategy.exit() with loss= in points
+//                                Dollar amount → points: 500 / syminfo.pointvalue
+//   SetProfitTarget(1000)      → strategy.exit() with profit= in points
+//                                Dollar amount → points: 1000 / syminfo.pointvalue
+//   SetBreakEven(200)          → NO direct Pine equivalent.
+//                                Approximation: trail_offset or manual logic.
+//                                Commented-out placeholder is provided below.
+// =============================================================================
+//@version=5
+strategy("S4 Multi-Indicator + Risk Mgmt", overlay=true)
+
+// Converted from: adxVal = ADX(14)
+// ta.dmi(diLength, adxSmoothing) → [diplus, diminus, adxValue]
+[diPlus, diMinus, adxVal] = ta.dmi(14, 14)
+
+// Converted from: cciVal = CCI(20)
+cciVal = ta.cci(close, 20)
+
+// Dollar-to-points conversion (mirrors PL's SetStopLoss/SetProfitTarget dollar amounts)
+stopLossPoints   = 500  / syminfo.pointvalue   // PL: SetStopLoss(500)
+profitTgtPoints  = 1000 / syminfo.pointvalue   // PL: SetProfitTarget(1000)
+// breakEvenPoints = 200 / syminfo.pointvalue  // PL: SetBreakEven(200) — see note below
+
+// Converted from: If adxVal > 25 and cciVal crosses over -100 Then Buy ("S4_LE") ...
+if adxVal > 25 and ta.crossover(cciVal, -100)
+    strategy.entry("S4_LE", strategy.long)
+    // Apply stop-loss and profit-target (replaces SetStopLoss / SetProfitTarget)
+    strategy.exit("S4_LE_exit", from_entry="S4_LE",
+                  loss=stopLossPoints, profit=profitTgtPoints)
+    // NOTE: SetBreakEven(200) has no built-in Pine equivalent.
+    // A manual approach would track entry bar and move stop to entry price
+    // once unrealised profit >= breakEvenPoints, implemented with var variables.
+
+// Converted from: If adxVal > 25 and cciVal crosses under 100 Then SellShort ("S4_SE") ...
+if adxVal > 25 and ta.crossunder(cciVal, 100)
+    strategy.entry("S4_SE", strategy.short)
+    strategy.exit("S4_SE_exit", from_entry="S4_SE",
+                  loss=stopLossPoints, profit=profitTgtPoints)
+// END STRATEGY 4
+// =============================================================================
+
+
+// =============================================================================
+// STRATEGY 5 — Multi-Data Regime Filter
+// PL source: lines 87-93 of test_strategies.txt
+//
+// Conversion notes:
+//   Close of data2              → request.security(syminfo.tickerid, "D", close)
+//                                 PL "data2" is a second data feed; the closest
+//                                 Pine equivalent is requesting a higher timeframe
+//                                 (daily used here as a representative example).
+//   Average(Close of data2, 50) → request.security(..., ta.sma(close, 50))
+//                                 Calculated inside the security() call to avoid
+//                                 repainting; barmerge.lookahead_off is the default.
+//   RSI(Close, 14) < 30         → ta.rsi(close, 14) < 30  (data1 / current chart)
+//   Buy ... at Market           → strategy.entry("S5_LE", strategy.long)
+//   Sell ... at Market          → strategy.close("S5_LE")
+// =============================================================================
+//@version=5
+strategy("S5 Multi-Data Regime Filter", overlay=true)
+
+// Converted from: Close of data2
+// Using the same ticker on the Daily timeframe as a proxy for PL's data2.
+// Replace syminfo.tickerid / "D" with the actual regime instrument / timeframe.
+dailyClose = request.security(syminfo.tickerid, "D", close,
+                              lookahead=barmerge.lookahead_off)
+
+// Converted from: Average(Close of data2, 50)
+// SMA is computed inside request.security to prevent lookahead bias.
+dailySMA50 = request.security(syminfo.tickerid, "D", ta.sma(close, 50),
+                              lookahead=barmerge.lookahead_off)
+
+// Current-chart RSI (data1 in PL)
+rsiVal = ta.rsi(close, 14)
+
+// Converted from:
+//   If Close of data2 > Average(Close of data2, 50) Then Begin
+//       If RSI(Close, 14) < 30 Then Buy ("S5_LE") ...
+//   End
+if dailyClose > dailySMA50 and rsiVal < 30
+    strategy.entry("S5_LE", strategy.long)
+
+// Converted from: If MarketPosition = 1 and RSI(Close, 14) > 70 Then Sell ("S5_LX") ...
+if strategy.position_size > 0 and rsiVal > 70
+    strategy.close("S5_LE", comment="S5_LX")
+
+plot(dailySMA50, color=color.purple, title="Daily SMA 50 (regime)")
+// END STRATEGY 5
+// =============================================================================
