@@ -1,0 +1,86 @@
+{ test_pl_from_pine.txt -- PL conversions of Pine Script strategies }
+{ Paste this whole file into a new Signal study in PowerLanguage Editor and Verify (F3). }
+{ Expected: 0 errors, 0 warnings. }
+
+Variables:
+    emaFast(0), emaSlow(0),
+    rsiVal(0), atrVal(0), stopPx(0),
+    bbUp(0), bbLow(0);
+
+If False Then Begin
+
+    { ================================================================ }
+    { === Strategy 1: EMA Crossover === }
+    { Pine: ta.ema(close, 9) / ta.ema(close, 21) }
+    { Pine: ta.crossover / ta.crossunder }
+    { Pine: strategy.entry(strategy.long) / strategy.close() }
+    { ================================================================ }
+
+    { Pine: emaFast = ta.ema(close, 9) }
+    emaFast = XAverage(Close, 9);
+
+    { Pine: emaSlow = ta.ema(close, 21) }
+    emaSlow = XAverage(Close, 21);
+
+    { Pine: if ta.crossover(emaFast, emaSlow) => strategy.entry("P1_LE", strategy.long) }
+    If emaFast crosses over emaSlow Then
+        Buy ("P1_LE") 1 Contract Next Bar at Market;
+
+    { Pine: if ta.crossunder(emaFast, emaSlow) => strategy.close("P1_LE") }
+    If emaFast crosses under emaSlow Then
+        Sell ("P1_LX") 1 Contract Next Bar at Market;
+
+    { ================================================================ }
+    { === Strategy 2: RSI Mean Reversion === }
+    { Pine: ta.rsi(close, 14) }
+    { Pine: strategy.position_size == 0 / > 0 / < 0 }
+    { Pine: strategy.entry / strategy.close }
+    { ================================================================ }
+
+    { Pine: rsiVal = ta.rsi(close, 14) }
+    rsiVal = RSI(Close, 14);
+
+    { Pine: if strategy.position_size == 0 and rsiVal < 30 => strategy.entry("P2_LE", strategy.long) }
+    If MarketPosition = 0 And rsiVal < 30 Then
+        Buy ("P2_LE") 1 Contract Next Bar at Market;
+
+    { Pine: if strategy.position_size == 0 and rsiVal > 70 => strategy.entry("P2_SE", strategy.short) }
+    If MarketPosition = 0 And rsiVal > 70 Then
+        SellShort ("P2_SE") 1 Contract Next Bar at Market;
+
+    { Pine: if strategy.position_size > 0 and rsiVal > 50 => strategy.close("P2_LE") }
+    If MarketPosition = 1 And rsiVal > 50 Then
+        Sell ("P2_LX") 1 Contract Next Bar at Market;
+
+    { Pine: if strategy.position_size < 0 and rsiVal < 50 => strategy.close("P2_SE") }
+    If MarketPosition = -1 And rsiVal < 50 Then
+        BuyToCover ("P2_SX") 1 Contract Next Bar at Market;
+
+    { ================================================================ }
+    { === Strategy 3: BB + ATR Trailing Stop === }
+    { Pine: ta.bb(close, 20, 2) for upper / lower bands }
+    { Pine: ta.atr(14) }
+    { Pine: strategy.position_avg_price => EntryPrice }
+    { Pine: strategy.exit with stop => Sell at stop price }
+    { ================================================================ }
+
+    { Pine: [_, upper, _] = ta.bb(close, 20, 2) => upper band }
+    bbUp = BollingerBand(Close, 20, 2);
+
+    { Pine: [_, _, lower] = ta.bb(close, 20, 2) => lower band (PL uses negative deviation) }
+    bbLow = BollingerBand(Close, 20, -2);
+
+    { Pine: atrVal = ta.atr(14) }
+    atrVal = AvgTrueRange(14);
+
+    { Pine: if close > upper and strategy.position_size == 0 => strategy.entry("P3_LE", strategy.long) }
+    If Close > bbUp And MarketPosition = 0 Then
+        Buy ("P3_LE") 1 Contract Next Bar at Market;
+
+    { Pine: if strategy.position_size > 0 => strategy.exit("P3_STP", stop = strategy.position_avg_price - 2*atrVal) }
+    If MarketPosition = 1 Then Begin
+        stopPx = EntryPrice - 2 * atrVal;
+        Sell ("P3_STP") 1 Contract Next Bar at stopPx Stop;
+    End;
+
+End;
