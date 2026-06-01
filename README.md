@@ -1,12 +1,12 @@
 # multicharts-powerlanguage
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.1.3-blue.svg)](https://github.com/KasperChenGH/multicharts-powerlanguage)
+[![Version](https://img.shields.io/badge/version-0.2.0-blue.svg)](https://github.com/KasperChenGH/multicharts-powerlanguage)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude_Code-plugin-blueviolet.svg)](https://github.com/KasperChenGH/multicharts-powerlanguage)
 
 A public Claude Code plugin for [MultiCharts](https://www.multicharts.com/) PowerLanguage — gives Claude expert knowledge of the language used to write Indicators, Signals, and Functions. Works on Windows, macOS, and Linux.
 
-**947 keywords · 64 compile-verified functions · 3 auto-activating skills**
+**947 keywords · 64 compile-verified functions · 5 auto-activating skills · Pine Script reference · bidirectional conversion**
 
 ## Example
 
@@ -35,13 +35,27 @@ If MyRSI Crosses Above Overbought Then
 SetStopLoss(StopLossPct * 0.01 * EntryPrice);
 ```
 
+## Conversion Example
+
+**PowerLanguage input:**
+```
+Buy ("Entry") 1 Contract Next Bar at Market;
+```
+
+**Converted to Pine Script:**
+```pine
+strategy.entry("Entry", strategy.long, qty=1)
+```
+
 ## What's inside
 
-Three skills that auto-activate based on what you're asking Claude to do:
+Five skills that auto-activate based on what you're asking Claude to do:
 
 - **`multicharts-fundamentals`** — what MultiCharts is, when to use which script type (Indicator / Signal / Function), the execution model, multi-data series, order keywords, and the unique-signal-name compile rule.
 - **`powerlanguage-syntax`** — declarations, the `begin/end` semicolon rule, control flow, bar references, operators, comments, built-in trade-state variables, 64 compile-verified built-in function signatures (Average, RSI, Stochastic, ADX, DirMovement, …), and code-generation gotchas (variable-name collisions with functions, single-letter aliases, loop-counter declarations, Length-only function signatures, order syntax).
 - **`powerlanguage-keywords-reference`** — a categorized reference covering 947 official PowerLanguage keywords (40 categories from MultiCharts's own help system). Each keyword has signature, parameters, a paraphrased description, and a link to the official wiki page.
+- **`pinescript-reference`** — TradingView Pine Script syntax, type system, built-in namespaces (`ta.*`, `strategy.*`, `request.*`, `math.*`, `str.*`, `array.*`), plotting, control flow, user-defined functions/types, and common gotchas (repainting, `na` handling, series vs simple context).
+- **`powerlanguage-pinescript-conversion`** — bidirectional code conversion between PowerLanguage and Pine Script with concept mapping tables, semantic difference documentation (Sell ≠ short, dollar vs price stops, multi-data vs request.security), and pre/post-conversion checklists.
 
 ## Install (Claude Code)
 
@@ -50,11 +64,11 @@ Three skills that auto-activate based on what you're asking Claude to do:
 /plugin install multicharts-powerlanguage@multicharts-powerlanguage-dev
 ```
 
-After install, the three skills auto-trigger when relevant. You don't have to invoke them manually — when you ask Claude something about MultiCharts or PowerLanguage, the right skill activates.
+After install, the five skills auto-trigger when relevant. You don't have to invoke them manually — when you ask Claude something about MultiCharts, PowerLanguage, or Pine Script, the right skill activates.
 
 ## Verifying keyword signatures (maintainer only)
 
-The `tests/` directory contains 9 plain-text PowerLanguage source files that exercise keywords and code patterns inside unreachable `If False Then Begin … End;` blocks — so the compiler verifies syntax without executing anything. They are NOT `.pla` archives; they cannot be imported via File → Import.
+The `tests/` directory contains 11 plain-text PowerLanguage source files that exercise keywords and code patterns inside unreachable `If False Then Begin … End;` blocks — so the compiler verifies syntax without executing anything. They are NOT `.pla` archives; they cannot be imported via File → Import.
 
 | File | Study type | What it covers |
 |---|---|---|
@@ -67,6 +81,8 @@ The `tests/` directory contains 9 plain-text PowerLanguage source files that exe
 | `test_declarations.txt` | Signal | Inputs, Variables, Arrays, IntraBarPersist, multi-data, Value1–99 |
 | `test_plotting.txt` | Indicator | Plot1–4, SetPlotColor/Width/Style, TL/Text/Arw drawing |
 | `test_strategies.txt` | Signal | 5 mini-strategies combining indicators, conditions, and orders |
+| `test_pine_from_pl.txt` | Pine Script | 5 strategies converted from PL |
+| `test_pl_from_pine.txt` | Signal | 3 strategies converted from Pine Script |
 
 To run the compile-test, for each file:
 

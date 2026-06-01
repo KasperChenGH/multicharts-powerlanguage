@@ -1,12 +1,12 @@
 {
   "name": "multicharts-powerlanguage-dev",
-  "description": "MultiCharts PowerLanguage skills marketplace",
+  "description": "MultiCharts PowerLanguage and TradingView Pine Script skills marketplace",
   "owner": { "name": "Yu-An Chen" },
   "plugins": [
     {
       "name": "multicharts-powerlanguage",
-      "description": "MultiCharts PowerLanguage skills for Claude: fundamentals, syntax, and keywords reference.",
-      "version": "0.1.3",
+      "description": "MultiCharts PowerLanguage and TradingView Pine Script skills for Claude: fundamentals, syntax, keywords reference, Pine Script reference, and bidirectional code conversion.",
+      "version": "0.2.0",
       "source": "./"
     }
   ]
