@@ -6,7 +6,7 @@
     {
       "name": "multicharts-powerlanguage",
       "description": "MultiCharts PowerLanguage skills for Claude: fundamentals, syntax, and keywords reference.",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "source": "./"
     }
   ]
