@@ -383,6 +383,10 @@ plot(hist,        "Histogram", color = color.gray, style = plot.style_histogram)
 plot(st_value, "Supertrend", color = st_direction < 0 ? color.green : color.red)
 ```
 
+| Function | Signature | Returns |
+|---|---|---|
+| `ta.dmi` | `ta.dmi(diLength, adxSmoothing)` | `[diPlus, diMinus, adxValue]` tuple |
+
 > **Gotcha — no `ta.adx()`.** Pine has no standalone ADX function. Use `ta.dmi()` which returns a three-value tuple:
 > ```pine
 > [di_plus, di_minus, adx_val] = ta.dmi(14, 14)
@@ -489,7 +493,7 @@ if ta.crossunder(fast, slow)
 // Closes every open position immediately
 // strategy.close_all()
 
-// --- strategy.exit(id, from_entry, stop?, limit?, trail_price?, trail_offset?, loss?, profit?)
+// --- strategy.exit(id, from_entry, qty, qty_percent, profit, loss, limit, stop, trail_price, trail_points, trail_offset, comment)
 // Attach a bracket order to an open entry
 strategy.exit("Long Exit", from_entry = "Long",
               stop   = close * 0.98,   // stop-loss 2% below entry bar close

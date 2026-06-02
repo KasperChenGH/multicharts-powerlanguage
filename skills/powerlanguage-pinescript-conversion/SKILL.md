@@ -51,7 +51,7 @@ This skill covers the structural and semantic differences between MultiCharts Po
 | `Average(Close, Length)` | `ta.sma(close, length)` | Direct equivalent |
 | `XAverage(Close, Length)` | `ta.ema(close, length)` | Direct equivalent |
 | `RSI(Close, Length)` | `ta.rsi(close, length)` | Direct equivalent |
-| `Stochastic(Close, High, Low, Length, 1, 3, 0, 0, 0, 0, 0)` | `ta.stoch(high, low, close, length)` | PL takes 11 params including smoothing; Pine returns raw %K only — %D must be smoothed manually |
+| `Stochastic(Close, High, Low, Length, 1, 3, 0, 0, 0, 0, 0)` | `ta.stoch(close, high, low, length)` | PL takes 11 params including smoothing; Pine returns raw %K only — %D must be smoothed manually |
 | `ADX(Length)` | `[diplus, diminus, adx] = ta.dmi(length, length)` | Pine `ta.dmi` returns a 3-tuple; destructure before use |
 | `CCI(Close, Length)` | `ta.cci(close, length)` | Direct equivalent (note argument order differs from some PL references) |
 | `AvgTrueRange(Length)` | `ta.atr(length)` | Direct equivalent |
