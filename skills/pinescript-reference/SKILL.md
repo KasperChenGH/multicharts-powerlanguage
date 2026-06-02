@@ -1585,3 +1585,22 @@ plot(mid, "Mid (live, ticks)")
 ```
 
 **Contrast with PowerLanguage:** In MultiCharts, `CalcAtMarketClose` and `CalcOnTick` are explicit per-indicator settings that the user controls from the Properties dialog. In Pine, the behavior is always: once per historical bar at close, every tick on the live bar — with no per-indicator switch to change it. To suppress intra-bar noise, gate your logic with `if barstate.isconfirmed`.
+
+### Gotcha 7 — History-referencing functions must be called at global scope
+
+Functions that track state across bars — `ta.crossover()`, `ta.crossunder()`, `ta.change()`, `ta.pivothigh()`, `ta.pivotlow()`, `ta.barssince()`, `ta.valuewhen()` — must be called on **every bar** to maintain correct internal state. Calling them inside a conditional block (e.g. inside `if strategy.position_size > 0`) means they only execute on some bars, producing incorrect results and a compiler warning.
+
+```pine
+// BAD — called inside a conditional scope, triggers warning:
+// "The function 'ta.crossunder' should be called on each calculation for consistency"
+if strategy.position_size > 0
+    if ta.crossunder(macdLine, signalLine)  // only runs when in a position
+        strategy.close("LE")
+
+// GOOD — call at global scope, use the result inside the condition
+macdCrossDown = ta.crossunder(macdLine, signalLine)  // runs every bar
+if strategy.position_size > 0 and macdCrossDown
+    strategy.close("LE")
+```
+
+This applies to any `ta.*` function that uses historical comparison. Extract the call to a variable at the top level, then reference the variable inside your conditions.

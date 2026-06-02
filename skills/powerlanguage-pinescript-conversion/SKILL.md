@@ -138,7 +138,9 @@ This skill covers the structural and semantic differences between MultiCharts Po
 
 9. **PowerLanguage Functions (.elf files) must become Pine user-defined functions or libraries.** A PL `.elf` (EasyLanguage Function) is a reusable calculation unit compiled separately and called from indicators or strategies. In Pine, the equivalent is either a user-defined function defined with `f_name(params) =>` syntax within the same script, or a published Pine library imported with `import`. There is no separate compilation step in Pine.
 
-10. **Value1..Value99 and Condition1..Condition99 must be renamed.** These PL numbered built-ins have no Pine counterpart. Every occurrence must be replaced with a descriptive typed variable (`var float`, `var bool`, or a plain expression). Do not carry over numbers as Pine variable names — names like `val1` are legal but `Value1` in a Pine context is just an undefined identifier that will cause a compile error.
+10. **History-referencing functions must be called at global scope in Pine.** In PL, `Crosses Over` / `Crosses Under` can appear inside any `If` block without issue. In Pine, `ta.crossover()`, `ta.crossunder()`, `ta.change()`, `ta.pivothigh()`, `ta.pivotlow()`, and similar functions must be called on every bar at the global scope to maintain correct internal state. Calling them inside a conditional block (e.g. `if strategy.position_size > 0`) produces a compiler warning and potentially incorrect results. Extract the call to a variable at the top level, then use that variable inside conditions.
+
+11. **Value1..Value99 and Condition1..Condition99 must be renamed.** These PL numbered built-ins have no Pine counterpart. Every occurrence must be replaced with a descriptive typed variable (`var float`, `var bool`, or a plain expression). Do not carry over numbers as Pine variable names — names like `val1` are legal but `Value1` in a Pine context is just an undefined identifier that will cause a compile error.
 
 ---
 
@@ -163,6 +165,7 @@ This skill covers the structural and semantic differences between MultiCharts Po
 - [ ] Dollar-based stop/target amounts converted to price levels in all `strategy.exit()` calls
 - [ ] `Value1..Value99` and `Condition1..Condition99` renamed to typed Pine variables
 - [ ] Stochastic %D smoothing replicated manually if the original strategy used the smoothed line
+- [ ] All `ta.crossover()`, `ta.crossunder()`, and other history-referencing functions called at global scope, not inside conditional blocks
 - [ ] Strategy compiled and back-tested on the same instrument and date range as the PL original; trade count and net P&L should be in the same order of magnitude
 
 ### Pine → PL Pre-Conversion
