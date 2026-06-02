@@ -148,6 +148,7 @@ This skill covers the structural and semantic differences between MultiCharts Po
 
 ### PL → Pine Pre-Conversion
 
+- [ ] Target `//@version=5` for all conversions — v5 is the proven baseline; v6 may require additional syntax adjustments
 - [ ] List every `Inputs:` declaration; note the type (numeric / string / bool) and default value so each can be mapped to the correct `input.*()` function
 - [ ] Identify all `Data2` / `Data3` references; confirm what symbol and timeframe each feed represents so `request.security()` calls can be written correctly
 - [ ] Locate all `SetStopLoss`, `SetProfitTarget`, and dollar-based order parameters; note the instrument's point value for the price-level conversion

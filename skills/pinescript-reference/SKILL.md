@@ -43,7 +43,7 @@ indicator("My Indicator")
 | `UDT` (user-defined types) | Available | Extended — methods can be attached directly to types |
 | `import` libraries | Available | Available; v6 libraries can export methods |
 
-**Practical rule:** Use `//@version=5` for broad compatibility with existing examples and documentation. Use `//@version=6` when you need `chart.point`, `polyline`, or the extended UDT method syntax.
+**Version target:** All examples in this skill use `//@version=5`. TradingView may show a deprecation warning recommending v6 — this is non-blocking and the code compiles and runs correctly. v6 introduces syntax changes that may require adjustments; test on v6 separately if needed.
 
 ---
 
