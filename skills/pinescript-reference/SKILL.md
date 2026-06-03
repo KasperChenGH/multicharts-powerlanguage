@@ -4,13 +4,13 @@ description: >-
   Use when reading or writing TradingView Pine Script code — covers versioning
   (@version=5, @version=6), type system (series, simple, input, const),
   declarations (var, varip, input.*), built-in namespaces (ta.*, math.*, str.*,
-  strategy.*, request.*, array.*, color.*), plotting (plot, plotshape, bgcolor),
-  strategy functions (strategy.entry, strategy.exit, strategy.close),
-  multi-timeframe via request.security(), control flow (if/else, for, while,
-  switch, ternary), user-defined functions/types/methods, and common gotchas
-  (repainting, na handling, series vs simple context, max_bars_back,
-  global-scope function calls). Does not cover: map.*, matrix.*, table.*,
-  line.*, box.*, label.* drawing APIs, or Pine Script v6-specific syntax.
+  strategy.*, request.*, array.*, color.*, label.*, line.*, box.*, table.*,
+  map.*, matrix.*, log.*), alerts (alert, alertcondition), plotting (plot,
+  plotshape, bgcolor), strategy functions (strategy.entry, strategy.exit,
+  strategy.close), multi-timeframe via request.security(), control flow
+  (if/else, for, while, switch, ternary), user-defined functions/types/methods,
+  and common gotchas (repainting, na handling, series vs simple context,
+  max_bars_back, global-scope function calls, drawing object limits).
 ---
 
 # Pine Script Reference
@@ -803,6 +803,788 @@ bar_col  = rsi > 70 ? color.new(color.red, 20)
 
 bgcolor(bar_col, title = "RSI zone background")
 ```
+
+---
+
+### label.* — Labels
+
+Labels attach text annotations to specific chart coordinates. Each label is an object created by `label.new()` and modified via setter functions.
+
+#### Constructor
+
+```pine
+label.new(
+    x,                   // bar index (int) or timestamp if xloc = xloc.bar_time
+    y,                   // price level (float)
+    text         = "",
+    xloc         = xloc.bar_index,
+    yloc         = yloc.price,
+    color        = color.blue,
+    style        = label.style_label_down,
+    textcolor    = color.white,
+    size         = size.normal,
+    textalign    = text.align_center,
+    tooltip      = "",
+    text_font_family = font.family_default
+)
+```
+
+#### Setter functions
+
+| Function | What it changes |
+|---|---|
+| `label.set_x(id, x)` | Bar index or timestamp |
+| `label.set_y(id, y)` | Price level |
+| `label.set_xy(id, x, y)` | Position in one call |
+| `label.set_text(id, text)` | Label text string |
+| `label.set_color(id, color)` | Label background/border color |
+| `label.set_textcolor(id, color)` | Text color |
+| `label.set_style(id, style)` | Label style constant |
+| `label.set_size(id, size)` | Text/marker size |
+| `label.set_textalign(id, align)` | Text alignment within label |
+| `label.set_tooltip(id, tooltip)` | Tooltip text on hover |
+| `label.set_text_font_family(id, family)` | Font family |
+| `label.set_xloc(id, x, xloc)` | X coordinate and its type |
+| `label.set_yloc(id, yloc)` | Y positioning mode |
+
+#### Getter functions
+
+| Function | Returns |
+|---|---|
+| `label.get_x(id)` | `series int` — current x (bar index or timestamp) |
+| `label.get_y(id)` | `series float` — current y (price) |
+| `label.get_text(id)` | `series string` — current text |
+
+#### Other functions
+
+| Function | Description |
+|---|---|
+| `label.copy(id)` | Creates a copy of a label and returns the new id |
+| `label.delete(id)` | Removes the label from the chart |
+| `label.all` | `array<label>` — every label currently on the chart |
+
+#### `label.style_*` constants
+
+| Constant | Appearance |
+|---|---|
+| `label.style_label_down` | Callout box pointing downward (default) |
+| `label.style_label_up` | Callout box pointing upward |
+| `label.style_label_left` | Callout box pointing left |
+| `label.style_label_right` | Callout box pointing right |
+| `label.style_label_lower_left` | Callout pointing to lower-left |
+| `label.style_label_lower_right` | Callout pointing to lower-right |
+| `label.style_label_upper_left` | Callout pointing to upper-left |
+| `label.style_label_upper_right` | Callout pointing to upper-right |
+| `label.style_label_center` | Centered box with no pointer |
+| `label.style_circle` | Filled circle |
+| `label.style_cross` | Plus sign |
+| `label.style_xcross` | X mark |
+| `label.style_diamond` | Diamond shape |
+| `label.style_flag` | Flag marker |
+| `label.style_square` | Filled square |
+| `label.style_triangleup` | Upward-pointing triangle |
+| `label.style_triangledown` | Downward-pointing triangle |
+| `label.style_arrowup` | Arrow pointing up |
+| `label.style_arrowdown` | Arrow pointing down |
+| `label.style_none` | Invisible — text only, no marker |
+| `label.style_text_outline` | Text with an outline border, no background box |
+
+#### Supporting constants
+
+| Group | Values |
+|---|---|
+| `size.*` | `size.auto`, `size.tiny`, `size.small`, `size.normal`, `size.large`, `size.huge` |
+| `xloc.*` | `xloc.bar_index` (default), `xloc.bar_time` |
+| `yloc.*` | `yloc.price` (default), `yloc.abovebar`, `yloc.belowbar` |
+| `text.align_*` | `text.align_left`, `text.align_center`, `text.align_right` |
+
+> **Gotcha — label count limit:** By default a script can display at most **50 labels** simultaneously. Older labels are automatically deleted as new ones are created past the limit. To raise the cap, pass `max_labels_count = 500` in the `indicator()` or `strategy()` declaration (maximum 500).
+
+#### Example
+
+```pine
+//@version=5
+indicator("Label example", overlay = true, max_labels_count = 500)
+
+rsi = ta.rsi(close, 14)
+
+// Create a label whenever RSI crosses above 70
+if ta.crossover(rsi, 70)
+    label.new(
+        x         = bar_index,
+        y         = high,
+        text      = "OB " + str.tostring(math.round(rsi, 1)),
+        style     = label.style_label_down,
+        color     = color.new(color.red, 20),
+        textcolor = color.white,
+        size      = size.small
+    )
+
+// Update a persistent label on the most recent bar
+var label info_lbl = na
+if barstate.islast
+    if na(info_lbl)
+        info_lbl := label.new(bar_index, high, "", style = label.style_label_left)
+    label.set_xy(info_lbl, bar_index, high)
+    label.set_text(info_lbl, "RSI: " + str.tostring(math.round(rsi, 1)))
+```
+
+---
+
+### line.* — Lines
+
+Lines draw a segment (or ray) between two chart coordinates. They are independent drawing objects managed via the `line.*` namespace.
+
+#### Constructor
+
+```pine
+line.new(
+    x1,                       // start bar index (int) or timestamp
+    y1,                       // start price (float)
+    x2,                       // end bar index (int) or timestamp
+    y2,                       // end price (float)
+    xloc   = xloc.bar_index,
+    extend = extend.none,
+    color  = color.blue,
+    style  = line.style_solid,
+    width  = 1
+)
+```
+
+#### Setter and getter functions
+
+| Function | Description |
+|---|---|
+| `line.set_x1(id, x)` | Move the start x coordinate |
+| `line.set_y1(id, y)` | Move the start y coordinate |
+| `line.set_x2(id, x)` | Move the end x coordinate |
+| `line.set_y2(id, y)` | Move the end y coordinate |
+| `line.set_xy1(id, x, y)` | Set start point in one call |
+| `line.set_xy2(id, x, y)` | Set end point in one call |
+| `line.set_color(id, color)` | Change line color |
+| `line.set_style(id, style)` | Change line style |
+| `line.set_width(id, width)` | Change line width in pixels |
+| `line.set_extend(id, extend)` | Change extend mode |
+| `line.set_xloc(id, x1, x2, xloc)` | Change both x values and xloc type |
+| `line.get_x1(id)` | Returns start x |
+| `line.get_y1(id)` | Returns start y |
+| `line.get_x2(id)` | Returns end x |
+| `line.get_y2(id)` | Returns end y |
+| `line.get_price(id, x)` | Price on the line at bar index `x` (interpolated) |
+| `line.copy(id)` | Duplicate the line |
+| `line.delete(id)` | Remove the line |
+| `line.all` | `array<line>` — all currently visible lines |
+
+#### `line.style_*` constants
+
+| Constant | Appearance |
+|---|---|
+| `line.style_solid` | Continuous solid line |
+| `line.style_dashed` | Dashed line |
+| `line.style_dotted` | Dotted line |
+| `line.style_arrow_left` | Arrow head at the left (start) end |
+| `line.style_arrow_right` | Arrow head at the right (end) end |
+| `line.style_arrow_both` | Arrow heads at both ends |
+
+#### `extend.*` constants
+
+| Constant | Description |
+|---|---|
+| `extend.none` | Line drawn only between x1 and x2 |
+| `extend.left` | Ray extending infinitely to the left of x1 |
+| `extend.right` | Ray extending infinitely to the right of x2 |
+| `extend.both` | Full infinite line through both points |
+
+> **Gotcha — line count limit:** Default maximum is **50 lines**. Raise to up to 500 with `max_lines_count = 500` in the script declaration.
+
+#### Example
+
+```pine
+//@version=5
+indicator("Trendline example", overlay = true, max_lines_count = 500)
+
+// Draw a horizontal line at the 20-bar high, updated each bar
+pivot_high = ta.highest(high, 20)
+
+var line resistance = na
+if barstate.islast
+    if not na(resistance)
+        line.delete(resistance)
+    resistance := line.new(
+        x1     = bar_index - 20,
+        y1     = pivot_high,
+        x2     = bar_index,
+        y2     = pivot_high,
+        extend = extend.right,
+        color  = color.new(color.red, 30),
+        style  = line.style_dashed,
+        width  = 2
+    )
+
+// line.get_price() — read the line's price value at a specific bar
+// useful when the line is sloped (different y1 and y2)
+if not na(resistance)
+    price_at_current = line.get_price(resistance, bar_index)
+    bgcolor(close > price_at_current ? color.new(color.green, 90) : na)
+```
+
+---
+
+### box.* — Boxes
+
+Boxes draw filled rectangles between two price levels over a range of bars. They combine a border and a background fill into one object.
+
+#### Constructor
+
+```pine
+box.new(
+    left,                         // left bar index (int) or timestamp
+    top,                          // top price (float)
+    right,                        // right bar index (int) or timestamp
+    bottom,                       // bottom price (float)
+    border_color     = color.blue,
+    border_width     = 1,
+    border_style     = line.style_solid,
+    extend           = extend.none,
+    xloc             = xloc.bar_index,
+    bgcolor          = color.new(color.blue, 90),
+    text             = "",
+    text_size        = size.auto,
+    text_color       = color.black,
+    text_halign      = text.align_center,
+    text_valign      = text.align_center,
+    text_wrap        = text.wrap_none,
+    text_font_family = font.family_default
+)
+```
+
+#### Setter functions
+
+| Function | What it changes |
+|---|---|
+| `box.set_left(id, left)` | Left x boundary |
+| `box.set_top(id, top)` | Top price boundary |
+| `box.set_right(id, right)` | Right x boundary |
+| `box.set_bottom(id, bottom)` | Bottom price boundary |
+| `box.set_lefttop(id, left, top)` | Left and top in one call |
+| `box.set_rightbottom(id, right, bottom)` | Right and bottom in one call |
+| `box.set_border_color(id, color)` | Border color |
+| `box.set_border_width(id, width)` | Border width |
+| `box.set_border_style(id, style)` | Border style (reuses `line.style_*`) |
+| `box.set_bgcolor(id, color)` | Fill color |
+| `box.set_extend(id, extend)` | Extend mode |
+| `box.set_text(id, text)` | Box text |
+| `box.set_text_color(id, color)` | Text color |
+| `box.set_text_size(id, size)` | Text size |
+| `box.set_text_halign(id, align)` | Horizontal text alignment |
+| `box.set_text_valign(id, align)` | Vertical text alignment |
+| `box.set_text_wrap(id, wrap)` | Whether text wraps |
+| `box.set_text_font_family(id, family)` | Font family |
+
+#### Getter functions
+
+| Function | Returns |
+|---|---|
+| `box.get_left(id)` | `series int` — left x |
+| `box.get_top(id)` | `series float` — top price |
+| `box.get_right(id)` | `series int` — right x |
+| `box.get_bottom(id)` | `series float` — bottom price |
+
+#### Other functions
+
+| Function | Description |
+|---|---|
+| `box.copy(id)` | Duplicate the box |
+| `box.delete(id)` | Remove the box |
+| `box.all` | `array<box>` — all visible boxes |
+
+#### Text wrap constants
+
+| Constant | Behavior |
+|---|---|
+| `text.wrap_none` | Text displayed on a single line (may overflow) |
+| `text.wrap_auto` | Text wraps to fit inside the box width |
+
+> **Gotcha — box count limit:** Default maximum is **50 boxes**. Raise to up to 500 with `max_boxes_count = 500` in the script declaration.
+
+#### Example
+
+```pine
+//@version=5
+indicator("Supply/Demand zones", overlay = true, max_boxes_count = 500)
+
+// Draw a box highlighting the prior session's range
+var box session_box = na
+
+is_new_session = ta.change(time("D")) != 0
+
+if is_new_session
+    // Close previous box at the session end bar
+    if not na(session_box)
+        box.set_right(session_box, bar_index - 1)
+
+    // Open a new box starting at this bar
+    session_box := box.new(
+        left         = bar_index,
+        top          = high,
+        right        = bar_index,        // will be extended as the session progresses
+        bottom       = low,
+        border_color = color.new(color.gray, 50),
+        bgcolor      = color.new(color.yellow, 85),
+        text         = "Session",
+        text_size    = size.small,
+        text_color   = color.gray
+    )
+else if not na(session_box)
+    // Expand box boundaries to encompass the full session's range
+    box.set_top(session_box,    math.max(box.get_top(session_box),    high))
+    box.set_bottom(session_box, math.min(box.get_bottom(session_box), low))
+    box.set_right(session_box, bar_index)
+```
+
+---
+
+### table.* — Tables
+
+Tables display text in a fixed grid layout anchored to a corner of the chart pane. Unlike labels, tables do not have price or bar-index coordinates — they are always positioned relative to the visible pane.
+
+#### Constructor
+
+```pine
+table.new(
+    position     = position.top_right,
+    columns      = 2,
+    rows         = 3,
+    bgcolor      = color.new(color.gray, 80),
+    frame_color  = color.gray,
+    frame_width  = 1,
+    border_color = color.gray,
+    border_width = 1
+)
+```
+
+#### Populating and updating cells
+
+```pine
+// table.cell() — define or redefine a single cell (0-based row and column)
+table.cell(
+    table_id,
+    column,
+    row,
+    text          = "",
+    width         = 0,        // 0 = auto-size
+    height        = 0,
+    text_color    = color.black,
+    text_halign   = text.align_center,
+    text_valign   = text.align_center,
+    text_size     = size.normal,
+    bgcolor       = na,
+    tooltip       = "",
+    text_font_family = font.family_default
+)
+```
+
+#### Cell setter functions (partial updates)
+
+| Function | Description |
+|---|---|
+| `table.cell_set_text(id, col, row, text)` | Change the cell text |
+| `table.cell_set_bgcolor(id, col, row, color)` | Change cell background color |
+| `table.cell_set_text_color(id, col, row, color)` | Change cell text color |
+| `table.cell_set_text_size(id, col, row, size)` | Change font size |
+| `table.cell_set_text_halign(id, col, row, align)` | Horizontal text alignment |
+| `table.cell_set_text_valign(id, col, row, align)` | Vertical text alignment |
+| `table.cell_set_width(id, col, row, width)` | Set column width in chars |
+| `table.cell_set_height(id, col, row, height)` | Set row height |
+| `table.cell_set_tooltip(id, col, row, tooltip)` | Hover tooltip |
+
+#### Other table functions
+
+| Function | Description |
+|---|---|
+| `table.merge_cells(id, c1, r1, c2, r2)` | Merge a rectangular range of cells |
+| `table.clear(id, c1, r1, c2, r2)` | Clear content in a cell range |
+| `table.delete(id)` | Remove the table entirely |
+
+#### `position.*` constants
+
+| Constant | Location on pane |
+|---|---|
+| `position.top_left` | Upper-left corner |
+| `position.top_center` | Upper-center |
+| `position.top_right` | Upper-right corner |
+| `position.middle_left` | Mid-left edge |
+| `position.middle_center` | Center of pane |
+| `position.middle_right` | Mid-right edge |
+| `position.bottom_left` | Lower-left corner |
+| `position.bottom_center` | Lower-center |
+| `position.bottom_right` | Lower-right corner |
+
+> **Gotcha — create in `barstate.islast` or with `var`:** Creating a new table with `table.new()` on every bar wastes resources and flickers. Either declare the table with `var` so it is created once and reused, or create it inside `if barstate.islast`. Use `table.cell()` to update content on each bar — calling `table.cell()` on an existing cell redefines all of that cell's properties from scratch.
+
+#### Example
+
+```pine
+//@version=5
+indicator("Stats table", overlay = true)
+
+rsi  = ta.rsi(close, 14)
+fast = ta.ema(close, 9)
+slow = ta.ema(close, 21)
+
+// Create the table once (var ensures it survives across bars)
+var table stats = table.new(
+    position     = position.top_right,
+    columns      = 2,
+    rows         = 4,
+    bgcolor      = color.new(color.black, 60),
+    frame_color  = color.gray,
+    frame_width  = 1,
+    border_color = color.new(color.gray, 50),
+    border_width = 1
+)
+
+// Populate header row once
+if barstate.isfirst
+    table.cell(stats, 0, 0, "Metric",  text_color = color.silver, text_size = size.small)
+    table.cell(stats, 1, 0, "Value",   text_color = color.silver, text_size = size.small)
+
+// Update data rows on every bar
+table.cell(stats, 0, 1, "RSI",       text_color = color.white, text_size = size.small)
+table.cell(stats, 1, 1, str.tostring(math.round(rsi, 2)),
+           text_color = rsi > 70 ? color.red : rsi < 30 ? color.lime : color.white,
+           text_size  = size.small)
+
+table.cell(stats, 0, 2, "EMA 9",     text_color = color.white,  text_size = size.small)
+table.cell(stats, 1, 2, str.tostring(math.round(fast, 2)),
+           text_color = color.orange, text_size = size.small)
+
+table.cell(stats, 0, 3, "Trend",     text_color = color.white,  text_size = size.small)
+table.cell(stats, 1, 3, fast > slow ? "Bullish" : "Bearish",
+           text_color = fast > slow ? color.lime : color.red, text_size = size.small)
+```
+
+---
+
+### map.* — Maps
+
+Maps store key-value pairs with O(1) lookup. They are the Pine equivalent of a dictionary or hash map.
+
+#### Constructor
+
+```pine
+// Generic syntax — specify key and value types explicitly
+map.new<string, float>()   // string keys → float values
+map.new<int, bool>()       // int keys → bool values
+```
+
+Valid key types: `int`, `float`, `bool`, `string`, `color`. Value types can be any Pine type including UDTs.
+
+#### Core functions
+
+| Function | Description |
+|---|---|
+| `map.put(id, key, value)` | Insert or overwrite a key-value pair |
+| `map.put_all(id, other_map)` | Copy all pairs from another map into this one |
+| `map.get(id, key)` | Return the value for a key (`na` if not found) |
+| `map.contains(id, key)` | `bool` — true if the key exists |
+| `map.remove(id, key)` | Delete the entry for a key; returns the removed value |
+| `map.keys(id)` | `array` of all keys in insertion order |
+| `map.values(id)` | `array` of all values in insertion order |
+| `map.size(id)` | `int` — number of key-value pairs |
+| `map.clear(id)` | Remove all entries |
+| `map.copy(id)` | Return a shallow copy of the map |
+
+> **Gotchas:**
+> - Keys are **unique** — inserting an existing key overwrites its value silently.
+> - Maps are **unordered** in terms of retrieval semantics; `map.keys()` returns keys in insertion order but this is an implementation detail.
+> - Maximum **50,000 key-value pairs** per map.
+
+#### Example
+
+```pine
+//@version=5
+indicator("Map example", overlay = false)
+
+// Track the last-seen close price for multiple timeframes
+var map<string, float> tf_closes = map.new<string, float>()
+
+daily  = request.security(syminfo.tickerid, "D",  close)
+weekly = request.security(syminfo.tickerid, "W",  close)
+monthly= request.security(syminfo.tickerid, "M",  close)
+
+map.put(tf_closes, "Daily",   daily)
+map.put(tf_closes, "Weekly",  weekly)
+map.put(tf_closes, "Monthly", monthly)
+
+// Check presence before reading
+if map.contains(tf_closes, "Daily")
+    d = map.get(tf_closes, "Daily")
+    plot(close / d * 100 - 100, "% from daily close")
+
+// Iterate all entries
+if barstate.islast
+    keys = map.keys(tf_closes)
+    for k in keys
+        v = map.get(tf_closes, k)
+        label.new(bar_index, close,
+                  k + ": " + str.tostring(math.round(v, 2)),
+                  style = label.style_label_left, size = size.small)
+```
+
+---
+
+### matrix.* — Matrices
+
+Matrices are two-dimensional typed arrays. They support both element-level access and a rich set of linear algebra operations.
+
+#### Constructor
+
+```pine
+// matrix.new<type>(rows, columns, initial_value)
+m = matrix.new<float>(3, 3, 0.0)   // 3×3 float matrix, all zeros
+```
+
+#### Element access and dimensions
+
+| Function | Description |
+|---|---|
+| `matrix.get(id, row, col)` | Read a single element (0-based indices) |
+| `matrix.set(id, row, col, value)` | Write a single element |
+| `matrix.fill(id, value)` | Set every element to the same value |
+| `matrix.fill(id, value, r1, c1, r2, c2)` | Fill a rectangular subregion |
+| `matrix.row(id, row)` | Extract a row as an `array` |
+| `matrix.col(id, col)` | Extract a column as an `array` |
+| `matrix.rows(id)` | Number of rows |
+| `matrix.columns(id)` | Number of columns |
+| `matrix.elements_count(id)` | Total elements (rows × columns) |
+| `matrix.reshape(id, rows, cols)` | Change dimensions (total element count must stay the same) |
+
+#### Row and column manipulation
+
+| Function | Description |
+|---|---|
+| `matrix.add_row(id, row, array)` | Insert a row at index `row` |
+| `matrix.add_col(id, col, array)` | Insert a column at index `col` |
+| `matrix.remove_row(id, row)` | Delete a row; returns it as an array |
+| `matrix.remove_col(id, col)` | Delete a column; returns it as an array |
+| `matrix.swap_rows(id, r1, r2)` | Swap two rows in place |
+| `matrix.swap_columns(id, c1, c2)` | Swap two columns in place |
+| `matrix.submatrix(id, r1, c1, r2, c2)` | Extract a rectangular sub-matrix |
+| `matrix.reverse(id)` | Reverse element order (flattened, then re-shaped) |
+| `matrix.concat(id, other)` | Append rows of another matrix with same column count |
+
+#### Linear algebra
+
+| Function | Description |
+|---|---|
+| `matrix.transpose(id)` | Returns transposed copy (rows ↔ columns) |
+| `matrix.det(id)` | Determinant (square matrices only) |
+| `matrix.inv(id)` | Inverse matrix (square, non-singular only) |
+| `matrix.pinv(id)` | Moore-Penrose pseudo-inverse |
+| `matrix.rank(id)` | Rank of the matrix |
+| `matrix.trace(id)` | Sum of the main diagonal |
+| `matrix.eigenvalues(id)` | Array of eigenvalues (square matrices only) |
+| `matrix.eigenvectors(id)` | Matrix whose columns are eigenvectors |
+| `matrix.kron(id, other)` | Kronecker product |
+| `matrix.mult(id, other)` | Matrix multiplication |
+
+#### Statistics
+
+| Function | Description |
+|---|---|
+| `matrix.avg(id)` | Mean of all elements |
+| `matrix.max(id)` | Maximum element value |
+| `matrix.min(id)` | Minimum element value |
+| `matrix.sum(id)` | Sum of all elements |
+| `matrix.diff(id)` | Successive differences along rows |
+| `matrix.median(id)` | Median of all elements |
+| `matrix.mode(id)` | Mode (most frequent value) |
+
+#### Boolean inspectors
+
+| Function | Returns `true` when |
+|---|---|
+| `matrix.is_square(id)` | Row count equals column count |
+| `matrix.is_symmetric(id)` | Matrix equals its own transpose |
+| `matrix.is_diagonal(id)` | All off-diagonal elements are zero |
+| `matrix.is_identity(id)` | Diagonal ones, off-diagonal zeros |
+| `matrix.is_zero(id)` | Every element is zero |
+| `matrix.is_antidiagonal(id)` | Non-zero elements only on anti-diagonal |
+| `matrix.is_antisymmetric(id)` | Matrix equals the negation of its transpose |
+| `matrix.is_binary(id)` | Every element is 0 or 1 |
+| `matrix.is_stochastic(id)` | Rows each sum to 1 (probability matrix) |
+| `matrix.is_triangular(id, lower)` | Upper or lower triangular form |
+
+> **Gotchas:**
+> - `matrix.det()`, `matrix.inv()`, and `matrix.eigenvalues()` require **square matrices** — a runtime error is raised otherwise.
+> - Row and column indices are **0-based**.
+
+#### Example
+
+```pine
+//@version=5
+indicator("Correlation matrix example", overlay = false)
+
+len = input.int(20, "Lookback")
+
+// Build a 2×2 covariance-style matrix from two series
+closes_a = close
+closes_b = request.security(syminfo.tickerid, "D", close)
+
+// Collect recent returns into arrays
+var float[] ret_a = array.new_float(0)
+var float[] ret_b = array.new_float(0)
+
+if bar_index > 0
+    array.push(ret_a, math.log(close / close[1]))
+    array.push(ret_b, math.log(closes_b / closes_b[1]))
+    if array.size(ret_a) > len
+        array.shift(ret_a)
+        array.shift(ret_b)
+
+if array.size(ret_a) == len
+    // Build 2×2 matrix manually
+    m = matrix.new<float>(2, 2, 0.0)
+    matrix.set(m, 0, 0, array.stdev(ret_a))
+    matrix.set(m, 1, 1, array.stdev(ret_b))
+
+    // Trace = sum of variances
+    t = matrix.trace(m)
+    plot(t * 1000, "Trace (×1000)")
+```
+
+---
+
+### log.* — Logging
+
+The `log.*` functions write messages to the **Pine Logs** panel (accessible via the Pine Editor's Logs tab). They are the primary debugging tool when you cannot use `plot()` or labels.
+
+#### Functions
+
+| Function | Signature | Severity level |
+|---|---|---|
+| `log.info` | `log.info(message)` | Informational |
+| `log.warning` | `log.warning(message)` | Warning |
+| `log.error` | `log.error(message)` | Error |
+
+All three also accept a format-string overload with positional placeholders:
+
+```pine
+log.info("RSI at bar {0}: {1}", bar_index, rsi_val)
+// Placeholders: {0}, {1}, {2} … correspond to extra arguments in order
+```
+
+> **Gotcha — Pine Logs panel only:** Log output does not appear on the chart or in the console. You must open the Logs tab at the bottom of the Pine Editor to see it. Log calls on historical bars all execute at script load time — you can filter by severity in the panel.
+
+#### Example
+
+```pine
+//@version=5
+indicator("Logging demo", overlay = false)
+
+rsi = ta.rsi(close, 14)
+
+// Log a warning whenever RSI crosses into extreme territory
+if ta.crossover(rsi, 70)
+    log.warning("RSI crossed above 70 at bar {0}, value: {1,number,#.##}", bar_index, rsi)
+
+if ta.crossunder(rsi, 30)
+    log.info("RSI crossed below 30 at bar {0}, value: {1,number,#.##}", bar_index, rsi)
+
+// Log an error when data is unexpectedly na
+if na(rsi) and bar_index > 20
+    log.error("Unexpected na RSI at bar {0}", bar_index)
+
+plot(rsi, "RSI")
+```
+
+---
+
+### Alerts
+
+Pine Script supports two distinct alert mechanisms with different scopes and constraints.
+
+#### `alert()` — flexible, works in both indicators and strategies
+
+```pine
+alert(message, freq)
+```
+
+- Available in **both** `indicator()` and `strategy()` scripts.
+- Must be called inside an `if` block (or other conditional) — it fires when that code path executes.
+- The `message` argument can be a `series string` (dynamically constructed).
+
+#### `alertcondition()` — static, indicators only
+
+```pine
+alertcondition(condition, title, message)
+```
+
+- Available **only** in `indicator()` scripts — compile error in `strategy()`.
+- Must be at **global scope** (not inside any `if`, `for`, or function body).
+- `title` and `message` must be **`const string`** — string literals or `input.string()` values, never dynamically constructed series.
+- Registers an alert template that users activate from the TradingView "Create Alert" dialog.
+
+#### `alert.freq_*` constants
+
+| Constant | Fires |
+|---|---|
+| `alert.freq_once_per_bar` | At most once per bar, on the first matching tick |
+| `alert.freq_once_per_bar_close` | Only on the confirmed close of a bar |
+| `alert.freq_all` | Every tick that satisfies the condition |
+| `alert.freq_once_per_alert` | Only one time ever (until the alert is re-enabled) |
+
+> **Gotchas:**
+> - `alertcondition()` title and message **must be const strings** — attempting to embed `str.format()` output or any series value causes a compile error.
+> - `alert()` is more flexible but the alert must be manually enabled by the user in TradingView's alert dialog; the script itself cannot trigger the notification automatically.
+> - In strategies, use `alert()` rather than `alertcondition()`.
+
+#### Example
+
+```pine
+//@version=5
+indicator("Alert examples", overlay = true)
+
+fast = ta.ema(close, 9)
+slow = ta.ema(close, 21)
+cross_up   = ta.crossover(fast, slow)
+cross_down = ta.crossunder(fast, slow)
+
+// --- alertcondition: static registration (indicators only, global scope, const strings)
+alertcondition(cross_up,   title = "EMA Cross Up",   message = "Fast EMA crossed above Slow EMA")
+alertcondition(cross_down, title = "EMA Cross Down",  message = "Fast EMA crossed below Slow EMA")
+
+// --- alert(): dynamic message, fires from inside a conditional
+if cross_up
+    alert(
+        str.format("BUY signal on {0} — Fast EMA crossed above Slow EMA. Close: {1}",
+                   syminfo.ticker, close),
+        alert.freq_once_per_bar
+    )
+
+if cross_down
+    alert(
+        str.format("SELL signal on {0} — Fast EMA crossed below Slow EMA. Close: {1}",
+                   syminfo.ticker, close),
+        alert.freq_once_per_bar
+    )
+
+plotshape(cross_up,   "Buy",  shape.triangleup,   location.belowbar, color.green)
+plotshape(cross_down, "Sell", shape.triangledown,  location.abovebar, color.red)
+```
+
+---
+
+### Drawing Object Limits Summary
+
+| Object | Default max | Max via declaration param |
+|---|---|---|
+| Labels | 50 | 500 (`max_labels_count = 500`) |
+| Lines | 50 | 500 (`max_lines_count = 500`) |
+| Boxes | 50 | 500 (`max_boxes_count = 500`) |
+| Tables | No hard per-object limit | — |
+| Maps | — | 50,000 pairs per map instance |
 
 ---
 
