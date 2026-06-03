@@ -4,11 +4,13 @@ description: >-
   Use when reading or writing TradingView Pine Script code — covers versioning
   (@version=5, @version=6), type system (series, simple, input, const),
   declarations (var, varip, input.*), built-in namespaces (ta.*, math.*, str.*,
-  strategy.*, request.*, array.*, map.*), plotting (plot, plotshape, bgcolor),
+  strategy.*, request.*, array.*, color.*), plotting (plot, plotshape, bgcolor),
   strategy functions (strategy.entry, strategy.exit, strategy.close),
   multi-timeframe via request.security(), control flow (if/else, for, while,
   switch, ternary), user-defined functions/types/methods, and common gotchas
-  (repainting, na handling, series vs simple context, max_bars_back).
+  (repainting, na handling, series vs simple context, max_bars_back,
+  global-scope function calls). Does not cover: map.*, matrix.*, table.*,
+  line.*, box.*, label.* drawing APIs, or Pine Script v6-specific syntax.
 ---
 
 # Pine Script Reference

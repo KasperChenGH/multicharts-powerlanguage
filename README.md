@@ -4,7 +4,7 @@
 [![Version](https://img.shields.io/badge/version-0.2.0-blue.svg)](https://github.com/KasperChenGH/multicharts-powerlanguage)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude_Code-plugin-blueviolet.svg)](https://github.com/KasperChenGH/multicharts-powerlanguage)
 
-A public Claude Code plugin for [MultiCharts](https://www.multicharts.com/) PowerLanguage — gives Claude expert knowledge of the language used to write Indicators, Signals, and Functions. Works on Windows, macOS, and Linux.
+A public Claude Code plugin for [MultiCharts](https://www.multicharts.com/) PowerLanguage and [TradingView](https://www.tradingview.com/) Pine Script — gives Claude expert knowledge of both languages and the ability to convert code between them. Works on Windows, macOS, and Linux.
 
 **947 keywords · 64 compile-verified functions · 5 auto-activating skills · Pine Script reference · bidirectional conversion**
 
@@ -54,7 +54,7 @@ Five skills that auto-activate based on what you're asking Claude to do:
 - **`multicharts-fundamentals`** — what MultiCharts is, when to use which script type (Indicator / Signal / Function), the execution model, multi-data series, order keywords, and the unique-signal-name compile rule.
 - **`powerlanguage-syntax`** — declarations, the `begin/end` semicolon rule, control flow, bar references, operators, comments, built-in trade-state variables, 64 compile-verified built-in function signatures (Average, RSI, Stochastic, ADX, DirMovement, …), and code-generation gotchas (variable-name collisions with functions, single-letter aliases, loop-counter declarations, Length-only function signatures, order syntax).
 - **`powerlanguage-keywords-reference`** — a categorized reference covering 947 official PowerLanguage keywords (40 categories from MultiCharts's own help system). Each keyword has signature, parameters, a paraphrased description, and a link to the official wiki page.
-- **`pinescript-reference`** — TradingView Pine Script syntax, type system, built-in namespaces (`ta.*`, `strategy.*`, `request.*`, `math.*`, `str.*`, `array.*`), plotting, control flow, user-defined functions/types, and common gotchas (repainting, `na` handling, series vs simple context).
+- **`pinescript-reference`** — TradingView Pine Script v5 syntax, type system, built-in namespaces (`ta.*`, `strategy.*`, `request.*`, `math.*`, `str.*`, `array.*`, `color.*`), plotting, control flow, user-defined functions/types, and common gotchas (repainting, `na` handling, series vs simple context, global-scope function calls). Coverage focuses on indicators and strategies; `map.*`, `matrix.*`, `table.*`, and drawing object APIs (`line.*`, `box.*`, `label.*`) are not yet covered.
 - **`powerlanguage-pinescript-conversion`** — bidirectional code conversion between PowerLanguage and Pine Script with concept mapping tables, semantic difference documentation (Sell ≠ short, dollar vs price stops, multi-data vs request.security), and pre/post-conversion checklists.
 
 ## Install (Claude Code)
@@ -99,7 +99,9 @@ Skills are markdown files with YAML frontmatter (a `name` and a `description`). 
 
 ## Attribution
 
-MultiCharts® and PowerLanguage® are trademarks of MCT Limited. The keyword summaries in this plugin are original paraphrased descriptions written for this plugin; the authoritative documentation lives at https://www.multicharts.com/. Each keyword detail file links back to its official wiki page.
+MultiCharts® and PowerLanguage® are trademarks of MCT Limited. TradingView® and Pine Script® are trademarks of TradingView, Inc. This plugin is not affiliated with or endorsed by either company.
+
+The PowerLanguage keyword summaries are original paraphrased descriptions; each links to its official wiki page at https://www.multicharts.com/. The Pine Script reference is hand-curated from general language knowledge and open-source resources — no content was scraped from tradingview.com.
 
 See `NOTICE` for the full attribution.
 

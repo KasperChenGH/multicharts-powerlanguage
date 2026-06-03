@@ -1,5 +1,5 @@
 multicharts-powerlanguage
-A Claude Code plugin for MultiCharts PowerLanguage
+A Claude Code plugin for MultiCharts PowerLanguage and TradingView Pine Script
 
 Copyright (c) 2026 Yu-An Chen
 Licensed under the MIT License — see LICENSE.
@@ -23,3 +23,12 @@ Source materials
   No raw content from PowerLanguage.chm is redistributed in this repository.
   Where a paraphrase could not be safely generated, the entry uses a generic
   placeholder description and a wiki link rather than verbatim source text.
+
+  TradingView® and Pine Script® are trademarks of TradingView, Inc.
+  This plugin is not affiliated with, endorsed by, or sponsored by TradingView, Inc.
+
+  The Pine Script reference content in skills/pinescript-reference/ is entirely
+  original, hand-curated from general knowledge of the Pine Script language and
+  open-source community resources. No content was scraped, copied, or derived
+  from tradingview.com — TradingView's Terms of Service (Section 3) prohibit
+  automated access and derivative works from their documentation.
