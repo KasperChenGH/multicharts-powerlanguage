@@ -4,25 +4,29 @@
 [![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)](https://github.com/KasperChenGH/multicharts-powerlanguage)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude_Code-plugin-blueviolet.svg)](https://github.com/KasperChenGH/multicharts-powerlanguage)
 
-A Claude Code plugin for [MultiCharts](https://www.multicharts.com/) PowerLanguage — gives Claude expert knowledge of PowerLanguage syntax, 947 keywords, 64 built-in functions, and bidirectional code conversion to [TradingView Pine Script](https://www.tradingview.com/), Python, Rust, and C++. Works on Windows, macOS, and Linux.
+A Claude Code plugin for [MultiCharts](https://www.multicharts.com/) PowerLanguage — gives Claude expert knowledge of PowerLanguage syntax, 947 keywords, 64 built-in functions, and bidirectional code conversion to [TradingView Pine Script](https://www.tradingview.com/), Python, Rust, and C++.
 
 **947 keywords · 64 compile-verified functions · 8 auto-activating skills · 4 conversion targets**
 
-## Quick start
+---
+
+## Install
 
 ```bash
 claude /plugin marketplace add KasperChenGH/multicharts-powerlanguage
 claude /plugin install multicharts-powerlanguage@multicharts-powerlanguage-dev
 ```
 
-After install, all 8 skills auto-trigger when relevant — no manual invocation needed. Ask Claude about MultiCharts, PowerLanguage, Pine Script, or any conversion target and the right skill activates.
+All 8 skills auto-trigger when relevant — no manual invocation needed. Works on Windows, macOS, and Linux.
 
-## Example — code generation
+---
 
-**Prompt:**
+## Examples
+
+### Code generation
+
 > Write a MultiCharts signal that enters long when RSI crosses below 30 and exits when it crosses above 70, with a 2% stop loss.
 
-**Generated PowerLanguage (compiles with 0 errors):**
 ```pascal
 Inputs:
     RSI_Length(14),
@@ -44,133 +48,154 @@ If MyRSI Crosses Above Overbought Then
 SetStopLoss(StopLossPct * 0.01 * EntryPrice);
 ```
 
-## Example — code conversion
+### Code conversion
 
-**PowerLanguage input:**
+> Convert this to Python / Rust / C++ / Pine Script
+
 ```pascal
 Buy ("Entry") 1 Contract Next Bar at Market;
 ```
 
 | Target | Output |
 |---|---|
-| **Pine Script** | `strategy.entry("Entry", strategy.long, qty=1)` |
-| **Python** | `orders.append(Order("Entry", Side.LONG, OrderType.MARKET, 1))` |
-| **Rust** | `orders.push(Order { label: "Entry", side: Side::Long, order_type: OrderType::Market, qty: 1 })` |
-| **C++** | `orders.push_back({"Entry", Side::Long, OrderType::Market, 1});` |
+| Pine Script | `strategy.entry("Entry", strategy.long, qty=1)` |
+| Python | `orders.append(Order("Entry", Side.LONG, OrderType.MARKET, 1))` |
+| Rust | `orders.push(Order { label: "Entry", side: Side::Long, order_type: OrderType::Market, qty: 1 })` |
+| C++ | `orders.push_back({"Entry", Side::Long, OrderType::Market, 1});` |
 
-## Skills
+---
 
-Eight skills organized into three groups:
+## Skills overview
 
-### PowerLanguage knowledge (3 skills)
+### PowerLanguage knowledge
 
-| Skill | What it provides |
+| Skill | Description |
 |---|---|
-| `multicharts-fundamentals` | What MultiCharts is, script types (Indicator / Signal / Function), execution model, multi-data series, order keywords, unique-signal-name compile rule |
-| `powerlanguage-syntax` | Declarations, `begin/end` semicolon rule, control flow, bar references, operators, 64 compile-verified built-in function signatures, code-generation gotchas |
-| `powerlanguage-keywords-reference` | 947 official keywords across 40 categories — each with signature, parameters, paraphrased description, and wiki link |
+| `multicharts-fundamentals` | Script types (Indicator / Signal / Function), execution model, multi-data series, order keywords |
+| `powerlanguage-syntax` | Declarations, `begin/end` semicolon rule, control flow, bar references, 64 built-in function signatures, code-generation gotchas |
+| `powerlanguage-keywords-reference` | 947 keywords across 40 categories — signature, parameters, description, and wiki link for each |
 
-### Target language reference (1 skill)
+### Target language reference
 
-| Skill | What it provides |
+| Skill | Description |
 |---|---|
-| `pinescript-reference` | Pine Script v5 syntax, type system, 15 built-in namespaces (`ta.*`, `strategy.*`, `request.*`, `math.*`, `str.*`, `array.*`, `color.*`, `label.*`, `line.*`, `box.*`, `table.*`, `map.*`, `matrix.*`, `log.*`), alerts, plotting, user-defined functions/types, gotchas |
+| `pinescript-reference` | Pine Script v5 — type system, 15 built-in namespaces (`ta.*`, `strategy.*`, `request.*`, etc.), alerts, plotting, gotchas |
 
-### Code conversion (4 skills)
+### Code conversion
 
-Each conversion skill follows the same 4-part structure:
+All four converters follow the same structure:
 
-- **Part 0** — target-language scaffold (types, entry point, main loop)
-- **Part 1** — concept mapping tables (indicators, order types, data access)
-- **Part 2** — semantic gotchas specific to the target language
-- **Part 3** — pre/post-conversion checklists (both directions)
+| Part | Contents |
+|---|---|
+| Part 0 | Target-language scaffold — types, entry point, main loop |
+| Part 1 | Concept mapping tables — indicators, order types, data access |
+| Part 2 | Semantic gotchas specific to the target language |
+| Part 3 | Pre/post-conversion checklists in both directions |
 
-| Skill | Direction | Scaffold | Indicator library |
+| Skill | Target | Scaffold | Indicator library |
 |---|---|---|---|
-| `powerlanguage-pinescript-conversion` | PL <-> Pine Script | `strategy()` script | `ta.*` built-ins |
-| `powerlanguage-python-conversion` | PL <-> Python | `Strategy(ABC)` with `on_bar` | pandas-ta (primary), TA-Lib (alternative) |
-| `powerlanguage-rust-conversion` | PL <-> Rust | `Strategy` trait with `on_bar` | ta-rs (streaming API) |
-| `powerlanguage-cpp-conversion` | PL <-> C++ | `Strategy` base class with `on_bar` | TA-Lib (batch API) |
+| `powerlanguage-pinescript-conversion` | Pine Script | `strategy()` | `ta.*` built-ins |
+| `powerlanguage-python-conversion` | Python | `Strategy(ABC)` + `on_bar` | pandas-ta (primary), TA-Lib (alt) |
+| `powerlanguage-rust-conversion` | Rust | `Strategy` trait + `on_bar` | ta-rs (streaming) |
+| `powerlanguage-cpp-conversion` | C++ | `Strategy` base class + `on_bar` | TA-Lib (batch) |
+
+---
+
+## How it works
+
+Skills are markdown files with YAML frontmatter (`name` and `description`). Claude reads each skill's description and activates it on the fly based on what you're asking. No install-time scripts, no runtime hooks, no platform-specific tooling.
+
+---
 
 ## Project structure
 
 ```
 multicharts-powerlanguage/
-  .claude-plugin/
-    plugin.json              # plugin metadata (name, version, author)
-    marketplace.json         # marketplace registry entry
-  skills/
-    multicharts-fundamentals/SKILL.md
-    powerlanguage-syntax/SKILL.md
-    powerlanguage-keywords-reference/
-      SKILL.md
-      details/               # 40 category folders, 947 keyword files
-    pinescript-reference/SKILL.md
-    powerlanguage-pinescript-conversion/SKILL.md
-    powerlanguage-python-conversion/SKILL.md
-    powerlanguage-rust-conversion/SKILL.md
-    powerlanguage-cpp-conversion/SKILL.md
-  tests/                     # 14 test files (see below)
-  scripts/
-    lib/                     # 8 PowerShell modules (build pipeline)
-    tests/                   # 10 Pester test files (67 tests)
-  package.json               # npm-style version metadata
-  NOTICE                     # attribution and trademark notices
-  LICENSE                    # MIT
+├── .claude-plugin/
+│   ├── plugin.json                        # plugin metadata
+│   └── marketplace.json                   # marketplace registry
+├── skills/
+│   ├── multicharts-fundamentals/          # platform fundamentals
+│   ├── powerlanguage-syntax/              # language syntax + built-ins
+│   ├── powerlanguage-keywords-reference/  # 947 keywords (40 categories)
+│   │   ├── SKILL.md
+│   │   └── details/                       # 40 category folders
+│   ├── pinescript-reference/              # Pine Script v5 reference
+│   ├── powerlanguage-pinescript-conversion/
+│   ├── powerlanguage-python-conversion/
+│   ├── powerlanguage-rust-conversion/
+│   └── powerlanguage-cpp-conversion/
+├── tests/                                 # 14 compile-test files
+├── scripts/
+│   ├── lib/                               # 8 PowerShell build modules
+│   └── tests/                             # 10 Pester test files (67 tests)
+├── package.json
+├── NOTICE
+└── LICENSE
 ```
 
-## Test suite
+---
 
-### Pester tests (automated)
+<details>
+<summary><strong>Testing (maintainer only)</strong></summary>
+
+### Automated tests (Pester)
 
 ```powershell
 Invoke-Pester scripts/tests/ -Output Detailed
 ```
 
-10 test files, 67 tests covering frontmatter validation, metadata, keyword parsing, paraphrase quality, and build pipeline correctness.
+10 test files, 67 tests — frontmatter validation, metadata consistency, keyword parsing, paraphrase quality, build pipeline.
 
-### Compile tests (manual, maintainer only)
+### Manual compile tests
 
-The `tests/` directory contains 14 plain-text source files that exercise keywords and code patterns. PowerLanguage files use unreachable `If False Then Begin … End;` blocks so the compiler verifies syntax without executing anything. They are NOT `.pla` archives — they cannot be imported via File → Import.
+14 plain-text files in `tests/` exercise keywords and conversion patterns. PowerLanguage files use unreachable `If False Then Begin … End;` blocks so the compiler checks syntax without executing.
 
-| File | Type | What it covers |
+**Keyword coverage (8 files):**
+
+| File | Script type | Scope |
 |---|---|---|
 | `test_indicator.txt` | Indicator | 947 CHM keywords |
 | `test_signal.txt` | Signal | 947 CHM keywords |
 | `test_function.txt` | Function | 947 CHM keywords |
-| `test_builtins.txt` | Signal | 64 built-in function (`.elf`) signatures |
-| `test_syntax.txt` | Signal | If/Else, For/While, Switch, Once, operators, crosses over/under |
-| `test_orders.txt` | Signal | Buy/Sell/SellShort/BuyToCover x Market/Limit/Stop/Close, SetStopLoss/SetProfitTarget |
-| `test_declarations.txt` | Signal | Inputs, Variables, Arrays, IntraBarPersist, multi-data, Value1-99 |
-| `test_plotting.txt` | Indicator | Plot1-4, SetPlotColor/Width/Style, TL/Text/Arw drawing |
-| `test_strategies.txt` | Signal | 14 mini-strategies combining 39+ indicators, conditions, and orders |
-| `test_pine_from_pl.txt` | Pine Script | 14 strategies converted from PL |
-| `test_pl_from_pine.txt` | Signal | 14 strategies converted from Pine Script |
-| `test_python_from_pl.txt` | Python | 14 strategies converted from PL (pandas-ta) |
-| `test_rust_from_pl.txt` | Rust | 14 strategies converted from PL (ta-rs) |
-| `test_cpp_from_pl.txt` | C++ | 14 strategies converted from PL (TA-Lib) |
+| `test_builtins.txt` | Signal | 64 built-in function signatures |
+| `test_syntax.txt` | Signal | Control flow, operators, crosses |
+| `test_orders.txt` | Signal | All order combinations + stops |
+| `test_declarations.txt` | Signal | Inputs, Variables, Arrays, multi-data |
+| `test_plotting.txt` | Indicator | Plots, colors, drawing objects |
 
-The 14 strategies cover: MA crossover, RSI+ATR stop, Bollinger breakout, multi-indicator (ADX/CCI/BB), regime filter, EMA momentum, Donchian channel, MACD trailing stop, stochastic with switch/for/while, time filter with print/alert, DMI/Keltner/SAR, Williams %R/ROC/volatility, money flow/linear regression, and swing detection.
+**Strategy conversions (6 files, 14 strategies each):**
 
-To manually compile-test a PowerLanguage file: open MultiCharts PowerLanguage Editor, create a new study matching the script type, paste the file contents, and press **F3** (Verify). Expected: 0 errors, 0 warnings.
+| File | Target | Library |
+|---|---|---|
+| `test_strategies.txt` | PowerLanguage (source) | — |
+| `test_pine_from_pl.txt` / `test_pl_from_pine.txt` | Pine Script | `ta.*` |
+| `test_python_from_pl.txt` | Python | pandas-ta |
+| `test_rust_from_pl.txt` | Rust | ta-rs |
+| `test_cpp_from_pl.txt` | C++ | TA-Lib |
 
-## How it works
+The 14 strategies cover 39+ indicators: MA crossover, RSI+ATR stop, Bollinger breakout, ADX/CCI multi-indicator, regime filter, EMA momentum, Donchian channel, MACD trailing stop, Stochastic, time filter, DMI/Keltner/SAR, Williams %R/ROC/volatility, money flow/linear regression, and swing detection.
 
-Skills are markdown files with YAML frontmatter (`name` and `description`). Claude reads each plugin's skill descriptions and decides on the fly which to invoke. There are no install-time scripts, no runtime hooks, and no platform-specific tooling.
+To compile-test: open PowerLanguage Editor, create a new study matching the script type, paste the file contents, press **F3** (Verify). Expected: 0 errors, 0 warnings.
+
+</details>
+
+---
 
 ## Attribution
 
 MultiCharts and PowerLanguage are trademarks of MCT Limited. TradingView and Pine Script are trademarks of TradingView, Inc. This plugin is not affiliated with or endorsed by either company.
 
-The PowerLanguage keyword summaries are original paraphrased descriptions; each links to its official wiki page. The Pine Script reference is hand-curated from general language knowledge and open-source resources — no content was scraped from tradingview.com.
-
 Third-party library references (no source code redistributed):
-- [ta-rs](https://crates.io/crates/ta) — MIT-licensed Rust crate (Rust conversion skill)
-- [yata](https://crates.io/crates/yata) — Apache-2.0-licensed Rust crate (Rust conversion skill, ADX/CCI)
-- [TA-Lib](https://ta-lib.org/) — BSD-licensed C library (C++ conversion skill)
-- [pandas-ta](https://github.com/twopirllc/pandas-ta) — MIT-licensed Python library (Python conversion skill)
 
-See `NOTICE` for the full attribution.
+| Library | License | Used by |
+|---|---|---|
+| [ta-rs](https://crates.io/crates/ta) | MIT | Rust conversion |
+| [yata](https://crates.io/crates/yata) | Apache-2.0 | Rust conversion (ADX/CCI) |
+| [TA-Lib](https://ta-lib.org/) | BSD | C++ conversion |
+| [pandas-ta](https://github.com/twopirllc/pandas-ta) | MIT | Python conversion |
+
+See `NOTICE` for full attribution.
 
 ## License
 
