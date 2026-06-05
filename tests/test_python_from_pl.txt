@@ -1,0 +1,567 @@
+# =============================================================================
+# test_python_from_pl.txt
+# Python conversions of the 14 PowerLanguage strategies in tests/test_strategies.txt.
+#
+# Each block is a self-contained strategy class inheriting from the Strategy
+# ABC defined in Part 0 of the powerlanguage-python-conversion skill.
+#
+# Dependencies: pandas-ta (primary), python-talib (alternative)
+#
+# NOTE: These cannot be run as-is in a single file — each strategy is a
+# standalone class. Separator lines mark where one ends and the next begins.
+#
+# The Order dataclass includes an Action field to distinguish PL order semantics:
+#
+#   class Action(Enum):
+#       ENTRY = auto()
+#       EXIT = auto()
+#       STOP_LOSS = auto()
+#       PROFIT_TARGET = auto()
+#       BREAK_EVEN = auto()
+#
+#   @dataclass
+#   class Order:
+#       label: str
+#       action: Action
+#       side: Side
+#       order_type: OrderType
+#       price: float = 0.0
+#       qty: float = 1.0
+# =============================================================================
+
+
+# =============================================================================
+# STRATEGY 1 — MA Crossover
+# PL source: lines 29-38 of test_strategies.txt
+#
+# Conversion notes:
+#   Average(Close, 10)             -> ta.sma(closes, length=10)
+#   Average(Close, 20)             -> ta.sma(closes, length=20)
+#   crosses over                   -> prev_fast <= prev_slow and fast > slow
+#   crosses under                  -> prev_fast >= prev_slow and fast < slow
+#   Buy ... Next Bar at Market     -> Order(action=Action.ENTRY, side=Side.LONG)
+#   Sell ... Next Bar at Market    -> Order(action=Action.EXIT, side=Side.LONG)
+# =============================================================================
+
+import pandas as pd
+import pandas_ta as ta
+
+
+class S1MaCrossover(Strategy):
+    def __init__(self):
+        super().__init__()
+
+    def on_bar(self, bars: list[Bar], orders: list[Order]) -> None:
+        if len(bars) < 20:
+            return
+
+        closes = pd.Series([b.close for b in bars])
+
+        fast_ma_series = ta.sma(closes, length=10)
+        slow_ma_series = ta.sma(closes, length=20)
+
+        if fast_ma_series is None or slow_ma_series is None:
+            return
+
+        fast = fast_ma_series.iloc[-1]
+        prev_fast = fast_ma_series.iloc[-2]
+        slow = slow_ma_series.iloc[-1]
+        prev_slow = slow_ma_series.iloc[-2]
+
+        if pd.notna(fast) and pd.notna(slow) and pd.notna(prev_fast) and pd.notna(prev_slow):
+            # PL: If fastMA crosses over slowMA Then Buy
+            if prev_fast <= prev_slow and fast > slow:
+                orders.append(Order(
+                    label="S1_LE", action=Action.ENTRY, side=Side.LONG,
+                    order_type=OrderType.MARKET, price=0.0, qty=1.0,
+                ))
+
+            # PL: If fastMA crosses under slowMA Then Sell (exit long)
+            if prev_fast >= prev_slow and fast < slow:
+                orders.append(Order(
+                    label="S1_LX", action=Action.EXIT, side=Side.LONG,
+                    order_type=OrderType.MARKET, price=0.0, qty=1.0,
+                ))
+
+
+# END STRATEGY 1
+# =============================================================================
+
+
+# =============================================================================
+# STRATEGY 2 — RSI + ATR Stop + Position Detection
+# PL source: lines 40-60 of test_strategies.txt
+#
+# Conversion notes:
+#   RSI(Close, 14)                 -> ta.rsi(closes, length=14)
+#   AvgTrueRange(14)               -> ta.atr(highs, lows, closes, length=14)
+#   MarketPosition                 -> self.position (updated by execution engine)
+#   EntryPrice                     -> self.entry_price (set by execution engine)
+#   Sell ... at stopPx Stop        -> Order(order_type=OrderType.STOP, price=stop_px)
+#   Sell ... at Market (target)    -> Order(order_type=OrderType.MARKET)
+#
+#   PL "Next Bar" semantics: orders are submitted this bar, filled next bar.
+#   The execution engine handles fill timing — strategy just emits orders.
+# =============================================================================
+
+import pandas as pd
+import pandas_ta as ta
+
+
+class S2RsiAtrStop(Strategy):
+    def __init__(self):
+        super().__init__()
+        self.position: int = 0
+        self.prev_position: int = 0
+        self.entry_price: float = 0.0
+
+    def on_bar(self, bars: list[Bar], orders: list[Order]) -> None:
+        if len(bars) < 15:
+            return
+
+        closes = pd.Series([b.close for b in bars])
+        highs = pd.Series([b.high for b in bars])
+        lows = pd.Series([b.low for b in bars])
+
+        rsi_series = ta.rsi(closes, length=14)
+        atr_series = ta.atr(highs, lows, closes, length=14)
+
+        if rsi_series is None or atr_series is None:
+            return
+
+        rsi_val = rsi_series.iloc[-1]
+        atr_val = atr_series.iloc[-1]
+
+        if not (pd.notna(rsi_val) and pd.notna(atr_val)):
+            return
+
+        # PL: position transition detection
+        if self.position != self.prev_position:
+            pass  # position just changed
+        self.prev_position = self.position
+
+        # PL: If MarketPosition = 0 and rsiVal < 30 Then Buy
+        if self.position == 0 and rsi_val < 30.0:
+            orders.append(Order(
+                label="S2_LE", action=Action.ENTRY, side=Side.LONG,
+                order_type=OrderType.MARKET, price=0.0, qty=1.0,
+            ))
+
+        # PL: If MarketPosition = 1 Then Begin
+        if self.position == 1:
+            stop_px = self.entry_price - 2.0 * atr_val
+
+            # PL: Sell ("S2_STP") at stopPx Stop
+            orders.append(Order(
+                label="S2_STP", action=Action.EXIT, side=Side.LONG,
+                order_type=OrderType.STOP, price=stop_px, qty=1.0,
+            ))
+
+            # PL: If rsiVal > 70 Then Sell ("S2_TGT") at Market
+            if rsi_val > 70.0:
+                orders.append(Order(
+                    label="S2_TGT", action=Action.EXIT, side=Side.LONG,
+                    order_type=OrderType.MARKET, price=0.0, qty=1.0,
+                ))
+
+
+# END STRATEGY 2
+# =============================================================================
+
+
+# =============================================================================
+# STRATEGY 3 — Bollinger Band Breakout + Volume Filter
+# PL source: lines 62-79 of test_strategies.txt
+#
+# Conversion notes:
+#   BollingerBand(Close, 20, 2)    -> ta.bbands(closes, length=20, std=2)
+#   BollingerBand(Close, 20, -2)   -> lower band from ta.bbands output
+#   Average(Volume, 20)            -> ta.sma(volumes, length=20)
+#   SellShort                      -> Action.ENTRY, Side.SHORT
+#   Sell ... at Stop               -> Action.EXIT, Side.LONG (exit long)
+#   BuyToCover ... at Stop         -> Action.EXIT, Side.SHORT (exit short)
+# =============================================================================
+
+import pandas as pd
+import pandas_ta as ta
+
+
+class S3BbBreakout(Strategy):
+    def __init__(self):
+        super().__init__()
+        self.position: int = 0
+
+    def on_bar(self, bars: list[Bar], orders: list[Order]) -> None:
+        if len(bars) < 21:
+            return
+
+        closes = pd.Series([b.close for b in bars])
+        volumes = pd.Series([b.volume for b in bars])
+        bar = bars[-1]
+
+        bb_df = ta.bbands(closes, length=20, std=2)
+        vol_avg_series = ta.sma(volumes, length=20)
+
+        if bb_df is None or vol_avg_series is None:
+            return
+
+        # ta.bbands returns DataFrame with columns: BBL_20_2.0, BBM_20_2.0, BBU_20_2.0, ...
+        upper_bb = bb_df.iloc[-1][f"BBU_20_2.0"]
+        lower_bb = bb_df.iloc[-1][f"BBL_20_2.0"]
+        vol_avg = vol_avg_series.iloc[-1]
+
+        if not (pd.notna(upper_bb) and pd.notna(lower_bb) and pd.notna(vol_avg)):
+            return
+
+        # PL: If Close > upperBB and Volume > volAvg * 1.5 Then Buy
+        if bar.close > upper_bb and bar.volume > vol_avg * 1.5:
+            orders.append(Order(
+                label="S3_LE", action=Action.ENTRY, side=Side.LONG,
+                order_type=OrderType.MARKET, price=0.0, qty=1.0,
+            ))
+
+        # PL: If Close < lowerBB and Volume > volAvg * 1.5 Then SellShort
+        if bar.close < lower_bb and bar.volume > vol_avg * 1.5:
+            orders.append(Order(
+                label="S3_SE", action=Action.ENTRY, side=Side.SHORT,
+                order_type=OrderType.MARKET, price=0.0, qty=1.0,
+            ))
+
+        # PL: If MarketPosition = 1 Then Sell at lowerBB Stop (exit long)
+        if self.position == 1:
+            orders.append(Order(
+                label="S3_LX", action=Action.EXIT, side=Side.LONG,
+                order_type=OrderType.STOP, price=lower_bb, qty=1.0,
+            ))
+
+        # PL: If MarketPosition = -1 Then BuyToCover at upperBB Stop (exit short)
+        if self.position == -1:
+            orders.append(Order(
+                label="S3_SX", action=Action.EXIT, side=Side.SHORT,
+                order_type=OrderType.STOP, price=upper_bb, qty=1.0,
+            ))
+
+
+# END STRATEGY 3
+# =============================================================================
+
+
+# =============================================================================
+# STRATEGY 4 — Multi-Indicator + Risk Management
+# PL source: lines 81-95 of test_strategies.txt
+#
+# Conversion notes:
+#   ADX(14)                        -> ta.adx(highs, lows, closes, length=14)
+#   CCI(20)                        -> ta.cci(highs, lows, closes, length=20)
+#   crosses over -100              -> prev_cci <= -100 and cci > -100
+#   crosses under 100              -> prev_cci >= 100 and cci < 100
+#   SetStopLoss(500)               -> Action.STOP_LOSS order emitted each bar
+#   SetProfitTarget(1000)          -> Action.PROFIT_TARGET order emitted each bar
+#   SetBreakEven(200)              -> Action.BREAK_EVEN order when profit >= $200
+# =============================================================================
+
+import pandas as pd
+import pandas_ta as ta
+
+
+class S4MultiIndicator(Strategy):
+    def __init__(self, point_value: float = 1.0):
+        super().__init__()
+        self.point_value = point_value
+        self.position: int = 0
+        self.entry_price: float = 0.0
+
+    def on_bar(self, bars: list[Bar], orders: list[Order]) -> None:
+        if len(bars) < 30:
+            return
+
+        closes = pd.Series([b.close for b in bars])
+        highs = pd.Series([b.high for b in bars])
+        lows = pd.Series([b.low for b in bars])
+        bar = bars[-1]
+
+        adx_df = ta.adx(highs, lows, closes, length=14)
+        cci_series = ta.cci(highs, lows, closes, length=20)
+
+        if adx_df is None or cci_series is None:
+            return
+
+        # ta.adx returns DataFrame with ADX_14, DMP_14, DMN_14
+        adx_val = adx_df["ADX_14"].iloc[-1]
+        cci_val = cci_series.iloc[-1]
+        prev_cci = cci_series.iloc[-2]
+
+        if not (pd.notna(adx_val) and pd.notna(cci_val) and pd.notna(prev_cci)):
+            return
+
+        # PL: If adxVal > 25 and cciVal crosses over -100 Then Buy
+        cci_crossed_over = prev_cci <= -100.0 and cci_val > -100.0
+        if adx_val > 25.0 and cci_crossed_over:
+            orders.append(Order(
+                label="S4_LE", action=Action.ENTRY, side=Side.LONG,
+                order_type=OrderType.MARKET, price=0.0, qty=1.0,
+            ))
+
+        # PL: If adxVal > 25 and cciVal crosses under 100 Then SellShort
+        cci_crossed_under = prev_cci >= 100.0 and cci_val < 100.0
+        if adx_val > 25.0 and cci_crossed_under:
+            orders.append(Order(
+                label="S4_SE", action=Action.ENTRY, side=Side.SHORT,
+                order_type=OrderType.MARKET, price=0.0, qty=1.0,
+            ))
+
+        # PL: SetStopLoss(500), SetProfitTarget(1000), SetBreakEven(200)
+        if self.position != 0:
+            sign = 1.0 if self.position == 1 else -1.0
+            side = Side.LONG if self.position == 1 else Side.SHORT
+            sl_price = self.entry_price - sign * 500.0 / self.point_value
+            tp_price = self.entry_price + sign * 1000.0 / self.point_value
+
+            orders.append(Order(
+                label="S4_SL", action=Action.STOP_LOSS, side=side,
+                order_type=OrderType.STOP, price=sl_price, qty=1.0,
+            ))
+            orders.append(Order(
+                label="S4_TP", action=Action.PROFIT_TARGET, side=side,
+                order_type=OrderType.LIMIT, price=tp_price, qty=1.0,
+            ))
+
+            # SetBreakEven(200): move stop to entry when profit >= $200
+            unrealized = sign * (bar.close - self.entry_price) * self.point_value
+            if unrealized >= 200.0:
+                orders.append(Order(
+                    label="S4_BE", action=Action.BREAK_EVEN, side=side,
+                    order_type=OrderType.STOP, price=self.entry_price, qty=1.0,
+                ))
+
+
+# END STRATEGY 4
+# =============================================================================
+
+
+# =============================================================================
+# STRATEGY 5 — Multi-Data Regime Filter
+# PL source: lines 97-107 of test_strategies.txt
+#
+# Conversion notes:
+#   Close of data2                 -> bars2 (second bar list passed separately)
+#   Average(Close of data2, 50)    -> ta.sma() on bars2 close prices
+#   RSI(Close, 14)                 -> ta.rsi() on primary close prices
+#   Sell ("S5_LX") at Market       -> Order(action=Action.EXIT, side=Side.LONG)
+# =============================================================================
+
+import pandas as pd
+import pandas_ta as ta
+
+
+class S5RegimeFilter(Strategy):
+    def __init__(self):
+        super().__init__()
+        self.position: int = 0
+
+    def on_bar_multi(self, bars: list[Bar], bars2: list[Bar],
+                     orders: list[Order]) -> None:
+        if len(bars) < 15 or len(bars2) < 51:
+            return
+
+        closes = pd.Series([b.close for b in bars])
+        closes2 = pd.Series([b.close for b in bars2])
+
+        rsi_series = ta.rsi(closes, length=14)
+        regime_ma_series = ta.sma(closes2, length=50)
+
+        if rsi_series is None or regime_ma_series is None:
+            return
+
+        rsi_val = rsi_series.iloc[-1]
+        regime_ma = regime_ma_series.iloc[-1]
+        regime_close = bars2[-1].close
+
+        if not (pd.notna(rsi_val) and pd.notna(regime_ma)):
+            return
+
+        # PL: If Close of data2 > Average(Close of data2, 50) Then Begin
+        if regime_close > regime_ma:
+            # PL: If RSI(Close, 14) < 30 Then Buy
+            if rsi_val < 30.0:
+                orders.append(Order(
+                    label="S5_LE", action=Action.ENTRY, side=Side.LONG,
+                    order_type=OrderType.MARKET, price=0.0, qty=1.0,
+                ))
+
+        # PL: If MarketPosition = 1 and RSI(Close, 14) > 70 Then Sell (exit long)
+        if self.position == 1 and rsi_val > 70.0:
+            orders.append(Order(
+                label="S5_LX", action=Action.EXIT, side=Side.LONG,
+                order_type=OrderType.MARKET, price=0.0, qty=1.0,
+            ))
+
+    def on_bar(self, bars: list[Bar], orders: list[Order]) -> None:
+        pass
+
+
+# END STRATEGY 5
+# =============================================================================
+
+
+# =============================================================================
+# STRATEGY 6 — EMA Momentum + Limit Entry + Time Exit
+# PL source: lines 109-127 of test_strategies.txt
+#
+# Conversion notes:
+#   XAverage(Close, 12)            -> ta.ema(closes, length=12)
+#   XAverage(Close, 26)            -> ta.ema(closes, length=26)
+#   Momentum(Close, 10)            -> ta.mom(closes, length=10)
+#   Once Begin ... End             -> if not self._once_done: ...; self._once_done = True
+#   Buy ... at Close Limit         -> Order(order_type=OrderType.LIMIT, price=bar.close)
+#   BarsSinceEntry >= 10           -> self.bars_since_entry >= 10 (manual tracking)
+#   Sell ("S6_TX/LX") at Market    -> Order(action=Action.EXIT, side=Side.LONG)
+# =============================================================================
+
+import pandas as pd
+import pandas_ta as ta
+
+
+class S6EmaMomentum(Strategy):
+    def __init__(self):
+        super().__init__()
+        self.position: int = 0
+        self.bars_since_entry: int = 0
+        self._once_done: bool = False
+        self._init_close: float = 0.0
+
+    def on_bar(self, bars: list[Bar], orders: list[Order]) -> None:
+        if len(bars) < 27:
+            return
+
+        closes = pd.Series([b.close for b in bars])
+        bar = bars[-1]
+
+        ema_fast_series = ta.ema(closes, length=12)
+        ema_slow_series = ta.ema(closes, length=26)
+        mom_series = ta.mom(closes, length=10)
+
+        if ema_fast_series is None or ema_slow_series is None or mom_series is None:
+            return
+
+        fast_val = ema_fast_series.iloc[-1]
+        prev_fast = ema_fast_series.iloc[-2]
+        slow_val = ema_slow_series.iloc[-1]
+        prev_slow = ema_slow_series.iloc[-2]
+        momentum = mom_series.iloc[-1]
+
+        if not (pd.notna(fast_val) and pd.notna(slow_val) and pd.notna(momentum)
+                and pd.notna(prev_fast) and pd.notna(prev_slow)):
+            return
+
+        # PL: Once Begin Value1 = Close; End;
+        if not self._once_done:
+            self._init_close = bar.close
+            self._once_done = True
+
+        # PL: If MarketPosition = 0 and momVal > 0 and emaFast > emaSlow
+        #     Then Buy at Close Limit
+        if self.position == 0 and momentum > 0.0 and fast_val > slow_val:
+            orders.append(Order(
+                label="S6_LE", action=Action.ENTRY, side=Side.LONG,
+                order_type=OrderType.LIMIT, price=bar.close, qty=1.0,
+            ))
+
+        # PL: If MarketPosition = 1 and BarsSinceEntry >= 10 Then Sell (time exit)
+        if self.position == 1 and self.bars_since_entry >= 10:
+            orders.append(Order(
+                label="S6_TX", action=Action.EXIT, side=Side.LONG,
+                order_type=OrderType.MARKET, price=0.0, qty=1.0,
+            ))
+
+        # PL: If MarketPosition = 1 and emaFast crosses under emaSlow Then Sell
+        crossed_under = prev_fast >= prev_slow and fast_val < slow_val
+        if self.position == 1 and crossed_under:
+            orders.append(Order(
+                label="S6_LX", action=Action.EXIT, side=Side.LONG,
+                order_type=OrderType.MARKET, price=0.0, qty=1.0,
+            ))
+
+        # Increment after checks to match PL BarsSinceEntry semantics
+        if self.position != 0:
+            self.bars_since_entry += 1
+
+
+# END STRATEGY 6
+# =============================================================================
+
+
+# =============================================================================
+# STRATEGY 7 — Donchian Channel Breakout
+# PL source: lines 129-145 of test_strategies.txt
+#
+# Conversion notes:
+#   Highest(High, 20)              -> highs.rolling(20).max()
+#   Lowest(Low, 20)                -> lows.rolling(20).min()
+#   hiChan[1]                      -> .iloc[-2] (previous bar's channel value)
+#   loChan[1]                      -> .iloc[-2] (previous bar's channel value)
+#   SellShort                      -> Action.ENTRY, Side.SHORT
+#   Sell ... at loChan Stop        -> Action.EXIT, Side.LONG (exit long)
+#   BuyToCover ... at hiChan Stop  -> Action.EXIT, Side.SHORT (exit short)
+# =============================================================================
+
+import pandas as pd
+import pandas_ta as ta
+
+
+class S7DonchianBreakout(Strategy):
+    def __init__(self):
+        super().__init__()
+        self.position: int = 0
+
+    def on_bar(self, bars: list[Bar], orders: list[Order]) -> None:
+        if len(bars) < 21:
+            return
+
+        highs = pd.Series([b.high for b in bars])
+        lows = pd.Series([b.low for b in bars])
+        bar = bars[-1]
+
+        hi_chan_series = highs.rolling(20).max()
+        lo_chan_series = lows.rolling(20).min()
+
+        hi_chan = hi_chan_series.iloc[-1]
+        prev_hi_chan = hi_chan_series.iloc[-2]
+        lo_chan = lo_chan_series.iloc[-1]
+        prev_lo_chan = lo_chan_series.iloc[-2]
+
+        if not (pd.notna(hi_chan) and pd.notna(prev_hi_chan)
+                and pd.notna(lo_chan) and pd.notna(prev_lo_chan)):
+            return
+
+        # PL: If Close > hiChan[1] Then Buy
+        if bar.close > prev_hi_chan:
+            orders.append(Order(
+                label="S7_LE", action=Action.ENTRY, side=Side.LONG,
+                order_type=OrderType.MARKET, price=0.0, qty=1.0,
+            ))
+
+        # PL: If Close < loChan[1] Then SellShort
+        if bar.close < prev_lo_chan:
+            orders.append(Order(
+                label="S7_SE", action=Action.ENTRY, side=Side.SHORT,
+                order_type=OrderType.MARKET, price=0.0, qty=1.0,
+            ))
+
+        # PL: If MarketPosition = 1 Then Sell at loChan Stop (exit long)
+        if self.position == 1:
+            orders.append(Order(
+                label="S7_LX", action=Action.EXIT, side=Side.LONG,
+                order_type=OrderType.STOP, price=lo_chan, qty=1.0,
+            ))
+
+        # PL: If MarketPosition = -1 Then BuyToCover at hiChan Stop (exit short)
+        if self.position == -1:
+            orders.append(Order(
+                label="S7_SX", action=Action.EXIT, side=Side.SHORT,
+                order_type=OrderType.STOP, price=hi_chan, qty=1.0,
+            ))
+
+
+# END STRATEGY 7
+# =============================================================================
