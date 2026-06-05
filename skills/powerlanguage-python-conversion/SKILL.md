@@ -263,3 +263,83 @@ The slice `bars[:i+1]` gives the strategy access to full history; `bars[-1]` is 
 | `Print("text")` | `print("text")` | Direct mapping |
 | `#BeginCmtry ... #EndCmtry` | No equivalent | PL expert commentary; skip or log |
 | `Alert("msg")` | `print("ALERT: msg", file=sys.stderr)` | No built-in alert; write to stderr or use callback |
+
+---
+
+## Part 2: Semantic Differences and Gotchas
+
+1. **`Sell` does not mean "go short".** In PowerLanguage, `Sell` exits an existing long position. The Python equivalent is closing the position (setting `self.position = 0`). Do not create a new short entry as a translation of `Sell`.
+
+2. **PL is implicitly bar-driven; Python requires an explicit loop.** PowerLanguage executes the entire script top-to-bottom on each bar close automatically. In Python, you must write the `for i in range(len(bars))` loop yourself and call `on_bar()` on each iteration. Forgetting the loop wrapper means the strategy logic runs only once.
+
+3. **Negative indexing is convenient but still needs bounds guarding.** `bars[-2].close` is Pythonic for "previous bar" but raises `IndexError` when `len(bars) < 2`. Guard with `if len(bars) > n` before any lookback access. PL handles this automatically via MaxBarsBack; Python does not.
+
+4. **pandas-ta operates on full Series, not streaming.** Each `on_bar()` call recomputes the indicator on the entire series up to the current bar. This is correct but O(n²) over a backtest. For performance, pre-compute indicators outside the loop or cache results.
+
+5. **NaN values in indicator output.** pandas-ta returns `NaN` for the first `length - 1` bars where the indicator has insufficient history. Always check `pd.notna(value)` or `not math.isnan(value)` before using the result. PL silently returns 0 for insufficient history; Python raises errors or produces silent NaN propagation.
+
+6. **Mutable default arguments are a classic Python trap.** Never write `def __init__(self, buf=[])` — use `None` and assign inside: `self.buf = buf if buf is not None else []`. This doesn't affect PL conversion directly, but catches new Python users.
+
+7. **Python `match` does not fall through.** Unlike C++ `switch`, Python 3.10+ `match/case` has no fallthrough. This matches PL's `Switch/Case` behavior, so the mapping is direct.
+
+8. **Float equality.** Use `math.isclose(a, b)` or `abs(a - b) < 1e-10` instead of `==`. PL uses tolerance-based comparison for `=` on float values; Python `==` on floats is exact bitwise comparison.
+
+9. **No `Value1..Value99` or `Condition1..Condition99`.** These PL pre-declared variables must be replaced with named instance attributes. Use descriptive identifiers like `self.rsi_value` and `self.is_oversold`.
+
+10. **Position state is not tracked automatically.** PL provides `MarketPosition`, `EntryPrice`, `CurrentContracts`, and `BarsSinceEntry` as built-in read-only variables updated by the engine. In Python, you must maintain these as instance attributes and update them manually whenever the execution engine fills an order.
+
+11. **Dollar amounts versus price levels for stops.** `SetStopLoss` and `SetProfitTarget` in PL accept a dollar (currency) amount. Python has no implicit conversion — you must compute the price level manually: `stop_price = entry_price - stop_dollars / (qty * point_value)`.
+
+12. **Multi-data series requires explicit design.** PL `Close of Data2` accesses a second feed bound to the chart. In Python, you must pass a second bar list (`bars2: list[Bar]`) to `on_bar()` or store it as an attribute. There is no implicit secondary-feed mechanism.
+
+13. **No Portfolio Money Management (PMM) equivalent.** PL's PMM allows a single script to govern position sizing across multiple instruments. Python has no built-in portfolio-level abstraction. You must implement cross-instrument logic as a separate orchestrator that calls individual strategy instances.
+
+14. **`datetime.utcfromtimestamp` is deprecated in Python 3.12+.** Use `datetime.fromtimestamp(ts, tz=timezone.utc)` instead to avoid deprecation warnings.
+
+---
+
+## Part 3: Conversion Checklists
+
+### PL → Python Pre-Conversion
+
+- [ ] List every `Inputs:` declaration → `__init__` parameter with default
+- [ ] List every `Variables:` declaration → instance attribute in `__init__`
+- [ ] Identify `Value1..99` / `Condition1..99` → plan meaningful replacement names
+- [ ] Identify all indicator calls → confirm pandas-ta / TA-Lib equivalent exists
+- [ ] Locate `Data2`/`Data3` references → plan multi-feed architecture
+- [ ] Locate `SetStopLoss`/`SetProfitTarget` → note point value for dollar→price conversion
+- [ ] Check `IntraBarPersist` → decide if tick-level behavior matters
+- [ ] Identify `.elf` function calls → plan Python function equivalents
+
+### PL → Python Post-Conversion
+
+- [ ] Every `Sell` maps to closing the long, not entering short
+- [ ] Every `BuyToCover` maps to closing the short, not entering long
+- [ ] All bar lookback accesses guarded with `len(bars) > n`
+- [ ] All indicator results checked for `NaN` before use
+- [ ] `Crosses Over` / `Crosses Under` implemented as two-bar comparisons
+- [ ] `MarketPosition`, `EntryPrice`, `CurrentContracts`, `BarsSinceEntry` tracked as instance attributes
+- [ ] Dollar-based stop/target amounts converted to price levels
+- [ ] `Value1..99` and `Condition1..99` renamed to descriptive typed attributes
+- [ ] Code runs with `python -Wall script.py` with zero errors and zero warnings
+- [ ] Strategy back-tested on same instrument/date range; trade count and P&L in same order of magnitude
+
+### Python → PL Pre-Conversion
+
+- [ ] List all `__init__` attributes → categorize: inputs (immutable) vs variables (mutable) vs indicator state
+- [ ] Identify all pandas-ta / TA-Lib calls → map each to PL built-in
+- [ ] Check for `match` statements with guard clauses → plan PL `Switch` or `If/Else`
+- [ ] Identify any libraries beyond pandas-ta/TA-Lib → plan PL equivalents
+- [ ] Check for explicit position-tracking attributes → confirm PL built-ins suffice
+
+### Python → PL Post-Conversion
+
+- [ ] Every short entry maps to `SellShort`, not `Sell`
+- [ ] Every long close maps to `Sell`, not `SellShort`
+- [ ] All `bars[-1-n].close` lookbacks converted to `Close[n]`
+- [ ] All manual crossover comparisons converted to PL `Crosses Over` / `Crosses Under`
+- [ ] All attributes categorized: immutable → `Inputs:`, mutable → `Variables:`
+- [ ] All pandas-ta/TA-Lib calls replaced with PL function calls
+- [ ] NaN handling removed (PL handles lookback alignment internally)
+- [ ] Price-level stops/targets converted to dollar amounts for `SetStopLoss`/`SetProfitTarget`
+- [ ] Script compiled in MultiCharts PowerEditor with zero errors
