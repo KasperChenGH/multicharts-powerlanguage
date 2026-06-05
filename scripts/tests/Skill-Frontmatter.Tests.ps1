@@ -40,6 +40,11 @@ Describe 'SKILL.md frontmatter' {
       $r.Valid | Should -BeTrue -Because $r.Reason
       $r.Name  | Should -Be 'powerlanguage-keywords-reference'
     }
+    It 'powerlanguage-python-conversion has valid frontmatter' {
+      $r = Test-SkillFrontmatter "$repoRoot/skills/powerlanguage-python-conversion/SKILL.md"
+      $r.Valid | Should -BeTrue -Because $r.Reason
+      $r.Name  | Should -Be 'powerlanguage-python-conversion'
+    }
   }
 
   Context 'negative cases (synthetic fixtures)' {
