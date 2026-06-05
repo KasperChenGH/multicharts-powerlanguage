@@ -32,3 +32,20 @@ Source materials
   open-source community resources. No content was scraped, copied, or derived
   from tradingview.com — TradingView's Terms of Service (Section 3) prohibit
   automated access and derivative works from their documentation.
+
+Third-party library references
+
+  The Rust conversion skill (skills/powerlanguage-rust-conversion/) references
+  ta-rs (https://crates.io/crates/ta), an open-source Rust crate for technical
+  analysis, licensed under the MIT License. This plugin does not redistribute
+  ta-rs source code or binaries.
+
+  The Rust conversion skill also references yata
+  (https://crates.io/crates/yata) for indicators not covered by ta-rs (e.g.,
+  ADX, CCI). yata is licensed under the Apache-2.0 License. This plugin does
+  not redistribute yata source code or binaries.
+
+  The C++ conversion skill (skills/powerlanguage-cpp-conversion/) references
+  TA-Lib (https://ta-lib.org/), an open-source C library for technical
+  analysis, licensed under a BSD-style license. This plugin does not
+  redistribute TA-Lib source code or binaries.

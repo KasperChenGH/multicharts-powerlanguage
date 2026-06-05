@@ -1,12 +1,12 @@
 # multicharts-powerlanguage
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.2.0-blue.svg)](https://github.com/KasperChenGH/multicharts-powerlanguage)
+[![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)](https://github.com/KasperChenGH/multicharts-powerlanguage)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude_Code-plugin-blueviolet.svg)](https://github.com/KasperChenGH/multicharts-powerlanguage)
 
-A public Claude Code plugin for [MultiCharts](https://www.multicharts.com/) PowerLanguage and [TradingView](https://www.tradingview.com/) Pine Script — gives Claude expert knowledge of both languages and the ability to convert code between them. Works on Windows, macOS, and Linux.
+A public Claude Code plugin for [MultiCharts](https://www.multicharts.com/) PowerLanguage — gives Claude expert knowledge of PowerLanguage, [TradingView](https://www.tradingview.com/) Pine Script, and the ability to convert code between PowerLanguage and Pine Script, Rust, or C++. Works on Windows, macOS, and Linux.
 
-**947 keywords · 64 compile-verified functions · 5 auto-activating skills · Pine Script reference · bidirectional conversion**
+**947 keywords · 64 compile-verified functions · 7 auto-activating skills · Pine Script / Rust / C++ conversion**
 
 ## Example
 
@@ -49,13 +49,15 @@ strategy.entry("Entry", strategy.long, qty=1)
 
 ## What's inside
 
-Five skills that auto-activate based on what you're asking Claude to do:
+Seven skills that auto-activate based on what you're asking Claude to do:
 
 - **`multicharts-fundamentals`** — what MultiCharts is, when to use which script type (Indicator / Signal / Function), the execution model, multi-data series, order keywords, and the unique-signal-name compile rule.
 - **`powerlanguage-syntax`** — declarations, the `begin/end` semicolon rule, control flow, bar references, operators, comments, built-in trade-state variables, 64 compile-verified built-in function signatures (Average, RSI, Stochastic, ADX, DirMovement, …), and code-generation gotchas (variable-name collisions with functions, single-letter aliases, loop-counter declarations, Length-only function signatures, order syntax).
 - **`powerlanguage-keywords-reference`** — a categorized reference covering 947 official PowerLanguage keywords (40 categories from MultiCharts's own help system). Each keyword has signature, parameters, a paraphrased description, and a link to the official wiki page.
 - **`pinescript-reference`** — TradingView Pine Script v5 syntax, type system, 15 built-in namespaces (`ta.*`, `strategy.*`, `request.*`, `math.*`, `str.*`, `array.*`, `color.*`, `label.*`, `line.*`, `box.*`, `table.*`, `map.*`, `matrix.*`, `log.*`), alerts (`alert()`, `alertcondition()`), plotting, control flow, user-defined functions/types, and common gotchas (repainting, `na` handling, series vs simple context, global-scope function calls).
 - **`powerlanguage-pinescript-conversion`** — bidirectional code conversion between PowerLanguage and Pine Script with concept mapping tables, semantic difference documentation (Sell ≠ short, dollar vs price stops, multi-data vs request.security), and pre/post-conversion checklists.
+- **`powerlanguage-rust-conversion`** — bidirectional code conversion between PowerLanguage and Rust with a lightweight Strategy trait scaffold, concept mapping tables (ta-rs indicators, bar struct, order enum), semantic differences (explicit loops, borrow checker, stateful indicators), and pre/post-conversion checklists.
+- **`powerlanguage-cpp-conversion`** — bidirectional code conversion between PowerLanguage and C++ with a Strategy base class scaffold, concept mapping tables (TA-Lib batch API, Bar struct, order struct), semantic differences (explicit loops, memory management, outBegIdx offset), and pre/post-conversion checklists.
 
 ## Install (Claude Code)
 
@@ -64,7 +66,7 @@ Five skills that auto-activate based on what you're asking Claude to do:
 /plugin install multicharts-powerlanguage@multicharts-powerlanguage-dev
 ```
 
-After install, the five skills auto-trigger when relevant. You don't have to invoke them manually — when you ask Claude something about MultiCharts, PowerLanguage, or Pine Script, the right skill activates.
+After install, the seven skills auto-trigger when relevant. You don't have to invoke them manually — when you ask Claude something about MultiCharts, PowerLanguage, or Pine Script, the right skill activates.
 
 ## Verifying keyword signatures (maintainer only)
 
@@ -102,6 +104,8 @@ Skills are markdown files with YAML frontmatter (a `name` and a `description`). 
 MultiCharts® and PowerLanguage® are trademarks of MCT Limited. TradingView® and Pine Script® are trademarks of TradingView, Inc. This plugin is not affiliated with or endorsed by either company.
 
 The PowerLanguage keyword summaries are original paraphrased descriptions; each links to its official wiki page at https://www.multicharts.com/. The Pine Script reference is hand-curated from general language knowledge and open-source resources — no content was scraped from tradingview.com.
+
+The Rust conversion skill references [ta-rs](https://crates.io/crates/ta), an open-source technical analysis crate (MIT-licensed). The C++ conversion skill references [TA-Lib](https://ta-lib.org/), an open-source technical analysis library (BSD-licensed). Neither library's source code is redistributed in this plugin.
 
 See `NOTICE` for the full attribution.
 
