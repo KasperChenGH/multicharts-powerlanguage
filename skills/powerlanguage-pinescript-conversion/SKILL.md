@@ -53,14 +53,14 @@ This skill covers the structural and semantic differences between MultiCharts Po
 | `RSI(Close, Length)` | `ta.rsi(close, length)` | Direct equivalent |
 | `Stochastic(Close, High, Low, Length, 1, 3, 0, 0, 0, 0, 0)` | `ta.stoch(close, high, low, length)` | PL takes 11 params including smoothing; Pine returns raw %K only — %D must be smoothed manually |
 | `ADX(Length)` | `[diplus, diminus, adx] = ta.dmi(length, length)` | Pine `ta.dmi` returns a 3-tuple; destructure before use |
-| `CCI(Close, Length)` | `ta.cci(close, length)` | Direct equivalent (note argument order differs from some PL references) |
+| `CCI(Length)` | `ta.cci(close, length)` | PL `CCI` takes only length (uses HLC internally); Pine `ta.cci` also uses HLC |
 | `AvgTrueRange(Length)` | `ta.atr(length)` | Direct equivalent |
 | `BollingerBand(Close, Length, 2)` | `[mid, upper, lower] = ta.bb(close, length, 2)` | Pine returns a 3-tuple; PL returns the upper or lower band depending on the final argument |
 | `Close Crosses Over MA` | `ta.crossover(close, ma)` | PL keyword phrase; Pine is a function returning bool |
 | `Close Crosses Under MA` | `ta.crossunder(close, ma)` | Same pattern as above |
 | `Highest(Close, Length)` | `ta.highest(close, length)` | Direct equivalent |
 | `Lowest(Close, Length)` | `ta.lowest(close, length)` | Direct equivalent |
-| `MomentumFunc(Close, Length)` | `ta.mom(close, length)` | Direct equivalent |
+| `Momentum(Close, Length)` | `ta.mom(close, length)` | Direct equivalent |
 
 ---
 

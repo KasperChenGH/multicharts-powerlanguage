@@ -132,8 +132,8 @@ The slice `&bars[..=i]` gives the strategy access to full history; `bars.last().
 | `Open`, `High`, `Low`, `Close`, `Volume` | `bar.open`, `bar.high`, `bar.low`, `bar.close`, `bar.volume` | `let bar = bars.last().unwrap();` for current bar |
 | `Close[1]` | `bars[bars.len() - 2].close` | Lookback N: `bars[bars.len() - 1 - n].close`. Guard with `bars.len() > n` to avoid panic. |
 | `Close of Data2` | separate `bars2: &[Bar]` parameter or struct field | PL Data2 is a second chart feed; pass a second bar slice to `on_bar()` |
-| `Date` | `chrono::NaiveDateTime::from_timestamp(bar.time, 0)` | PL `Date` is YYMMDD integer; Rust uses the `chrono` crate |
-| `Time` | `chrono::NaiveDateTime::from_timestamp(bar.time, 0).time()` | PL `Time` is HHMM integer; extract hour/minute from timestamp |
+| `Date` | `chrono::DateTime::from_timestamp(bar.time, 0).unwrap().naive_utc()` | PL `Date` is YYYMMDD integer (YYY = years since 1900, e.g., 2024 = `124`); Rust uses the `chrono` crate |
+| `Time` | `chrono::DateTime::from_timestamp(bar.time, 0).unwrap().naive_utc().time()` | PL `Time` is HHMM integer; extract hour/minute from timestamp |
 | `BarNumber` / `CurrentBar` | `bar.bar_number` or `i + 1` (loop index) | PL is 1-based; if using loop index `i`, add 1 |
 
 ---
@@ -145,16 +145,16 @@ The slice `&bars[..=i]` gives the strategy access to full history; `bars.last().
 | `Average(Close, Length)` | `SimpleMovingAverage::new(length).unwrap()` → `.next(bar.close)` | Create once in `new()`, call `next()` in `on_bar()` |
 | `XAverage(Close, Length)` | `ExponentialMovingAverage::new(length).unwrap()` → `.next(bar.close)` | Same streaming pattern |
 | `RSI(Close, Length)` | `RelativeStrengthIndex::new(length).unwrap()` → `.next(bar.close)` | Returns 0–100 range matching PL |
-| `Stochastic(...)` | `SlowStochastic::new(k, d).unwrap()` → `.next(&data_item)` | ta-rs needs a `DataItem`; PL takes 11 params — map k_period and d_period |
+| `Stochastic(...)` | `SlowStochastic::new(k_period, d_period).unwrap()` → `.next(&data_item)` | Accepts f64 but needs OHLC `DataItem` for correct stochastic formula; PL takes 11 params — map k_period and d_period |
 | `ADX(Length)` | Not in ta-rs; use `yata::indicators::ADX` or implement manually | ta-rs lacks ADX; `yata` crate covers it |
-| `CCI(Close, Length)` | Not in ta-rs; implement manually or use `yata` | CCI = (TP − SMA) / (0.015 × MeanDeviation) |
-| `AvgTrueRange(Length)` | `AverageTrueRange::new(length).unwrap()` → `.next(&data_item)` | Requires `DataItem` (OHLCV), not plain f64 |
-| `BollingerBand(Close, Length, 2)` | `BollingerBands::new(length, 2.0).unwrap()` → `.next(bar.close)` | Returns `BollingerBandsOutput { average, upper, lower }` |
+| `CCI(Length)` | `CommodityChannelIndex::new(length).unwrap()` → `.next(&data_item)` | PL `CCI` takes only length (uses HLC internally); ta-rs requires a type implementing `Close + High + Low` |
+| `AvgTrueRange(Length)` | `AverageTrueRange::new(length).unwrap()` → `.next(&data_item)` | Accepts f64 but needs OHLC `DataItem` for correct true-range calculation (high-low range) |
+| `BollingerBand(Close, Length, 2)` | `BollingerBands::new(length, 2.0).unwrap()` → `.next(bar.close)` | Returns `BollingerBandsOutput { average, upper, lower }`. Note: ta-rs may use EMA internally — verify output matches PL's SMA-based Bollinger Bands |
 | `Close Crosses Over MA` | `prev_close <= prev_ma && close > ma` | No built-in crossover in ta-rs; store previous-bar values yourself |
 | `Close Crosses Under MA` | `prev_close >= prev_ma && close < ma` | Same pattern, reversed inequality |
 | `Highest(Close, Length)` | `Maximum::new(length).unwrap()` → `.next(bar.close)` | ta-rs `Maximum` indicator |
 | `Lowest(Close, Length)` | `Minimum::new(length).unwrap()` → `.next(bar.close)` | ta-rs `Minimum` indicator |
-| `MomentumFunc(Close, Length)` | `close - bars[bars.len() - 1 - length].close` | No ta-rs built-in; compute directly from bar slice |
+| `Momentum(Close, Length)` | `close - bars[bars.len() - 1 - length].close` | No ta-rs built-in; compute directly from bar slice. Guard with `bars.len() > length`. |
 
 ---
 
@@ -217,11 +217,11 @@ The slice `&bars[..=i]` gives the strategy access to full history; `bars.last().
 
 2. **PL is implicitly bar-driven; Rust requires an explicit loop.** PowerLanguage executes the entire script top-to-bottom on each bar close automatically. In Rust, you must write the `for i in 0..bars.len()` loop yourself and call `on_bar()` on each iteration. Forgetting the loop wrapper means the strategy logic runs only once.
 
-3. **Bar lookback can panic on insufficient history.** PL `Close[5]` silently returns 0 if fewer than 6 bars exist. Rust `bars[bars.len() - 6]` will panic with an index-out-of-bounds error. Always guard lookback access with `if bars.len() > n` before indexing.
+3. **Bar lookback can panic on insufficient history.** PL uses MaxBarsBack to prevent execution on bars with insufficient history — the script simply does not run on those early bars. Rust `bars[bars.len() - 6]` will panic with an index-out-of-bounds error. Always guard lookback access with `if bars.len() > n` before indexing. When the guard fails, either skip the bar with an early return (matching PL's MaxBarsBack behavior) or use a default value.
 
 4. **ta-rs indicators are stateful and must be created once.** Each ta-rs indicator (SMA, EMA, RSI, etc.) maintains internal state via its struct. Create the indicator in `new()` and call `.next()` on each bar. Creating a new indicator inside `on_bar()` resets the calculation and produces wrong values.
 
-5. **ta-rs `DataItem` vs plain f64.** Some ta-rs indicators (ATR, Stochastic, Bollinger Bands) require a `DataItem` implementing the `Open`, `High`, `Low`, `Close`, `Volume` traits, not a plain f64. Use `ta::DataItem::builder().open(o).high(h).low(l).close(c).volume(v).build().unwrap()` or implement the traits on your `Bar` struct.
+5. **Some ta-rs indicators need OHLC data for correct results.** ATR, Stochastic, and CCI all accept plain f64 via `Next<f64>`, but passing only close prices produces incorrect values — ATR needs high-low range, Stochastic needs high/low/close, CCI needs typical price. Pass a `DataItem` (via `ta::DataItem::builder().open(o).high(h).low(l).close(c).volume(v).build().unwrap()`) or implement the `High + Low + Close` traits on your `Bar` struct.
 
 6. **Crossover/crossunder has no built-in.** PL `Crosses Over` / `Crosses Under` are language keywords. ta-rs has no crossover function. Implement as: `let crossed_over = prev_a <= prev_b && a > b;`. You must store previous-bar values in struct fields.
 
@@ -236,6 +236,10 @@ The slice `&bars[..=i]` gives the strategy access to full history; `bars.last().
 11. **Ownership and borrowing affect indicator state.** PL variables are global mutable state with no restrictions. In Rust, indicator structs are owned by the strategy and mutated via `&mut self` in `on_bar()`. If you try to pass `&mut self.sma` and `&self` simultaneously, you will hit borrow-checker errors. Extract the needed bar data into local variables before calling `.next()`.
 
 12. **No Portfolio Money Management (PMM) equivalent.** PL's PMM allows a single script to govern position sizing across multiple instruments. Rust has no built-in portfolio-level abstraction. You must implement cross-instrument logic as a separate orchestrator that calls individual strategy instances.
+
+13. **Floating-point equality differs.** PL uses tolerance-based comparison for `=` on float values. Rust `==` on f64 is exact bitwise comparison. Converting PL `If Close = 100` to `if close == 100.0` may miss matches due to floating-point precision. Use an epsilon comparison: `(close - 100.0).abs() < 1e-10`.
+
+14. **Multiple `Once` blocks need separate booleans.** PL supports multiple independent `Once Begin ... End` blocks in the same script, each executing exactly once. A single `self.first_bar` bool handles only one. If the PL source has N `Once` blocks, create N separate bool fields (e.g., `once_header: bool`, `once_init: bool`).
 
 ---
 

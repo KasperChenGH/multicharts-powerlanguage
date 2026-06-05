@@ -1,0 +1,425 @@
+// =============================================================================
+// test_cpp_from_pl.txt
+// C++ conversions of the 5 PowerLanguage strategies in tests/test_strategies.txt.
+//
+// Each block is a self-contained strategy class inheriting from the Strategy
+// base class defined in Part 0 of the powerlanguage-cpp-conversion skill.
+//
+// Dependencies: TA-Lib (ta_libc.h)
+//
+// NOTE: These cannot be compiled as-is in a single file — each strategy is a
+// standalone class. Separator lines mark where one ends and the next begins.
+//
+// The Order struct includes an Action field to distinguish PL order semantics:
+//
+//   enum class Action { Entry, Exit, StopLoss, ProfitTarget, BreakEven };
+//   struct Order { std::string label; Action action; Side side;
+//                  OrderType type; double price; double qty; };
+// =============================================================================
+
+
+// =============================================================================
+// STRATEGY 1 — MA Crossover
+// PL source: lines 17-24 of test_strategies.txt
+//
+// Conversion notes:
+//   Average(Close, 10)           → TA_SMA(0, endIdx, closes, 10, ...)
+//   Average(Close, 20)           → TA_SMA(0, endIdx, closes, 20, ...)
+//   crosses over                 → prev_fast <= prev_slow && fast > slow
+//   crosses under                → prev_fast >= prev_slow && fast < slow
+//   Buy ... Next Bar at Market   → Order { Action::Entry, Side::Long }
+//   Sell ... Next Bar at Market  → Order { Action::Exit, Side::Long }
+// =============================================================================
+
+#include "ta_libc.h"
+#include <vector>
+#include <string>
+
+class S1MaCrossover : public Strategy {
+public:
+    S1MaCrossover() = default;
+
+    void on_bar(const std::vector<Bar>& bars,
+                std::vector<Order>& orders) override {
+        if (bars.size() < 20) return;
+
+        std::vector<double> closes(bars.size());
+        for (size_t i = 0; i < bars.size(); ++i) closes[i] = bars[i].close;
+        int endIdx = static_cast<int>(closes.size()) - 1;
+
+        // TA_SMA for fast MA (period 10)
+        int outBeg = 0, outNB = 0;
+        std::vector<double> fast_out(bars.size());
+        TA_SMA(0, endIdx, closes.data(), 10, &outBeg, &outNB, fast_out.data());
+        if (outNB < 2) return;
+        double fast_ma = fast_out[outNB - 1];
+        double prev_fast = fast_out[outNB - 2];
+
+        // TA_SMA for slow MA (period 20)
+        std::vector<double> slow_out(bars.size());
+        TA_SMA(0, endIdx, closes.data(), 20, &outBeg, &outNB, slow_out.data());
+        if (outNB < 2) return;
+        double slow_ma = slow_out[outNB - 1];
+        double prev_slow = slow_out[outNB - 2];
+
+        // PL: If fastMA crosses over slowMA Then Buy
+        bool crossed_over = prev_fast <= prev_slow && fast_ma > slow_ma;
+        if (crossed_over) {
+            orders.push_back({"S1_LE", Action::Entry, Side::Long,
+                              OrderType::Market, 0.0, 1.0});
+        }
+
+        // PL: If fastMA crosses under slowMA Then Sell (exit long)
+        bool crossed_under = prev_fast >= prev_slow && fast_ma < slow_ma;
+        if (crossed_under) {
+            orders.push_back({"S1_LX", Action::Exit, Side::Long,
+                              OrderType::Market, 0.0, 1.0});
+        }
+    }
+};
+// END STRATEGY 1
+// =============================================================================
+
+
+// =============================================================================
+// STRATEGY 2 — RSI + ATR Stop + Position Detection
+// PL source: lines 29-46 of test_strategies.txt
+//
+// Conversion notes:
+//   RSI(Close, 14)               → TA_RSI(0, endIdx, closes, 14, ...)
+//   AvgTrueRange(14)             → TA_ATR(0, endIdx, highs, lows, closes, 14, ...)
+//   MarketPosition               → position_ (updated by execution engine on fill)
+//   EntryPrice                   → entry_price_ (set by execution engine on fill)
+//   Sell ... at stopPx Stop      → Order { Action::Exit, OrderType::Stop }
+//   Sell ... at Market (target)  → Order { Action::Exit, OrderType::Market }
+//
+//   PL "Next Bar" semantics: orders are submitted this bar, filled next bar.
+//   The execution engine handles fill timing — strategy just emits orders.
+// =============================================================================
+
+#include "ta_libc.h"
+#include <vector>
+
+class S2RsiAtrStop : public Strategy {
+public:
+    S2RsiAtrStop() = default;
+
+    void on_bar(const std::vector<Bar>& bars,
+                std::vector<Order>& orders) override {
+        if (bars.size() < 15) return;
+
+        int n = static_cast<int>(bars.size());
+        std::vector<double> closes(n), highs(n), lows(n);
+        for (int i = 0; i < n; ++i) {
+            closes[i] = bars[i].close;
+            highs[i] = bars[i].high;
+            lows[i] = bars[i].low;
+        }
+        int endIdx = n - 1;
+        int outBeg = 0, outNB = 0;
+
+        // TA_RSI
+        std::vector<double> rsi_out(n);
+        TA_RSI(0, endIdx, closes.data(), 14, &outBeg, &outNB, rsi_out.data());
+        if (outNB < 1) return;
+        double rsi_val = rsi_out[outNB - 1];
+
+        // TA_ATR — requires HLC arrays
+        std::vector<double> atr_out(n);
+        TA_ATR(0, endIdx, highs.data(), lows.data(), closes.data(), 14,
+               &outBeg, &outNB, atr_out.data());
+        if (outNB < 1) return;
+        double atr_val = atr_out[outNB - 1];
+
+        // PL: position transition detection
+        if (position_ != prev_position_) {
+            // position just changed
+        }
+        prev_position_ = position_;
+
+        // PL: If MarketPosition = 0 and rsiVal < 30 Then Buy
+        if (position_ == 0 && rsi_val < 30.0) {
+            orders.push_back({"S2_LE", Action::Entry, Side::Long,
+                              OrderType::Market, 0.0, 1.0});
+        }
+
+        // PL: If MarketPosition = 1 Then Begin
+        if (position_ == 1) {
+            double stop_px = entry_price_ - 2.0 * atr_val;
+
+            // PL: Sell ("S2_STP") at stopPx Stop
+            orders.push_back({"S2_STP", Action::Exit, Side::Long,
+                              OrderType::Stop, stop_px, 1.0});
+
+            // PL: If rsiVal > 70 Then Sell ("S2_TGT") at Market
+            if (rsi_val > 70.0) {
+                orders.push_back({"S2_TGT", Action::Exit, Side::Long,
+                                  OrderType::Market, 0.0, 1.0});
+            }
+        }
+    }
+
+private:
+    int position_ = 0;
+    int prev_position_ = 0;
+    double entry_price_ = 0.0;
+};
+// END STRATEGY 2
+// =============================================================================
+
+
+// =============================================================================
+// STRATEGY 3 — Bollinger Band Breakout + Volume Filter
+// PL source: lines 51-65 of test_strategies.txt
+//
+// Conversion notes:
+//   BollingerBand(Close, 20, 2)  → TA_BBANDS(... 2.0, 2.0, TA_MAType_SMA, ...)
+//   BollingerBand(Close, 20, -2) → lower band from TA_BBANDS output
+//   Average(Volume, 20)          → TA_SMA on volume array
+//   SellShort                    → Action::Entry, Side::Short
+//   Sell ... at Stop             → Action::Exit, Side::Long (exit long)
+//   BuyToCover ... at Stop       → Action::Exit, Side::Short (exit short)
+// =============================================================================
+
+#include "ta_libc.h"
+#include <vector>
+
+class S3BbBreakout : public Strategy {
+public:
+    S3BbBreakout() = default;
+
+    void on_bar(const std::vector<Bar>& bars,
+                std::vector<Order>& orders) override {
+        if (bars.size() < 21) return;
+
+        int n = static_cast<int>(bars.size());
+        std::vector<double> closes(n), volumes(n);
+        for (int i = 0; i < n; ++i) {
+            closes[i] = bars[i].close;
+            volumes[i] = bars[i].volume;
+        }
+        int endIdx = n - 1;
+        int outBeg = 0, outNB = 0;
+
+        // TA_BBANDS — returns upper, middle, lower arrays
+        std::vector<double> bb_upper(n), bb_middle(n), bb_lower(n);
+        TA_BBANDS(0, endIdx, closes.data(), 20, 2.0, 2.0, TA_MAType_SMA,
+                  &outBeg, &outNB, bb_upper.data(), bb_middle.data(),
+                  bb_lower.data());
+        if (outNB < 1) return;
+        double upper_bb = bb_upper[outNB - 1];
+        double lower_bb = bb_lower[outNB - 1];
+
+        // TA_SMA on volume
+        std::vector<double> vol_out(n);
+        TA_SMA(0, endIdx, volumes.data(), 20, &outBeg, &outNB, vol_out.data());
+        if (outNB < 1) return;
+        double vol_avg = vol_out[outNB - 1];
+
+        double close = bars.back().close;
+        double volume = bars.back().volume;
+
+        // PL: If Close > upperBB and Volume > volAvg * 1.5 Then Buy
+        if (close > upper_bb && volume > vol_avg * 1.5) {
+            orders.push_back({"S3_LE", Action::Entry, Side::Long,
+                              OrderType::Market, 0.0, 1.0});
+        }
+
+        // PL: If Close < lowerBB and Volume > volAvg * 1.5 Then SellShort
+        if (close < lower_bb && volume > vol_avg * 1.5) {
+            orders.push_back({"S3_SE", Action::Entry, Side::Short,
+                              OrderType::Market, 0.0, 1.0});
+        }
+
+        // PL: If MarketPosition = 1 Then Sell at lowerBB Stop (exit long)
+        if (position_ == 1) {
+            orders.push_back({"S3_LX", Action::Exit, Side::Long,
+                              OrderType::Stop, lower_bb, 1.0});
+        }
+
+        // PL: If MarketPosition = -1 Then BuyToCover at upperBB Stop (exit short)
+        if (position_ == -1) {
+            orders.push_back({"S3_SX", Action::Exit, Side::Short,
+                              OrderType::Stop, upper_bb, 1.0});
+        }
+    }
+
+private:
+    int position_ = 0;
+};
+// END STRATEGY 3
+// =============================================================================
+
+
+// =============================================================================
+// STRATEGY 4 — Multi-Indicator + Risk Management
+// PL source: lines 70-81 of test_strategies.txt
+//
+// Conversion notes:
+//   ADX(14)                      → TA_ADX(0, endIdx, highs, lows, closes, 14, ...)
+//   CCI(20)                      → TA_CCI(0, endIdx, highs, lows, closes, 20, ...)
+//   crosses over -100            → prev_cci <= -100 && cci > -100
+//   SetStopLoss(500)             → Action::StopLoss order emitted each bar
+//   SetProfitTarget(1000)        → Action::ProfitTarget order emitted each bar
+//   SetBreakEven(200)            → Action::BreakEven order when profit exceeds $200
+// =============================================================================
+
+#include "ta_libc.h"
+#include <vector>
+#include <cmath>
+
+class S4MultiIndicator : public Strategy {
+public:
+    explicit S4MultiIndicator(double point_value)
+        : point_value_(point_value) {}
+
+    void on_bar(const std::vector<Bar>& bars,
+                std::vector<Order>& orders) override {
+        if (bars.size() < 30) return; // ADX(14) needs ~28 bars
+
+        int n = static_cast<int>(bars.size());
+        std::vector<double> closes(n), highs(n), lows(n);
+        for (int i = 0; i < n; ++i) {
+            closes[i] = bars[i].close;
+            highs[i] = bars[i].high;
+            lows[i] = bars[i].low;
+        }
+        int endIdx = n - 1;
+        int outBeg = 0, outNB = 0;
+
+        // TA_ADX — requires HLC arrays
+        std::vector<double> adx_out(n);
+        TA_ADX(0, endIdx, highs.data(), lows.data(), closes.data(), 14,
+               &outBeg, &outNB, adx_out.data());
+        if (outNB < 1) return;
+        double adx_val = adx_out[outNB - 1];
+
+        // TA_CCI — requires HLC arrays
+        std::vector<double> cci_out(n);
+        TA_CCI(0, endIdx, highs.data(), lows.data(), closes.data(), 20,
+               &outBeg, &outNB, cci_out.data());
+        if (outNB < 2) return;
+        double cci_val = cci_out[outNB - 1];
+        double prev_cci = cci_out[outNB - 2];
+
+        // PL: If adxVal > 25 and cciVal crosses over -100 Then Buy
+        bool cci_crossed_over = prev_cci <= -100.0 && cci_val > -100.0;
+        if (adx_val > 25.0 && cci_crossed_over) {
+            orders.push_back({"S4_LE", Action::Entry, Side::Long,
+                              OrderType::Market, 0.0, 1.0});
+        }
+
+        // PL: If adxVal > 25 and cciVal crosses under 100 Then SellShort
+        bool cci_crossed_under = prev_cci >= 100.0 && cci_val < 100.0;
+        if (adx_val > 25.0 && cci_crossed_under) {
+            orders.push_back({"S4_SE", Action::Entry, Side::Short,
+                              OrderType::Market, 0.0, 1.0});
+        }
+
+        // PL: SetStopLoss(500), SetProfitTarget(1000), SetBreakEven(200)
+        if (position_ != 0) {
+            double sign = (position_ == 1) ? 1.0 : -1.0;
+            double sl = entry_price_ - sign * 500.0 / point_value_;
+            double tp = entry_price_ + sign * 1000.0 / point_value_;
+
+            orders.push_back({"S4_SL", Action::StopLoss,
+                              (position_ == 1) ? Side::Long : Side::Short,
+                              OrderType::Stop, sl, 1.0});
+            orders.push_back({"S4_TP", Action::ProfitTarget,
+                              (position_ == 1) ? Side::Long : Side::Short,
+                              OrderType::Limit, tp, 1.0});
+
+            // SetBreakEven(200): move stop to entry when profit > $200
+            double unrealized = sign * (bars.back().close - entry_price_) * point_value_;
+            if (unrealized >= 200.0) {
+                orders.push_back({"S4_BE", Action::BreakEven,
+                                  (position_ == 1) ? Side::Long : Side::Short,
+                                  OrderType::Stop, entry_price_, 1.0});
+            }
+        }
+    }
+
+private:
+    double point_value_;
+    int position_ = 0;
+    double entry_price_ = 0.0;
+};
+// END STRATEGY 4
+// =============================================================================
+
+
+// =============================================================================
+// STRATEGY 5 — Multi-Data Regime Filter
+// PL source: lines 87-93 of test_strategies.txt
+//
+// Conversion notes:
+//   Close of data2               → bars2 (second bar vector passed separately)
+//   Average(Close of data2, 50)  → TA_SMA on bars2 close prices
+//   RSI(Close, 14)               → TA_RSI on primary close prices
+//   Sell ("S5_LX") at Market     → Order { Action::Exit, Side::Long }
+// =============================================================================
+
+#include "ta_libc.h"
+#include <vector>
+
+class S5RegimeFilter : public Strategy {
+public:
+    S5RegimeFilter() = default;
+
+    // Multi-data: accepts two bar vectors
+    void on_bar_multi(const std::vector<Bar>& bars,
+                      const std::vector<Bar>& bars2,
+                      std::vector<Order>& orders) {
+        if (bars.size() < 15 || bars2.size() < 51) return;
+
+        int n1 = static_cast<int>(bars.size());
+        int n2 = static_cast<int>(bars2.size());
+
+        std::vector<double> closes(n1);
+        for (int i = 0; i < n1; ++i) closes[i] = bars[i].close;
+
+        std::vector<double> closes2(n2);
+        for (int i = 0; i < n2; ++i) closes2[i] = bars2[i].close;
+
+        int outBeg = 0, outNB = 0;
+
+        // TA_RSI on primary feed
+        std::vector<double> rsi_out(n1);
+        TA_RSI(0, n1 - 1, closes.data(), 14, &outBeg, &outNB, rsi_out.data());
+        if (outNB < 1) return;
+        double rsi_val = rsi_out[outNB - 1];
+
+        // TA_SMA on regime feed (data2)
+        std::vector<double> regime_out(n2);
+        TA_SMA(0, n2 - 1, closes2.data(), 50, &outBeg, &outNB, regime_out.data());
+        if (outNB < 1) return;
+        double regime_ma = regime_out[outNB - 1];
+        double regime_close = bars2.back().close;
+
+        // PL: If Close of data2 > Average(Close of data2, 50) Then Begin
+        if (regime_close > regime_ma) {
+            // PL: If RSI(Close, 14) < 30 Then Buy
+            if (rsi_val < 30.0) {
+                orders.push_back({"S5_LE", Action::Entry, Side::Long,
+                                  OrderType::Market, 0.0, 1.0});
+            }
+        }
+
+        // PL: If MarketPosition = 1 and RSI(Close, 14) > 70 Then Sell (exit long)
+        if (position_ == 1 && rsi_val > 70.0) {
+            orders.push_back({"S5_LX", Action::Exit, Side::Long,
+                              OrderType::Market, 0.0, 1.0});
+        }
+    }
+
+    void on_bar(const std::vector<Bar>& bars,
+                std::vector<Order>& orders) override {
+        (void)bars;
+        (void)orders;
+    }
+
+private:
+    int position_ = 0;
+};
+// END STRATEGY 5
+// =============================================================================

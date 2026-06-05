@@ -164,8 +164,8 @@ TA-Lib RT is a community fork that adds streaming APIs: `TA_SMA_StateInit()`, `T
 | `Open`, `High`, `Low`, `Close`, `Volume` | `bars.back().open`, `.high`, `.low`, `.close`, `.volume` | `bars.back()` for current bar |
 | `Close[1]` | `bars[bars.size() - 2].close` | Lookback N: `bars[bars.size() - 1 - n].close`. Check `bars.size() > n` to avoid UB. |
 | `Close of Data2` | separate `const std::vector<Bar>& bars2` parameter | PL Data2 is a second chart feed; pass a second vector reference |
-| `Date` | `std::gmtime(&bar.time)` → `tm_year`, `tm_mon`, `tm_mday` | PL `Date` is YYMMDD integer; C++ uses `<ctime>` or `<chrono>` |
-| `Time` | `std::gmtime(&bar.time)` → `tm_hour`, `tm_min` | PL `Time` is HHMM integer |
+| `Date` | `time_t t = bar.time; auto* tm = std::gmtime(&t);` → `tm->tm_year`, `tm->tm_mon`, `tm->tm_mday` | PL `Date` is YYYMMDD integer (YYY = years since 1900); C++ uses `<ctime>` or `<chrono>`. Cast `int64_t` to `time_t` for portability. |
+| `Time` | `time_t t = bar.time; auto* tm = std::gmtime(&t);` → `tm->tm_hour`, `tm->tm_min` | PL `Time` is HHMM integer |
 | `BarNumber` / `CurrentBar` | `bar.bar_number` or `i + 1` (loop index) | PL is 1-based |
 
 ---
@@ -179,14 +179,14 @@ TA-Lib RT is a community fork that adds streaming APIs: `TA_SMA_StateInit()`, `T
 | `RSI(Close, Length)` | `TA_RSI(0, endIdx, inClose, length, &outBeg, &outNB, outRsi)` | Returns 0–100 range |
 | `Stochastic(...)` | `TA_STOCH(0, endIdx, inHigh, inLow, inClose, fastK, slowK, slowKMAType, slowD, slowDMAType, &outBeg, &outNB, outSlowK, outSlowD)` | Full %K/%D smoothing control — maps better to PL's 11-param version than Pine's simple `ta.stoch` |
 | `ADX(Length)` | `TA_ADX(0, endIdx, inHigh, inLow, inClose, length, &outBeg, &outNB, outAdx)` | Direct equivalent |
-| `CCI(Close, Length)` | `TA_CCI(0, endIdx, inHigh, inLow, inClose, length, &outBeg, &outNB, outCci)` | Note: TA-Lib CCI uses HLC, not just Close |
+| `CCI(Length)` | `TA_CCI(0, endIdx, inHigh, inLow, inClose, length, &outBeg, &outNB, outCci)` | PL `CCI` takes only length (uses HLC internally); TA-Lib requires explicit HLC arrays |
 | `AvgTrueRange(Length)` | `TA_ATR(0, endIdx, inHigh, inLow, inClose, length, &outBeg, &outNB, outAtr)` | Requires HLC arrays |
 | `BollingerBand(Close, Length, 2)` | `TA_BBANDS(0, endIdx, inClose, length, 2.0, 2.0, TA_MAType_SMA, &outBeg, &outNB, outUpper, outMiddle, outLower)` | Returns three arrays: upper, middle, lower |
 | `Close Crosses Over MA` | `prev_close <= prev_ma && close > ma` | No built-in crossover in TA-Lib; implement as two-bar comparison |
 | `Close Crosses Under MA` | `prev_close >= prev_ma && close < ma` | Same pattern |
 | `Highest(Close, Length)` | `TA_MAX(0, endIdx, inClose, length, &outBeg, &outNB, outMax)` | Direct equivalent |
 | `Lowest(Close, Length)` | `TA_MIN(0, endIdx, inClose, length, &outBeg, &outNB, outMin)` | Direct equivalent |
-| `MomentumFunc(Close, Length)` | `TA_MOM(0, endIdx, inClose, length, &outBeg, &outNB, outMom)` | Direct equivalent |
+| `Momentum(Close, Length)` | `TA_MOM(0, endIdx, inClose, length, &outBeg, &outNB, outMom)` | Direct equivalent |
 
 ---
 
@@ -249,7 +249,7 @@ TA-Lib RT is a community fork that adds streaming APIs: `TA_SMA_StateInit()`, `T
 
 2. **PL is implicitly bar-driven; C++ requires an explicit loop.** PowerLanguage executes the entire script top-to-bottom on each bar close automatically. In C++, you must write the `for (size_t i = 0; i < bars.size(); ++i)` loop and call `on_bar()` on each iteration.
 
-3. **Bar lookback causes undefined behavior without bounds checking.** PL `Close[5]` silently returns 0 if fewer than 6 bars exist. C++ `bars[bars.size() - 6]` is undefined behavior when `bars.size() < 6` — likely a crash, but possibly silent corruption. Always check `bars.size() > n` before lookback access.
+3. **Bar lookback causes undefined behavior without bounds checking.** PL uses MaxBarsBack to prevent execution on bars with insufficient history — the script simply does not run on those early bars. C++ `bars[bars.size() - 6]` is undefined behavior when `bars.size() < 6` — likely a crash, but possibly silent corruption. Always check `bars.size() > n` before lookback access, and skip the bar or use a default value when history is insufficient.
 
 4. **TA-Lib uses batch computation, not streaming.** TA-Lib functions like `TA_SMA` process an entire array at once and return `outBegIdx` (first valid output index) and `outNBElement` (count of valid outputs). Calling TA-Lib on every bar with a growing history slice recomputes the entire series each time. For performance, consider TA-Lib RT's streaming API or caching previous results.
 

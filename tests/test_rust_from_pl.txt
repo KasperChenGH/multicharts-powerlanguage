@@ -1,0 +1,515 @@
+// =============================================================================
+// test_rust_from_pl.txt
+// Rust conversions of the 5 PowerLanguage strategies in tests/test_strategies.txt.
+//
+// Each block is a self-contained strategy struct implementing the Strategy trait
+// from Part 0 of the powerlanguage-rust-conversion skill.
+//
+// Dependencies: ta = "0.5"  (ta-rs crate)
+//
+// NOTE: These cannot be compiled as-is in a single file — each strategy is a
+// standalone module. Separator lines mark where one ends and the next begins.
+//
+// The Order enum includes Entry, Exit, StopLoss, and ProfitTarget variants
+// to distinguish PL's order semantics in Rust:
+//
+//   #[derive(Debug, Clone)]
+//   pub enum Action { Entry, Exit, StopLoss, ProfitTarget, BreakEven }
+//   pub struct Order { label: String, action: Action, side: Side,
+//                      order_type: OrderType, qty: f64 }
+// =============================================================================
+
+
+// =============================================================================
+// STRATEGY 1 — MA Crossover
+// PL source: lines 17-24 of test_strategies.txt
+//
+// Conversion notes:
+//   Average(Close, 10)           → SimpleMovingAverage::new(10) + .next(close)
+//   crosses over                 → prev_fast <= prev_slow && fast > slow
+//   crosses under                → prev_fast >= prev_slow && fast < slow
+//   Buy ... Next Bar at Market   → Order { action: Action::Entry, side: Side::Long }
+//   Sell ... Next Bar at Market  → Order { action: Action::Exit, side: Side::Long }
+// =============================================================================
+
+use ta::indicators::SimpleMovingAverage;
+use ta::Next;
+
+pub struct S1MaCrossover {
+    fast_sma: SimpleMovingAverage,
+    slow_sma: SimpleMovingAverage,
+    prev_fast: f64,
+    prev_slow: f64,
+    position: i32,
+}
+
+impl S1MaCrossover {
+    pub fn new() -> Self {
+        Self {
+            fast_sma: SimpleMovingAverage::new(10).unwrap(),
+            slow_sma: SimpleMovingAverage::new(20).unwrap(),
+            prev_fast: 0.0,
+            prev_slow: 0.0,
+            position: 0,
+        }
+    }
+}
+
+impl Strategy for S1MaCrossover {
+    fn on_bar(&mut self, bars: &[Bar], orders: &mut Vec<Order>) {
+        let bar = bars.last().unwrap();
+        let fast_ma = self.fast_sma.next(bar.close);
+        let slow_ma = self.slow_sma.next(bar.close);
+
+        // PL: If fastMA crosses over slowMA Then Buy
+        let crossed_over = self.prev_fast <= self.prev_slow && fast_ma > slow_ma;
+        if crossed_over {
+            orders.push(Order {
+                label: "S1_LE".into(),
+                action: Action::Entry,
+                side: Side::Long,
+                order_type: OrderType::Market,
+                qty: 1.0,
+            });
+        }
+
+        // PL: If fastMA crosses under slowMA Then Sell (exit long)
+        let crossed_under = self.prev_fast >= self.prev_slow && fast_ma < slow_ma;
+        if crossed_under {
+            orders.push(Order {
+                label: "S1_LX".into(),
+                action: Action::Exit,
+                side: Side::Long,
+                order_type: OrderType::Market,
+                qty: 1.0,
+            });
+        }
+
+        self.prev_fast = fast_ma;
+        self.prev_slow = slow_ma;
+    }
+}
+// END STRATEGY 1
+// =============================================================================
+
+
+// =============================================================================
+// STRATEGY 2 — RSI + ATR Stop + Position Detection
+// PL source: lines 29-46 of test_strategies.txt
+//
+// Conversion notes:
+//   RSI(Close, 14)               → RelativeStrengthIndex::new(14) + .next(close)
+//   AvgTrueRange(14)             → AverageTrueRange::new(14) + .next(&data_item)
+//   MarketPosition               → self.position (updated by execution engine)
+//   EntryPrice                   → self.entry_price (set by execution engine on fill)
+//   Sell ... at stopPx Stop      → Order { action: Action::Exit, OrderType::Stop }
+//   Sell ... at Market            → Order { action: Action::Exit, OrderType::Market }
+//
+//   PL "Next Bar" semantics: orders are submitted this bar, filled next bar.
+//   The execution engine handles fill timing — strategy just emits orders.
+// =============================================================================
+
+use ta::indicators::{RelativeStrengthIndex, AverageTrueRange};
+use ta::{Next, DataItem};
+
+pub struct S2RsiAtrStop {
+    rsi: RelativeStrengthIndex,
+    atr: AverageTrueRange,
+    position: i32,
+    entry_price: f64,
+    prev_position: i32,
+}
+
+impl S2RsiAtrStop {
+    pub fn new() -> Self {
+        Self {
+            rsi: RelativeStrengthIndex::new(14).unwrap(),
+            atr: AverageTrueRange::new(14).unwrap(),
+            position: 0,
+            entry_price: 0.0,
+            prev_position: 0,
+        }
+    }
+}
+
+impl Strategy for S2RsiAtrStop {
+    fn on_bar(&mut self, bars: &[Bar], orders: &mut Vec<Order>) {
+        let bar = bars.last().unwrap();
+        let rsi_val = self.rsi.next(bar.close);
+
+        let data_item = DataItem::builder()
+            .open(bar.open)
+            .high(bar.high)
+            .low(bar.low)
+            .close(bar.close)
+            .volume(bar.volume)
+            .build()
+            .unwrap();
+        let atr_val = self.atr.next(&data_item);
+
+        // PL: position transition detection
+        if self.position != self.prev_position {
+            // position just changed — can log or react here
+        }
+        self.prev_position = self.position;
+
+        // PL: If MarketPosition = 0 and rsiVal < 30 Then Buy
+        if self.position == 0 && rsi_val < 30.0 {
+            orders.push(Order {
+                label: "S2_LE".into(),
+                action: Action::Entry,
+                side: Side::Long,
+                order_type: OrderType::Market,
+                qty: 1.0,
+            });
+        }
+
+        // PL: If MarketPosition = 1 Then Begin
+        //   stopPx = EntryPrice - 2 * atrVal
+        //   Sell ("S2_STP") at stopPx Stop
+        //   If rsiVal > 70 Then Sell ("S2_TGT") at Market
+        // End
+        if self.position == 1 {
+            let stop_px = self.entry_price - 2.0 * atr_val;
+            orders.push(Order {
+                label: "S2_STP".into(),
+                action: Action::Exit,
+                side: Side::Long,
+                order_type: OrderType::Stop(stop_px),
+                qty: 1.0,
+            });
+
+            if rsi_val > 70.0 {
+                orders.push(Order {
+                    label: "S2_TGT".into(),
+                    action: Action::Exit,
+                    side: Side::Long,
+                    order_type: OrderType::Market,
+                    qty: 1.0,
+                });
+            }
+        }
+    }
+}
+// END STRATEGY 2
+// =============================================================================
+
+
+// =============================================================================
+// STRATEGY 3 — Bollinger Band Breakout + Volume Filter
+// PL source: lines 51-65 of test_strategies.txt
+//
+// Conversion notes:
+//   BollingerBand(Close, 20, 2)  → BollingerBands::new(20, 2.0) + .next(close)
+//   BollingerBand(Close, 20, -2) → .lower field from BollingerBandsOutput
+//   Average(Volume, 20)          → SimpleMovingAverage::new(20) + .next(volume)
+//   SellShort                    → Action::Entry, Side::Short
+//   Sell ... at Stop             → Action::Exit, Side::Long (exit long)
+//   BuyToCover ... at Stop       → Action::Exit, Side::Short (exit short)
+// =============================================================================
+
+use ta::indicators::{BollingerBands, BollingerBandsOutput, SimpleMovingAverage};
+use ta::Next;
+
+pub struct S3BbBreakout {
+    bb: BollingerBands,
+    vol_sma: SimpleMovingAverage,
+    position: i32,
+}
+
+impl S3BbBreakout {
+    pub fn new() -> Self {
+        Self {
+            bb: BollingerBands::new(20, 2.0).unwrap(),
+            vol_sma: SimpleMovingAverage::new(20).unwrap(),
+            position: 0,
+        }
+    }
+}
+
+impl Strategy for S3BbBreakout {
+    fn on_bar(&mut self, bars: &[Bar], orders: &mut Vec<Order>) {
+        let bar = bars.last().unwrap();
+        let bb_out: BollingerBandsOutput = self.bb.next(bar.close);
+        let upper_bb = bb_out.upper;
+        let lower_bb = bb_out.lower;
+        let vol_avg = self.vol_sma.next(bar.volume);
+
+        // PL: If Close > upperBB and Volume > volAvg * 1.5 Then Buy
+        if bar.close > upper_bb && bar.volume > vol_avg * 1.5 {
+            orders.push(Order {
+                label: "S3_LE".into(),
+                action: Action::Entry,
+                side: Side::Long,
+                order_type: OrderType::Market,
+                qty: 1.0,
+            });
+        }
+
+        // PL: If Close < lowerBB and Volume > volAvg * 1.5 Then SellShort
+        if bar.close < lower_bb && bar.volume > vol_avg * 1.5 {
+            orders.push(Order {
+                label: "S3_SE".into(),
+                action: Action::Entry,
+                side: Side::Short,
+                order_type: OrderType::Market,
+                qty: 1.0,
+            });
+        }
+
+        // PL: If MarketPosition = 1 Then Sell at lowerBB Stop (exit long)
+        if self.position == 1 {
+            orders.push(Order {
+                label: "S3_LX".into(),
+                action: Action::Exit,
+                side: Side::Long,
+                order_type: OrderType::Stop(lower_bb),
+                qty: 1.0,
+            });
+        }
+
+        // PL: If MarketPosition = -1 Then BuyToCover at upperBB Stop (exit short)
+        if self.position == -1 {
+            orders.push(Order {
+                label: "S3_SX".into(),
+                action: Action::Exit,
+                side: Side::Short,
+                order_type: OrderType::Stop(upper_bb),
+                qty: 1.0,
+            });
+        }
+    }
+}
+// END STRATEGY 3
+// =============================================================================
+
+
+// =============================================================================
+// STRATEGY 4 — Multi-Indicator + Risk Management
+// PL source: lines 70-81 of test_strategies.txt
+//
+// Conversion notes:
+//   ADX(14)                      → not in ta-rs; manual implementation
+//   CCI(20)                      → CommodityChannelIndex::new(20) + .next(&data_item)
+//   crosses over -100            → prev_cci <= -100.0 && cci > -100.0
+//   SetStopLoss(500)             → Action::StopLoss order each bar
+//   SetProfitTarget(1000)        → Action::ProfitTarget order each bar
+//   SetBreakEven(200)            → Action::BreakEven order each bar
+// =============================================================================
+
+use ta::indicators::CommodityChannelIndex;
+use ta::{Next, DataItem};
+
+pub struct S4MultiIndicator {
+    cci: CommodityChannelIndex,
+    adx_len: usize,
+    stop_loss_dollars: f64,
+    profit_target_dollars: f64,
+    break_even_dollars: f64,
+    point_value: f64,
+    prev_cci: f64,
+    position: i32,
+    entry_price: f64,
+}
+
+impl S4MultiIndicator {
+    pub fn new(point_value: f64) -> Self {
+        Self {
+            cci: CommodityChannelIndex::new(20).unwrap(),
+            adx_len: 14,
+            stop_loss_dollars: 500.0,
+            profit_target_dollars: 1000.0,
+            break_even_dollars: 200.0,
+            point_value,
+            prev_cci: 0.0,
+            position: 0,
+            entry_price: 0.0,
+        }
+    }
+
+    fn compute_adx(&self, bars: &[Bar]) -> f64 {
+        // Manual ADX: simplified DI+/DI-/ADX computation
+        // In production, use yata::indicators::ADX for accuracy
+        let len = self.adx_len;
+        if bars.len() < len + 1 {
+            return 0.0;
+        }
+        let mut plus_dm_sum = 0.0;
+        let mut minus_dm_sum = 0.0;
+        let mut tr_sum = 0.0;
+        let start = bars.len() - len;
+        for i in start..bars.len() {
+            let prev = &bars[i - 1];
+            let curr = &bars[i];
+            let up = curr.high - prev.high;
+            let down = prev.low - curr.low;
+            if up > down && up > 0.0 { plus_dm_sum += up; }
+            if down > up && down > 0.0 { minus_dm_sum += down; }
+            let tr = (curr.high - curr.low)
+                .max((curr.high - prev.close).abs())
+                .max((curr.low - prev.close).abs());
+            tr_sum += tr;
+        }
+        if tr_sum == 0.0 { return 0.0; }
+        let di_plus = plus_dm_sum / tr_sum * 100.0;
+        let di_minus = minus_dm_sum / tr_sum * 100.0;
+        let di_sum = di_plus + di_minus;
+        if di_sum == 0.0 { return 0.0; }
+        ((di_plus - di_minus).abs() / di_sum) * 100.0
+    }
+}
+
+impl Strategy for S4MultiIndicator {
+    fn on_bar(&mut self, bars: &[Bar], orders: &mut Vec<Order>) {
+        if bars.len() < self.adx_len + 1 {
+            return;
+        }
+        let bar = bars.last().unwrap();
+        let adx_val = self.compute_adx(bars);
+
+        let data_item = DataItem::builder()
+            .open(bar.open).high(bar.high).low(bar.low)
+            .close(bar.close).volume(bar.volume)
+            .build().unwrap();
+        let cci_val = self.cci.next(&data_item);
+
+        // PL: If adxVal > 25 and cciVal crosses over -100 Then Buy
+        let cci_crossed_over = self.prev_cci <= -100.0 && cci_val > -100.0;
+        if adx_val > 25.0 && cci_crossed_over {
+            orders.push(Order {
+                label: "S4_LE".into(),
+                action: Action::Entry,
+                side: Side::Long,
+                order_type: OrderType::Market,
+                qty: 1.0,
+            });
+        }
+
+        // PL: If adxVal > 25 and cciVal crosses under 100 Then SellShort
+        let cci_crossed_under = self.prev_cci >= 100.0 && cci_val < 100.0;
+        if adx_val > 25.0 && cci_crossed_under {
+            orders.push(Order {
+                label: "S4_SE".into(),
+                action: Action::Entry,
+                side: Side::Short,
+                order_type: OrderType::Market,
+                qty: 1.0,
+            });
+        }
+
+        // PL: SetStopLoss(500) — emit as stop order each bar while in position
+        // PL: SetProfitTarget(1000)
+        // PL: SetBreakEven(200)
+        if self.position != 0 {
+            let sign = if self.position == 1 { 1.0 } else { -1.0 };
+            let sl_price = self.entry_price - sign * self.stop_loss_dollars / self.point_value;
+            let tp_price = self.entry_price + sign * self.profit_target_dollars / self.point_value;
+
+            orders.push(Order {
+                label: "S4_SL".into(),
+                action: Action::StopLoss,
+                side: if self.position == 1 { Side::Long } else { Side::Short },
+                order_type: OrderType::Stop(sl_price),
+                qty: 1.0,
+            });
+            orders.push(Order {
+                label: "S4_TP".into(),
+                action: Action::ProfitTarget,
+                side: if self.position == 1 { Side::Long } else { Side::Short },
+                order_type: OrderType::Limit(tp_price),
+                qty: 1.0,
+            });
+
+            // SetBreakEven(200): move stop to entry price once unrealized profit > $200
+            let unrealized = sign * (bar.close - self.entry_price) * self.point_value;
+            if unrealized >= self.break_even_dollars {
+                orders.push(Order {
+                    label: "S4_BE".into(),
+                    action: Action::BreakEven,
+                    side: if self.position == 1 { Side::Long } else { Side::Short },
+                    order_type: OrderType::Stop(self.entry_price),
+                    qty: 1.0,
+                });
+            }
+        }
+
+        self.prev_cci = cci_val;
+    }
+}
+// END STRATEGY 4
+// =============================================================================
+
+
+// =============================================================================
+// STRATEGY 5 — Multi-Data Regime Filter
+// PL source: lines 87-93 of test_strategies.txt
+//
+// Conversion notes:
+//   Close of data2               → bars2 (second bar slice)
+//   Average(Close of data2, 50)  → separate SMA on bars2 close prices
+//   RSI(Close, 14)               → RelativeStrengthIndex on primary bars
+//   Sell ("S5_LX") at Market     → Action::Exit, Side::Long (exit long)
+// =============================================================================
+
+use ta::indicators::{SimpleMovingAverage, RelativeStrengthIndex};
+use ta::Next;
+
+pub struct S5RegimeFilter {
+    rsi: RelativeStrengthIndex,
+    regime_sma: SimpleMovingAverage,
+    position: i32,
+}
+
+impl S5RegimeFilter {
+    pub fn new() -> Self {
+        Self {
+            rsi: RelativeStrengthIndex::new(14).unwrap(),
+            regime_sma: SimpleMovingAverage::new(50).unwrap(),
+            position: 0,
+        }
+    }
+}
+
+// Multi-data strategy: extends the Strategy trait with a second feed.
+// The execution engine calls on_bar_multi instead of on_bar.
+impl S5RegimeFilter {
+    pub fn on_bar_multi(
+        &mut self,
+        bars: &[Bar],
+        bars2: &[Bar],
+        orders: &mut Vec<Order>,
+    ) {
+        let bar = bars.last().unwrap();
+        let bar2 = bars2.last().unwrap();
+
+        let rsi_val = self.rsi.next(bar.close);
+        let regime_ma = self.regime_sma.next(bar2.close);
+
+        // PL: If Close of data2 > Average(Close of data2, 50) Then Begin
+        if bar2.close > regime_ma {
+            // PL: If RSI(Close, 14) < 30 Then Buy
+            if rsi_val < 30.0 {
+                orders.push(Order {
+                    label: "S5_LE".into(),
+                    action: Action::Entry,
+                    side: Side::Long,
+                    order_type: OrderType::Market,
+                    qty: 1.0,
+                });
+            }
+        }
+
+        // PL: If MarketPosition = 1 and RSI(Close, 14) > 70 Then Sell (exit long)
+        if self.position == 1 && rsi_val > 70.0 {
+            orders.push(Order {
+                label: "S5_LX".into(),
+                action: Action::Exit,
+                side: Side::Long,
+                order_type: OrderType::Market,
+                qty: 1.0,
+            });
+        }
+    }
+}
+// END STRATEGY 5
+// =============================================================================

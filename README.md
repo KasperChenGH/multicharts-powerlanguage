@@ -70,7 +70,7 @@ After install, the seven skills auto-trigger when relevant. You don't have to in
 
 ## Verifying keyword signatures (maintainer only)
 
-The `tests/` directory contains 11 plain-text PowerLanguage source files that exercise keywords and code patterns inside unreachable `If False Then Begin … End;` blocks — so the compiler verifies syntax without executing anything. They are NOT `.pla` archives; they cannot be imported via File → Import.
+The `tests/` directory contains 13 plain-text source files that exercise keywords and code patterns. The PowerLanguage files use unreachable `If False Then Begin … End;` blocks — so the compiler verifies syntax without executing anything. They are NOT `.pla` archives; they cannot be imported via File → Import. The Rust and C++ files are reference conversions of the 5 strategies.
 
 | File | Study type | What it covers |
 |---|---|---|
@@ -85,6 +85,8 @@ The `tests/` directory contains 11 plain-text PowerLanguage source files that ex
 | `test_strategies.txt` | Signal | 5 mini-strategies combining indicators, conditions, and orders |
 | `test_pine_from_pl.txt` | Pine Script | 5 strategies converted from PL |
 | `test_pl_from_pine.txt` | Signal | 3 strategies converted from Pine Script |
+| `test_rust_from_pl.txt` | Rust | 5 strategies converted from PL (ta-rs) |
+| `test_cpp_from_pl.txt` | C++ | 5 strategies converted from PL (TA-Lib) |
 
 To run the compile-test, for each file:
 
