@@ -565,3 +565,646 @@ class S7DonchianBreakout(Strategy):
 
 # END STRATEGY 7
 # =============================================================================
+
+
+# =============================================================================
+# STRATEGY 8 — MACD Crossover + Trailing Stop
+# PL source: lines 147-161 of test_strategies.txt
+#
+# Conversion notes:
+#   MACD(Close, 12, 26)             -> ta.ema(closes, 12) - ta.ema(closes, 26)
+#   XAverage(MACD, 9)               -> ta.ema(macd_series, 9) (signal line)
+#   crosses over / under            -> prev comparison + current comparison
+#   AvgTrueRange(14)                -> ta.atr(highs, lows, closes, length=14)
+#   Trailing stop ratchet           -> max(trail_stop, close - 3 * atr)
+#   BarsSinceEntry = 0              -> self.bars_since_entry == 0 (entry bar init)
+#   Sell ... at trailStop Stop      -> Order(order_type=OrderType.STOP, price=trail_stop)
+# =============================================================================
+
+import pandas as pd
+import pandas_ta as ta
+
+
+class S8MacdTrailingStop(Strategy):
+    def __init__(self):
+        super().__init__()
+        self.position: int = 0
+        self.entry_price: float = 0.0
+        self.bars_since_entry: int = 0
+        self.trail_stop: float = 0.0
+
+    def on_bar(self, bars: list[Bar], orders: list[Order]) -> None:
+        if len(bars) < 27:
+            return
+
+        closes = pd.Series([b.close for b in bars])
+        highs = pd.Series([b.high for b in bars])
+        lows = pd.Series([b.low for b in bars])
+        bar = bars[-1]
+
+        ema_fast = ta.ema(closes, length=12)
+        ema_slow = ta.ema(closes, length=26)
+        atr_series = ta.atr(highs, lows, closes, length=14)
+
+        if ema_fast is None or ema_slow is None or atr_series is None:
+            return
+
+        macd_series = ema_fast - ema_slow
+        signal_series = ta.ema(macd_series, length=9)
+
+        if signal_series is None:
+            return
+
+        macd_val = macd_series.iloc[-1]
+        prev_macd = macd_series.iloc[-2]
+        signal_val = signal_series.iloc[-1]
+        prev_signal = signal_series.iloc[-2]
+        atr_val = atr_series.iloc[-1]
+
+        if not (pd.notna(macd_val) and pd.notna(prev_macd)
+                and pd.notna(signal_val) and pd.notna(prev_signal)
+                and pd.notna(atr_val)):
+            return
+
+        # PL: If MarketPosition = 0 and macdLine crosses over signalLine Then Buy
+        crossed_over = prev_macd <= prev_signal and macd_val > signal_val
+        if self.position == 0 and crossed_over:
+            orders.append(Order(
+                label="S8_LE", action=Action.ENTRY, side=Side.LONG,
+                order_type=OrderType.MARKET, price=0.0, qty=1.0,
+            ))
+
+        # PL: If MarketPosition = 1 Then Begin
+        if self.position == 1:
+            # PL: If BarsSinceEntry = 0 Then trailStop = EntryPrice - ATR * 3
+            if self.bars_since_entry == 0:
+                self.trail_stop = self.entry_price - atr_val * 3.0
+
+            # PL: ratchet trail stop upward
+            candidate = bar.close - atr_val * 3.0
+            if candidate > self.trail_stop:
+                self.trail_stop = candidate
+
+            # PL: Sell ("S8_TS") at trailStop Stop
+            orders.append(Order(
+                label="S8_TS", action=Action.EXIT, side=Side.LONG,
+                order_type=OrderType.STOP, price=self.trail_stop, qty=1.0,
+            ))
+
+            # PL: If macdLine crosses under signalLine Then Sell ("S8_MX") at Market
+            crossed_under = prev_macd >= prev_signal and macd_val < signal_val
+            if crossed_under:
+                orders.append(Order(
+                    label="S8_MX", action=Action.EXIT, side=Side.LONG,
+                    order_type=OrderType.MARKET, price=0.0, qty=1.0,
+                ))
+
+        # Increment after checks to match PL BarsSinceEntry semantics
+        if self.position != 0:
+            self.bars_since_entry += 1
+
+
+# END STRATEGY 8
+# =============================================================================
+
+
+# =============================================================================
+# STRATEGY 9 — Stochastic + Switch + Array + For + Contracts
+# PL source: lines 163-181 of test_strategies.txt
+#
+# Conversion notes:
+#   Stochastic(H,L,C,14,3,3,1,...)  -> ta.stoch(highs, lows, closes, k=14, d=3)
+#   slowK / slowD outputs            -> STOCHk_14_3_3 / STOCHd_14_3_3 columns
+#   For Value2 = 4 DownTo 1 Begin   -> for i in range(4, 0, -1):
+#   kHistory[N] array                -> self.k_history list (5 elements)
+#   Switch (MarketPosition)          -> match self.position:
+#   CurrentContracts                 -> self.current_contracts (tracked by engine)
+# =============================================================================
+
+import pandas as pd
+import pandas_ta as ta
+
+
+class S9StochSwitch(Strategy):
+    def __init__(self):
+        super().__init__()
+        self.position: int = 0
+        self.current_contracts: int = 0
+        self.k_history: list[float] = [0.0] * 5  # PL Array[0..4]
+
+    def on_bar(self, bars: list[Bar], orders: list[Order]) -> None:
+        if len(bars) < 20:
+            return
+
+        closes = pd.Series([b.close for b in bars])
+        highs = pd.Series([b.high for b in bars])
+        lows = pd.Series([b.low for b in bars])
+
+        stoch_df = ta.stoch(highs, lows, closes, k=14, d=3)
+
+        if stoch_df is None:
+            return
+
+        slow_k = stoch_df["STOCHk_14_3_3"].iloc[-1]
+        slow_d = stoch_df["STOCHd_14_3_3"].iloc[-1]
+
+        if not (pd.notna(slow_k) and pd.notna(slow_d)):
+            return
+
+        # PL: For Value2 = 4 DownTo 1 Begin kHistory[Value2] = kHistory[Value2-1]; End;
+        for i in range(4, 0, -1):
+            self.k_history[i] = self.k_history[i - 1]
+        self.k_history[0] = slow_k
+
+        # PL: Switch (MarketPosition) Begin Case 0/1/-1 End;
+        match self.position:
+            case 0:
+                # PL: If slowK < 20 and slowD < 20 Then Buy
+                if slow_k < 20.0 and slow_d < 20.0:
+                    orders.append(Order(
+                        label="S9_LE", action=Action.ENTRY, side=Side.LONG,
+                        order_type=OrderType.MARKET, price=0.0, qty=1.0,
+                    ))
+                # PL: If slowK > 80 and slowD > 80 Then SellShort
+                if slow_k > 80.0 and slow_d > 80.0:
+                    orders.append(Order(
+                        label="S9_SE", action=Action.ENTRY, side=Side.SHORT,
+                        order_type=OrderType.MARKET, price=0.0, qty=1.0,
+                    ))
+            case 1:
+                # PL: If slowK > 80 or CurrentContracts > 2 Then Sell
+                if slow_k > 80.0 or self.current_contracts > 2:
+                    orders.append(Order(
+                        label="S9_LX", action=Action.EXIT, side=Side.LONG,
+                        order_type=OrderType.MARKET, price=0.0, qty=1.0,
+                    ))
+            case -1:
+                # PL: If slowK < 20 or CurrentContracts > 2 Then BuyToCover
+                if slow_k < 20.0 or self.current_contracts > 2:
+                    orders.append(Order(
+                        label="S9_SX", action=Action.EXIT, side=Side.SHORT,
+                        order_type=OrderType.MARKET, price=0.0, qty=1.0,
+                    ))
+
+
+# END STRATEGY 9
+# =============================================================================
+
+
+# =============================================================================
+# STRATEGY 10 — While Loop + Date/Time Filter + Print/Alert
+# PL source: lines 183-196 of test_strategies.txt
+#
+# Conversion notes:
+#   While ... Begin ... End          -> while ...:
+#   Close[Value3 - 1] > Close[Value3] -> bars[-(i)].close > bars[-(i+1)].close
+#   Time >= 930 and Time <= 1500     -> 930 <= bar_time <= 1500 (HHMM integer)
+#   Print(...)                       -> print(...)
+#   Alert(...)                       -> print(..., file=sys.stderr)
+#   Time filtering                   -> extract HHMM from bar timestamp
+# =============================================================================
+
+import sys
+import pandas as pd
+import pandas_ta as ta
+from datetime import datetime, timezone
+
+
+class S10WhileTimeFilter(Strategy):
+    def __init__(self):
+        super().__init__()
+        self.position: int = 0
+
+    def on_bar(self, bars: list[Bar], orders: list[Order]) -> None:
+        if len(bars) < 6:
+            return
+
+        bar = bars[-1]
+
+        # PL: While loop counting consecutive up bars
+        up_count = 0
+        idx = 1
+        while idx <= 5 and bars[-(idx)].close > bars[-(idx + 1)].close:
+            up_count += 1
+            idx += 1
+
+        # Extract HHMM time from bar timestamp
+        bar_dt = datetime.fromtimestamp(bar.time, tz=timezone.utc)
+        bar_time = bar_dt.hour * 100 + bar_dt.minute
+
+        # PL: If Time >= 930 and Time <= 1500 Then Begin
+        if 930 <= bar_time <= 1500:
+            # PL: If upCount >= 3 and MarketPosition = 0 Then Buy
+            if up_count >= 3 and self.position == 0:
+                orders.append(Order(
+                    label="S10_LE", action=Action.ENTRY, side=Side.LONG,
+                    order_type=OrderType.MARKET, price=0.0, qty=1.0,
+                ))
+
+        # PL: If MarketPosition = 1 and Time > 1545 Then Sell (time exit)
+        if self.position == 1 and bar_time > 1545:
+            orders.append(Order(
+                label="S10_TX", action=Action.EXIT, side=Side.LONG,
+                order_type=OrderType.MARKET, price=0.0, qty=1.0,
+            ))
+
+        # PL: Print("upCount=", upCount, " MP=", MarketPosition);
+        print(f"upCount={up_count} MP={self.position}")
+
+        # PL: If Time > 1530 and MarketPosition <> 0 Then Alert("session close approaching");
+        if bar_time > 1530 and self.position != 0:
+            print("session close approaching", file=sys.stderr)
+
+
+# END STRATEGY 10
+# =============================================================================
+
+
+# =============================================================================
+# STRATEGY 11 — DMI + Keltner Channel + Parabolic SAR
+# PL source: lines 198-212 of test_strategies.txt
+#
+# Conversion notes:
+#   DMIPlus(14) / DMIMinus(14)       -> ta.dm(highs, lows, length=14) -> DMP_14 / DMN_14
+#   DirMovement(..., dmAdx, ...)     -> ta.adx(highs, lows, closes, 14) -> ADX_14
+#   KeltnerChannel(Close, 20, 1.5)  -> ta.kc(highs, lows, closes, 20, scalar=1.5)
+#   KeltnerChannel(Close, 20, -1.5) -> lower band from ta.kc output
+#   Parabolic(0.02)                  -> ta.psar(highs, lows, af0=0.02, max_af=0.2)
+#   Sell ... at sarVal Stop          -> Order(order_type=OrderType.STOP, price=sar_val)
+#   BuyToCover ... at sarVal Stop    -> Order(order_type=OrderType.STOP, price=sar_val)
+# =============================================================================
+
+import pandas as pd
+import pandas_ta as ta
+
+
+class S11DmiKeltnerSar(Strategy):
+    def __init__(self):
+        super().__init__()
+        self.position: int = 0
+
+    def on_bar(self, bars: list[Bar], orders: list[Order]) -> None:
+        if len(bars) < 30:
+            return
+
+        closes = pd.Series([b.close for b in bars])
+        highs = pd.Series([b.high for b in bars])
+        lows = pd.Series([b.low for b in bars])
+        bar = bars[-1]
+
+        # DMI Plus / Minus
+        dm_df = ta.dm(highs, lows, length=14)
+        # ADX (includes ADX_14 column)
+        adx_df = ta.adx(highs, lows, closes, length=14)
+        # Keltner Channel
+        kc_df = ta.kc(highs, lows, closes, length=20, scalar=1.5)
+        # Parabolic SAR
+        psar_df = ta.psar(highs, lows, af0=0.02, max_af=0.2)
+
+        if dm_df is None or adx_df is None or kc_df is None or psar_df is None:
+            return
+
+        dmi_plus = dm_df["DMP_14"].iloc[-1]
+        dmi_minus = dm_df["DMN_14"].iloc[-1]
+        adx_val = adx_df["ADX_14"].iloc[-1]
+        kelt_upper = kc_df["KCUe_20_1.5"].iloc[-1]
+        kelt_lower = kc_df["KCLe_20_1.5"].iloc[-1]
+
+        # ta.psar returns PSARl (long SAR) and PSARs (short SAR); use the non-NaN one
+        psar_long = psar_df["PSARl_0.02_0.2"].iloc[-1]
+        psar_short = psar_df["PSARs_0.02_0.2"].iloc[-1]
+        sar_val = psar_long if pd.notna(psar_long) else psar_short
+
+        if not (pd.notna(dmi_plus) and pd.notna(dmi_minus) and pd.notna(adx_val)
+                and pd.notna(kelt_upper) and pd.notna(kelt_lower) and pd.notna(sar_val)):
+            return
+
+        # PL: If dmiP > dmiM and dmAdx > 25 and Close > keltUp Then Buy
+        if dmi_plus > dmi_minus and adx_val > 25.0 and bar.close > kelt_upper:
+            orders.append(Order(
+                label="S11_LE", action=Action.ENTRY, side=Side.LONG,
+                order_type=OrderType.MARKET, price=0.0, qty=1.0,
+            ))
+
+        # PL: If MarketPosition = 1 Then Begin
+        if self.position == 1:
+            # PL: Sell ("S11_SAR") at sarVal Stop
+            orders.append(Order(
+                label="S11_SAR", action=Action.EXIT, side=Side.LONG,
+                order_type=OrderType.STOP, price=sar_val, qty=1.0,
+            ))
+            # PL: If dmiM > dmiP Then Sell ("S11_DX") at Market
+            if dmi_minus > dmi_plus:
+                orders.append(Order(
+                    label="S11_DX", action=Action.EXIT, side=Side.LONG,
+                    order_type=OrderType.MARKET, price=0.0, qty=1.0,
+                ))
+
+        # PL: If dmiM > dmiP and dmAdx > 25 and Close < keltDn Then SellShort
+        if dmi_minus > dmi_plus and adx_val > 25.0 and bar.close < kelt_lower:
+            orders.append(Order(
+                label="S11_SE", action=Action.ENTRY, side=Side.SHORT,
+                order_type=OrderType.MARKET, price=0.0, qty=1.0,
+            ))
+
+        # PL: If MarketPosition = -1 Then BuyToCover at sarVal Stop
+        if self.position == -1:
+            orders.append(Order(
+                label="S11_SC", action=Action.EXIT, side=Side.SHORT,
+                order_type=OrderType.STOP, price=sar_val, qty=1.0,
+            ))
+
+
+# END STRATEGY 11
+# =============================================================================
+
+
+# =============================================================================
+# STRATEGY 12 — Williams %R + ROC + Volatility + StdDev
+# PL source: lines 214-226 of test_strategies.txt
+#
+# Conversion notes:
+#   PercentR(14)                     -> ta.willr(highs, lows, closes, length=14)
+#   RateOfChange(Close, 10)          -> ta.roc(closes, length=10)
+#   Volatility(20)                   -> ta.stdev(closes, length=20) (historical vol)
+#   StandardDev(Close, 20, 1)        -> ta.stdev(closes, length=20)
+#   TrueRange                        -> ta.true_range(highs, lows, closes)
+#   Range                            -> bar.high - bar.low
+#   Williams %R returns -100..0      -> same scale in pandas-ta
+# =============================================================================
+
+import pandas as pd
+import pandas_ta as ta
+
+
+class S12WilliamsRoc(Strategy):
+    def __init__(self):
+        super().__init__()
+        self.position: int = 0
+
+    def on_bar(self, bars: list[Bar], orders: list[Order]) -> None:
+        if len(bars) < 21:
+            return
+
+        closes = pd.Series([b.close for b in bars])
+        highs = pd.Series([b.high for b in bars])
+        lows = pd.Series([b.low for b in bars])
+        bar = bars[-1]
+
+        wr_series = ta.willr(highs, lows, closes, length=14)
+        roc_series = ta.roc(closes, length=10)
+        vol_series = ta.stdev(closes, length=20)    # PL Volatility(20)
+        stddev_series = ta.stdev(closes, length=20)  # PL StandardDev(Close, 20, 1)
+        tr_series = ta.true_range(highs, lows, closes)
+
+        if (wr_series is None or roc_series is None or vol_series is None
+                or stddev_series is None or tr_series is None):
+            return
+
+        wr_val = wr_series.iloc[-1]
+        roc_val = roc_series.iloc[-1]
+        vol_val = vol_series.iloc[-1]
+        stddev_val = stddev_series.iloc[-1]
+        tr_val = tr_series.iloc[-1]
+        range_val = bar.high - bar.low
+
+        if not (pd.notna(wr_val) and pd.notna(roc_val) and pd.notna(vol_val)
+                and pd.notna(stddev_val) and pd.notna(tr_val)):
+            return
+
+        # PL: If wrVal < -80 and rocVal > 0 and volVal < stdDevVal * 2 Then Buy
+        if wr_val < -80.0 and roc_val > 0.0 and vol_val < stddev_val * 2.0:
+            orders.append(Order(
+                label="S12_LE", action=Action.ENTRY, side=Side.LONG,
+                order_type=OrderType.MARKET, price=0.0, qty=1.0,
+            ))
+
+        # PL: If MarketPosition = 1 Then Begin
+        if self.position == 1:
+            # PL: If wrVal > -20 Then Sell ("S12_LX") at Market
+            if wr_val > -20.0:
+                orders.append(Order(
+                    label="S12_LX", action=Action.EXIT, side=Side.LONG,
+                    order_type=OrderType.MARKET, price=0.0, qty=1.0,
+                ))
+            # PL: If trVal > rng * 3 Then Sell ("S12_VX") at Market
+            if tr_val > range_val * 3.0:
+                orders.append(Order(
+                    label="S12_VX", action=Action.EXIT, side=Side.LONG,
+                    order_type=OrderType.MARKET, price=0.0, qty=1.0,
+                ))
+
+
+# END STRATEGY 12
+# =============================================================================
+
+
+# =============================================================================
+# STRATEGY 13 — MFI + AccumDist + LinReg + WAverage
+# PL source: lines 228-242 of test_strategies.txt
+#
+# Conversion notes:
+#   MoneyFlow(14)                    -> ta.mfi(highs, lows, closes, volumes, length=14)
+#   AccumDist(14)                    -> ta.ad(highs, lows, closes, volumes)
+#   LinearRegValue(Close, 20, 0)    -> ta.linreg(closes, length=20)
+#   LinearRegSlope(Close, 20)        -> manual: (linreg - linreg.shift(1)) approximation
+#                                       or numpy polyfit for proper slope
+#   Summation(Close, 10)             -> closes.rolling(10).sum()
+#   Cum(Volume)                      -> volumes.cumsum()
+#   WAverage(Close, 20)              -> ta.wma(closes, length=20)
+#   MidPoint(Close, 20)              -> ta.midpoint(closes, length=20)
+# =============================================================================
+
+import numpy as np
+import pandas as pd
+import pandas_ta as ta
+
+
+class S13MfiLinReg(Strategy):
+    def __init__(self):
+        super().__init__()
+        self.position: int = 0
+
+    def on_bar(self, bars: list[Bar], orders: list[Order]) -> None:
+        if len(bars) < 21:
+            return
+
+        closes = pd.Series([b.close for b in bars])
+        highs = pd.Series([b.high for b in bars])
+        lows = pd.Series([b.low for b in bars])
+        volumes = pd.Series([b.volume for b in bars])
+        bar = bars[-1]
+
+        mfi_series = ta.mfi(highs, lows, closes, volumes, length=14)
+        ad_series = ta.ad(highs, lows, closes, volumes)
+        linreg_series = ta.linreg(closes, length=20)
+        sum_series = closes.rolling(10).sum()
+        cum_vol = volumes.cumsum()
+        wma_series = ta.wma(closes, length=20)
+        midpt_series = ta.midpoint(closes, length=20)
+
+        if (mfi_series is None or ad_series is None or linreg_series is None
+                or wma_series is None or midpt_series is None):
+            return
+
+        mfi_val = mfi_series.iloc[-1]
+        ad_val = ad_series.iloc[-1]
+        linreg_val = linreg_series.iloc[-1]
+        sum_val = sum_series.iloc[-1]
+        cum_vol_val = cum_vol.iloc[-1]
+        wavg_val = wma_series.iloc[-1]
+        midpt_val = midpt_series.iloc[-1]
+
+        # Compute linear regression slope manually using numpy polyfit
+        if len(closes) >= 20:
+            recent = closes.iloc[-20:].values
+            x = np.arange(20, dtype=float)
+            linreg_slope = np.polyfit(x, recent, 1)[0]
+        else:
+            return
+
+        if not (pd.notna(mfi_val) and pd.notna(wavg_val)
+                and pd.notna(midpt_val) and pd.notna(linreg_slope)):
+            return
+
+        # PL: If mfiVal < 20 and linRegSlp > 0 and Close > wavgVal Then Buy
+        if mfi_val < 20.0 and linreg_slope > 0.0 and bar.close > wavg_val:
+            orders.append(Order(
+                label="S13_LE", action=Action.ENTRY, side=Side.LONG,
+                order_type=OrderType.MARKET, price=0.0, qty=1.0,
+            ))
+
+        # PL: If MarketPosition = 1 Then Begin
+        if self.position == 1:
+            # PL: If mfiVal > 80 Then Sell ("S13_LX") at Market
+            if mfi_val > 80.0:
+                orders.append(Order(
+                    label="S13_LX", action=Action.EXIT, side=Side.LONG,
+                    order_type=OrderType.MARKET, price=0.0, qty=1.0,
+                ))
+            # PL: If Close < midPtVal Then Sell ("S13_MX") at Market
+            if bar.close < midpt_val:
+                orders.append(Order(
+                    label="S13_MX", action=Action.EXIT, side=Side.LONG,
+                    order_type=OrderType.MARKET, price=0.0, qty=1.0,
+                ))
+
+
+# END STRATEGY 13
+# =============================================================================
+
+
+# =============================================================================
+# STRATEGY 14 — Swing + HighestBar + CountIF + Prices
+# PL source: lines 244-257 of test_strategies.txt
+#
+# Conversion notes:
+#   SwingHigh(1, High, 3, 10)        -> manual pivot detection: bar[i] higher than
+#                                       surrounding 3 bars on each side, within 10 bars
+#   SwingLow(1, Low, 3, 10)          -> same logic for lows
+#   HighestBar(High, 20)             -> np.argmax(highs[-20:]) reversed (bars ago)
+#   LowestBar(Low, 20)               -> np.argmin(lows[-20:]) reversed (bars ago)
+#   CountIF(Close > Close[1], 10)    -> sum(1 for i in range(10) if close[i] > close[i-1])
+#   AvgPrice                         -> (O + H + L + C) / 4
+#   TypicalPrice                     -> (H + L + C) / 3
+# =============================================================================
+
+import numpy as np
+import pandas as pd
+import pandas_ta as ta
+
+
+class S14SwingPrices(Strategy):
+    def __init__(self):
+        super().__init__()
+        self.position: int = 0
+
+    @staticmethod
+    def _swing_high(bars: list[Bar], strength: int, lookback: int) -> float:
+        """Detect most recent swing high within lookback bars.
+        A swing high occurs when a bar's high is higher than the highs
+        of `strength` bars on each side. Returns the high value or 0.0."""
+        end = len(bars) - 1
+        start = max(end - lookback, strength)
+        for i in range(end, start - 1, -1):
+            is_pivot = True
+            for j in range(1, strength + 1):
+                if i - j < 0 or i + j >= len(bars):
+                    is_pivot = False
+                    break
+                if bars[i].high <= bars[i - j].high or bars[i].high <= bars[i + j].high:
+                    is_pivot = False
+                    break
+            if is_pivot:
+                return bars[i].high
+        return 0.0
+
+    @staticmethod
+    def _swing_low(bars: list[Bar], strength: int, lookback: int) -> float:
+        """Detect most recent swing low within lookback bars.
+        A swing low occurs when a bar's low is lower than the lows
+        of `strength` bars on each side. Returns the low value or 0.0."""
+        end = len(bars) - 1
+        start = max(end - lookback, strength)
+        for i in range(end, start - 1, -1):
+            is_pivot = True
+            for j in range(1, strength + 1):
+                if i - j < 0 or i + j >= len(bars):
+                    is_pivot = False
+                    break
+                if bars[i].low >= bars[i - j].low or bars[i].low >= bars[i + j].low:
+                    is_pivot = False
+                    break
+            if is_pivot:
+                return bars[i].low
+        return 0.0
+
+    def on_bar(self, bars: list[Bar], orders: list[Order]) -> None:
+        if len(bars) < 21:
+            return
+
+        bar = bars[-1]
+
+        # PL: SwingHigh(1, High, 3, 10) / SwingLow(1, Low, 3, 10)
+        sw_hi = self._swing_high(bars, strength=3, lookback=10)
+        sw_lo = self._swing_low(bars, strength=3, lookback=10)
+
+        # PL: HighestBar(High, 20) — bars ago of highest high in last 20 bars
+        recent_highs = [b.high for b in bars[-20:]]
+        hi_bar = 19 - int(np.argmax(recent_highs))  # convert index to bars ago
+
+        # PL: LowestBar(Low, 20) — bars ago of lowest low in last 20 bars
+        recent_lows = [b.low for b in bars[-20:]]
+        lo_bar = 19 - int(np.argmin(recent_lows))  # convert index to bars ago
+
+        # PL: CountIF(Close > Close[1], 10) — count of up-closes in last 10 bars
+        up_bars_count = 0
+        for i in range(1, 11):
+            if len(bars) > i and bars[-i].close > bars[-(i + 1)].close:
+                up_bars_count += 1
+
+        # PL: AvgPrice = (O + H + L + C) / 4
+        avg_px = (bar.open + bar.high + bar.low + bar.close) / 4.0
+
+        # PL: TypicalPrice = (H + L + C) / 3
+        typ_px = (bar.high + bar.low + bar.close) / 3.0
+
+        # PL: If swLo > 0 and upBarsCount >= 6 and Close > typPx Then Buy
+        if sw_lo > 0.0 and up_bars_count >= 6 and bar.close > typ_px:
+            orders.append(Order(
+                label="S14_LE", action=Action.ENTRY, side=Side.LONG,
+                order_type=OrderType.MARKET, price=0.0, qty=1.0,
+            ))
+
+        # PL: If MarketPosition = 1 Then Begin
+        if self.position == 1:
+            # PL: If swHi > 0 and hiBar > 15 Then Sell ("S14_LX") at Market
+            if sw_hi > 0.0 and hi_bar > 15:
+                orders.append(Order(
+                    label="S14_LX", action=Action.EXIT, side=Side.LONG,
+                    order_type=OrderType.MARKET, price=0.0, qty=1.0,
+                ))
+
+
+# END STRATEGY 14
+# =============================================================================
