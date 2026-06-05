@@ -513,3 +513,1032 @@ impl S5RegimeFilter {
 }
 // END STRATEGY 5
 // =============================================================================
+
+
+// =============================================================================
+// STRATEGY 6 — EMA Momentum + Limit Entry + Time Exit
+// PL source: Strategy 6 in test_strategies.txt
+//
+// Conversion notes:
+//   XAverage(Close, 12)            → ExponentialMovingAverage::new(12) + .next(close)
+//   Momentum(Close, 10)            → bar.close - bars[bars.len()-1-10].close (manual)
+//   Once Begin ... End             → if !self.once_done { ... self.once_done = true; }
+//   Buy ... at Close Limit         → Order { order_type: OrderType::Limit(bar.close) }
+//   BarsSinceEntry >= 10           → self.bars_since_entry >= 10 (manual tracking)
+//   Sell ("S6_TX/LX") at Market    → Order { action: Action::Exit, side: Side::Long }
+// =============================================================================
+
+use ta::indicators::ExponentialMovingAverage;
+use ta::Next;
+
+pub struct S6EmaMomentum {
+    fast_ema: ExponentialMovingAverage,
+    slow_ema: ExponentialMovingAverage,
+    momentum_len: usize,
+    prev_fast: f64,
+    prev_slow: f64,
+    init_close: f64,
+    once_done: bool,
+    position: i32,
+    bars_since_entry: usize,
+}
+
+impl S6EmaMomentum {
+    pub fn new() -> Self {
+        Self {
+            fast_ema: ExponentialMovingAverage::new(12).unwrap(),
+            slow_ema: ExponentialMovingAverage::new(26).unwrap(),
+            momentum_len: 10,
+            prev_fast: 0.0,
+            prev_slow: 0.0,
+            init_close: 0.0,
+            once_done: false,
+            position: 0,
+            bars_since_entry: 0,
+        }
+    }
+}
+
+impl Strategy for S6EmaMomentum {
+    fn on_bar(&mut self, bars: &[Bar], orders: &mut Vec<Order>) {
+        let bar = bars.last().unwrap();
+        let fast_val = self.fast_ema.next(bar.close);
+        let slow_val = self.slow_ema.next(bar.close);
+
+        // PL: Momentum(Close, 10) — no ta-rs built-in; compute directly
+        let momentum = if bars.len() > self.momentum_len {
+            bar.close - bars[bars.len() - 1 - self.momentum_len].close
+        } else {
+            0.0
+        };
+
+        // PL: Once Begin Value1 = Close; End;
+        if !self.once_done {
+            self.init_close = bar.close;
+            self.once_done = true;
+        }
+
+        // PL: If MarketPosition = 0 and momVal > 0 and emaFast > emaSlow
+        //     Then Buy at Close Limit
+        if self.position == 0 && momentum > 0.0 && fast_val > slow_val {
+            orders.push(Order {
+                label: "S6_LE".into(),
+                action: Action::Entry,
+                side: Side::Long,
+                order_type: OrderType::Limit(bar.close),
+                qty: 1.0,
+            });
+        }
+
+        // PL: If MarketPosition = 1 and BarsSinceEntry >= 10 Then Sell (time exit)
+        if self.position == 1 && self.bars_since_entry >= 10 {
+            orders.push(Order {
+                label: "S6_TX".into(),
+                action: Action::Exit,
+                side: Side::Long,
+                order_type: OrderType::Market,
+                qty: 1.0,
+            });
+        }
+
+        // PL: If MarketPosition = 1 and emaFast crosses under emaSlow Then Sell
+        let crossed_under = self.prev_fast >= self.prev_slow && fast_val < slow_val;
+        if self.position == 1 && crossed_under {
+            orders.push(Order {
+                label: "S6_LX".into(),
+                action: Action::Exit,
+                side: Side::Long,
+                order_type: OrderType::Market,
+                qty: 1.0,
+            });
+        }
+
+        // Increment after checks to match PL BarsSinceEntry semantics
+        // (PL: 0 on entry bar, increments each subsequent bar)
+        if self.position != 0 {
+            self.bars_since_entry += 1;
+        }
+
+        self.prev_fast = fast_val;
+        self.prev_slow = slow_val;
+    }
+}
+// END STRATEGY 6
+// =============================================================================
+
+
+// =============================================================================
+// STRATEGY 7 — Donchian Channel Breakout
+// PL source: Strategy 7 in test_strategies.txt
+//
+// Conversion notes:
+//   Highest(High, 20)              → Maximum::new(20) + .next(bar.high)
+//   Lowest(Low, 20)                → Minimum::new(20) + .next(bar.low)
+//   hiChan[1]                      → self.prev_hi_chan (stored previous bar value)
+//   loChan[1]                      → self.prev_lo_chan (stored previous bar value)
+//   SellShort                      → Action::Entry, Side::Short
+//   Sell ... at loChan Stop        → Action::Exit, Side::Long (exit long)
+//   BuyToCover ... at hiChan Stop  → Action::Exit, Side::Short (exit short)
+// =============================================================================
+
+use ta::indicators::{Maximum, Minimum};
+use ta::Next;
+
+pub struct S7DonchianBreakout {
+    hi_max: Maximum,
+    lo_min: Minimum,
+    prev_hi_chan: f64,
+    prev_lo_chan: f64,
+    position: i32,
+}
+
+impl S7DonchianBreakout {
+    pub fn new() -> Self {
+        Self {
+            hi_max: Maximum::new(20).unwrap(),
+            lo_min: Minimum::new(20).unwrap(),
+            prev_hi_chan: 0.0,
+            prev_lo_chan: 0.0,
+            position: 0,
+        }
+    }
+}
+
+impl Strategy for S7DonchianBreakout {
+    fn on_bar(&mut self, bars: &[Bar], orders: &mut Vec<Order>) {
+        let bar = bars.last().unwrap();
+        let hi_chan = self.hi_max.next(bar.high);
+        let lo_chan = self.lo_min.next(bar.low);
+
+        // PL: If Close > hiChan[1] Then Buy
+        if bars.len() > 1 && self.prev_hi_chan > 0.0 && bar.close > self.prev_hi_chan {
+            orders.push(Order {
+                label: "S7_LE".into(),
+                action: Action::Entry,
+                side: Side::Long,
+                order_type: OrderType::Market,
+                qty: 1.0,
+            });
+        }
+
+        // PL: If Close < loChan[1] Then SellShort
+        if bars.len() > 1 && self.prev_lo_chan > 0.0 && bar.close < self.prev_lo_chan {
+            orders.push(Order {
+                label: "S7_SE".into(),
+                action: Action::Entry,
+                side: Side::Short,
+                order_type: OrderType::Market,
+                qty: 1.0,
+            });
+        }
+
+        // PL: If MarketPosition = 1 Then Sell at loChan Stop (exit long)
+        if self.position == 1 {
+            orders.push(Order {
+                label: "S7_LX".into(),
+                action: Action::Exit,
+                side: Side::Long,
+                order_type: OrderType::Stop(lo_chan),
+                qty: 1.0,
+            });
+        }
+
+        // PL: If MarketPosition = -1 Then BuyToCover at hiChan Stop (exit short)
+        if self.position == -1 {
+            orders.push(Order {
+                label: "S7_SX".into(),
+                action: Action::Exit,
+                side: Side::Short,
+                order_type: OrderType::Stop(hi_chan),
+                qty: 1.0,
+            });
+        }
+
+        self.prev_hi_chan = hi_chan;
+        self.prev_lo_chan = lo_chan;
+    }
+}
+// END STRATEGY 7
+// =============================================================================
+
+
+// =============================================================================
+// STRATEGY 8 — MACD Crossover + Trailing Stop
+// PL source: Strategy 8 in test_strategies.txt
+//
+// Conversion notes:
+//   MACD(Close, 12, 26)            → EMA(12).next(close) - EMA(26).next(close)
+//                                    (ta-rs has MovingAverageConvergenceDivergence
+//                                     but two EMAs are simpler and equivalent)
+//   XAverage(MACD(...), 9)         → EMA(9).next(macd_line) for signal line
+//   AvgTrueRange(14)               → AverageTrueRange::new(14) + .next(&data_item)
+//   BarsSinceEntry = 0             → self.bars_since_entry == 0 (trail init)
+//   Trailing stop                  → max(prev_trail, close - 3*atr)
+//   Sell ("S8_TS") at trailStop    → Action::Exit, OrderType::Stop(trail_stop)
+//   Sell ("S8_MX") at Market       → Action::Exit, Side::Long (exit long)
+// =============================================================================
+
+use ta::indicators::{ExponentialMovingAverage, AverageTrueRange};
+use ta::{Next, DataItem};
+
+pub struct S8MacdTrail {
+    fast_ema: ExponentialMovingAverage,
+    slow_ema: ExponentialMovingAverage,
+    signal_ema: ExponentialMovingAverage,
+    atr: AverageTrueRange,
+    prev_macd: f64,
+    prev_signal: f64,
+    trail_stop: f64,
+    position: i32,
+    bars_since_entry: usize,
+    entry_price: f64,
+}
+
+impl S8MacdTrail {
+    pub fn new() -> Self {
+        Self {
+            fast_ema: ExponentialMovingAverage::new(12).unwrap(),
+            slow_ema: ExponentialMovingAverage::new(26).unwrap(),
+            signal_ema: ExponentialMovingAverage::new(9).unwrap(),
+            atr: AverageTrueRange::new(14).unwrap(),
+            prev_macd: 0.0,
+            prev_signal: 0.0,
+            trail_stop: 0.0,
+            position: 0,
+            bars_since_entry: 0,
+            entry_price: 0.0,
+        }
+    }
+}
+
+impl Strategy for S8MacdTrail {
+    fn on_bar(&mut self, bars: &[Bar], orders: &mut Vec<Order>) {
+        let bar = bars.last().unwrap();
+
+        // PL: MACD(Close, 12, 26) = fast EMA - slow EMA
+        let fast_val = self.fast_ema.next(bar.close);
+        let slow_val = self.slow_ema.next(bar.close);
+        let macd_line = fast_val - slow_val;
+
+        // PL: signalLine = XAverage(MACD(Close, 12, 26), 9)
+        let signal_line = self.signal_ema.next(macd_line);
+
+        // ATR for trailing stop distance
+        let data_item = DataItem::builder()
+            .open(bar.open)
+            .high(bar.high)
+            .low(bar.low)
+            .close(bar.close)
+            .volume(bar.volume)
+            .build()
+            .unwrap();
+        let atr_val = self.atr.next(&data_item);
+
+        // PL: If MarketPosition = 0 and macdLine crosses over signalLine Then Buy
+        let macd_crossed_over = self.prev_macd <= self.prev_signal
+            && macd_line > signal_line;
+        if self.position == 0 && macd_crossed_over {
+            orders.push(Order {
+                label: "S8_LE".into(),
+                action: Action::Entry,
+                side: Side::Long,
+                order_type: OrderType::Market,
+                qty: 1.0,
+            });
+        }
+
+        // PL: If MarketPosition = 1 Then Begin ... End
+        if self.position == 1 {
+            // PL: If BarsSinceEntry = 0 Then trailStop = EntryPrice - ATR * 3
+            if self.bars_since_entry == 0 {
+                self.trail_stop = self.entry_price - atr_val * 3.0;
+            }
+
+            // PL: If Close - ATR * 3 > trailStop Then trailStop = Close - ATR * 3
+            let new_stop = bar.close - atr_val * 3.0;
+            if new_stop > self.trail_stop {
+                self.trail_stop = new_stop;
+            }
+
+            // PL: Sell ("S8_TS") at trailStop Stop
+            orders.push(Order {
+                label: "S8_TS".into(),
+                action: Action::Exit,
+                side: Side::Long,
+                order_type: OrderType::Stop(self.trail_stop),
+                qty: 1.0,
+            });
+
+            // PL: If macdLine crosses under signalLine Then Sell (exit long)
+            let macd_crossed_under = self.prev_macd >= self.prev_signal
+                && macd_line < signal_line;
+            if macd_crossed_under {
+                orders.push(Order {
+                    label: "S8_MX".into(),
+                    action: Action::Exit,
+                    side: Side::Long,
+                    order_type: OrderType::Market,
+                    qty: 1.0,
+                });
+            }
+
+            self.bars_since_entry += 1;
+        }
+
+        self.prev_macd = macd_line;
+        self.prev_signal = signal_line;
+    }
+}
+// END STRATEGY 8
+// =============================================================================
+
+
+// =============================================================================
+// STRATEGY 9 — Stochastic Regimes + Switch / Array / For / CurrentContracts
+// PL source: Strategy 9 in test_strategies.txt
+//
+// Conversion notes:
+//   Stochastic(H,L,C,14,3,3,1,...) → SlowStochastic::new(14, 3) + .next(&data_item)
+//                                    PL returns slowK/slowD via ref vars;
+//                                    ta-rs SlowStochastic returns slow %K as f64;
+//                                    compute %D with a separate EMA on %K values
+//   Arrays: kHistory[4](0)         → [f64; 5] (PL [4] = 5 elements, indices 0..4)
+//   For Value2 = 4 DownTo 1        → for i in (1..=4).rev()
+//   Switch (MarketPosition)        → match self.position { 0 => ..., 1 => ..., -1 => ..., _ => {} }
+//   CurrentContracts               → self.current_contracts (manual tracking)
+// =============================================================================
+
+use ta::indicators::{SlowStochastic, ExponentialMovingAverage};
+use ta::{Next, DataItem};
+
+pub struct S9StochRegime {
+    stoch: SlowStochastic,
+    stoch_d_ema: ExponentialMovingAverage,
+    k_history: [f64; 5],
+    position: i32,
+    current_contracts: f64,
+}
+
+impl S9StochRegime {
+    pub fn new() -> Self {
+        Self {
+            stoch: SlowStochastic::new(14, 3).unwrap(),
+            stoch_d_ema: ExponentialMovingAverage::new(3).unwrap(),
+            k_history: [0.0; 5],
+            position: 0,
+            current_contracts: 0.0,
+        }
+    }
+}
+
+impl Strategy for S9StochRegime {
+    fn on_bar(&mut self, bars: &[Bar], orders: &mut Vec<Order>) {
+        let bar = bars.last().unwrap();
+
+        let data_item = DataItem::builder()
+            .open(bar.open).high(bar.high).low(bar.low)
+            .close(bar.close).volume(bar.volume)
+            .build().unwrap();
+
+        // PL: Stochastic outputs slowK/slowD via ref vars
+        // ta-rs SlowStochastic returns slow %K; smooth with EMA for %D
+        let slow_k = self.stoch.next(&data_item);
+        let slow_d = self.stoch_d_ema.next(slow_k);
+
+        // PL: For Value2 = 4 DownTo 1 — shift array history
+        for i in (1..=4).rev() {
+            self.k_history[i] = self.k_history[i - 1];
+        }
+        self.k_history[0] = slow_k;
+
+        // PL: Switch (MarketPosition)
+        match self.position {
+            0 => {
+                if slow_k < 20.0 && slow_d < 20.0 {
+                    orders.push(Order {
+                        label: "S9_LE".into(),
+                        action: Action::Entry,
+                        side: Side::Long,
+                        order_type: OrderType::Market,
+                        qty: 1.0,
+                    });
+                }
+                if slow_k > 80.0 && slow_d > 80.0 {
+                    orders.push(Order {
+                        label: "S9_SE".into(),
+                        action: Action::Entry,
+                        side: Side::Short,
+                        order_type: OrderType::Market,
+                        qty: 1.0,
+                    });
+                }
+            }
+            1 => {
+                // PL: CurrentContracts > 2 — manually tracked
+                if slow_k > 80.0 || self.current_contracts > 2.0 {
+                    orders.push(Order {
+                        label: "S9_LX".into(),
+                        action: Action::Exit,
+                        side: Side::Long,
+                        order_type: OrderType::Market,
+                        qty: 1.0,
+                    });
+                }
+            }
+            -1 => {
+                if slow_k < 20.0 || self.current_contracts > 2.0 {
+                    orders.push(Order {
+                        label: "S9_SX".into(),
+                        action: Action::Exit,
+                        side: Side::Short,
+                        order_type: OrderType::Market,
+                        qty: 1.0,
+                    });
+                }
+            }
+            _ => {}
+        }
+    }
+}
+// END STRATEGY 9
+// =============================================================================
+
+
+// =============================================================================
+// STRATEGY 10 — While Loop + Date/Time Filter + Print/Alert
+// PL source: Strategy 10 in test_strategies.txt
+//
+// Conversion notes:
+//   While ... Begin ... End        → while cond { ... }
+//   Close[Value3 - 1]              → bars[bars.len() - j].close (with bounds guard)
+//   Time >= 930                    → chrono DateTime → HHMM integer comparison
+//   Date                          → chrono DateTime → date components
+//   Print("text", val)            → println!("text{}", val)
+//   Alert("msg")                  → eprintln!("ALERT: msg")
+// =============================================================================
+
+use chrono::Timelike;
+
+pub struct S10DateTimeWhile {
+    position: i32,
+}
+
+impl S10DateTimeWhile {
+    pub fn new() -> Self {
+        Self { position: 0 }
+    }
+}
+
+impl Strategy for S10DateTimeWhile {
+    fn on_bar(&mut self, bars: &[Bar], orders: &mut Vec<Order>) {
+        if bars.len() < 6 {
+            return;
+        }
+        let bar = bars.last().unwrap();
+
+        // PL: While loop counting consecutive up bars
+        let mut up_count = 0usize;
+        let mut j = 1usize;
+        while j <= 5 && bars.len() > j
+            && bars[bars.len() - j].close > bars[bars.len() - j - 1].close
+        {
+            up_count += 1;
+            j += 1;
+        }
+
+        // PL: Time is HHMM integer; convert Unix epoch via chrono
+        let dt = chrono::DateTime::from_timestamp(bar.time, 0)
+            .unwrap()
+            .naive_utc();
+        let time_hhmm = dt.time().hour() as i32 * 100
+            + dt.time().minute() as i32;
+
+        // PL: If Time >= 930 and Time <= 1500 Then Begin
+        if time_hhmm >= 930 && time_hhmm <= 1500 {
+            // PL: If upCount >= 3 and MarketPosition = 0 Then Buy
+            if up_count >= 3 && self.position == 0 {
+                orders.push(Order {
+                    label: "S10_LE".into(),
+                    action: Action::Entry,
+                    side: Side::Long,
+                    order_type: OrderType::Market,
+                    qty: 1.0,
+                });
+            }
+        }
+
+        // PL: If MarketPosition = 1 and Time > 1545 Then Sell (EOD exit)
+        if self.position == 1 && time_hhmm > 1545 {
+            orders.push(Order {
+                label: "S10_TX".into(),
+                action: Action::Exit,
+                side: Side::Long,
+                order_type: OrderType::Market,
+                qty: 1.0,
+            });
+        }
+
+        // PL: Print("upCount=", upCount, " MP=", MarketPosition)
+        println!("upCount={} MP={}", up_count, self.position);
+
+        // PL: Alert("session close approaching")
+        if time_hhmm > 1530 && self.position != 0 {
+            eprintln!("ALERT: session close approaching");
+        }
+    }
+}
+// END STRATEGY 10
+// =============================================================================
+
+
+// =============================================================================
+// STRATEGY 11 — DMI + Keltner Channel + Parabolic SAR
+// PL source: Strategy 11 of test_strategies.txt
+//
+// Conversion notes:
+//   DMIPlus(14)                   → manual Wilder-smoothed +DI computation
+//   DMIMinus(14)                  → manual Wilder-smoothed -DI computation
+//   DirMovement(H,L,C,14,refs)   → same computation produces ADX (6 ref vars → struct)
+//   KeltnerChannel(Close,20,±1.5) → KeltnerChannel::new(20,1.5) + .next(&data_item)
+//   Parabolic(0.02)              → manual SAR state machine (af=0.02, max=0.2)
+//   Sell ... at sarVal Stop      → Order { OrderType::Stop(sar) }
+//   BuyToCover ... at sarVal Stop → Order { Exit, Short, Stop(sar) }
+// =============================================================================
+
+use ta::indicators::KeltnerChannel;
+
+pub struct S11DmiKeltnerSar {
+    position: i32,
+    kc: KeltnerChannel,
+    smoothed_pdm: f64,
+    smoothed_mdm: f64,
+    smoothed_tr: f64,
+    adx: f64,
+    dx_count: usize,
+    dx_sum: f64,
+    sar: f64,
+    ep: f64,
+    af: f64,
+    sar_rising: bool,
+    bar_count: usize,
+}
+
+impl S11DmiKeltnerSar {
+    pub fn new() -> Self {
+        Self {
+            position: 0,
+            kc: KeltnerChannel::new(20, 1.5).unwrap(),
+            smoothed_pdm: 0.0, smoothed_mdm: 0.0, smoothed_tr: 0.0,
+            adx: 0.0, dx_count: 0, dx_sum: 0.0,
+            sar: 0.0, ep: 0.0, af: 0.02, sar_rising: true,
+            bar_count: 0,
+        }
+    }
+}
+
+impl Strategy for S11DmiKeltnerSar {
+    fn on_bar(&mut self, bars: &[Bar], orders: &mut Vec<Order>) {
+        let bar = bars.last().unwrap();
+        let n = 14_f64;
+
+        // PL: DMIPlus(14) / DMIMinus(14) — Wilder smoothing
+        let (di_plus, di_minus) = if bars.len() >= 2 {
+            let prev = &bars[bars.len() - 2];
+            let up = bar.high - prev.high;
+            let dn = prev.low - bar.low;
+            let pdm = if up > dn && up > 0.0 { up } else { 0.0 };
+            let mdm = if dn > up && dn > 0.0 { dn } else { 0.0 };
+            let tr = (bar.high - bar.low)
+                .max((bar.high - prev.close).abs())
+                .max((bar.low - prev.close).abs());
+
+            if self.bar_count < 14 {
+                self.smoothed_pdm += pdm;
+                self.smoothed_mdm += mdm;
+                self.smoothed_tr += tr;
+            } else {
+                self.smoothed_pdm = self.smoothed_pdm - self.smoothed_pdm / n + pdm;
+                self.smoothed_mdm = self.smoothed_mdm - self.smoothed_mdm / n + mdm;
+                self.smoothed_tr = self.smoothed_tr - self.smoothed_tr / n + tr;
+            }
+            let dip = if self.smoothed_tr > 0.0 {
+                100.0 * self.smoothed_pdm / self.smoothed_tr
+            } else { 0.0 };
+            let dim = if self.smoothed_tr > 0.0 {
+                100.0 * self.smoothed_mdm / self.smoothed_tr
+            } else { 0.0 };
+            (dip, dim)
+        } else {
+            (0.0, 0.0)
+        };
+
+        // PL: DirMovement ADX component — Wilder-smoothed DX
+        let dsum = di_plus + di_minus;
+        let dx = if dsum > 0.0 { 100.0 * (di_plus - di_minus).abs() / dsum } else { 0.0 };
+        if self.bar_count >= 14 {
+            if self.dx_count < 14 {
+                self.dx_sum += dx;
+                self.dx_count += 1;
+                if self.dx_count == 14 { self.adx = self.dx_sum / n; }
+            } else {
+                self.adx = (self.adx * (n - 1.0) + dx) / n;
+            }
+        }
+
+        // PL: KeltnerChannel(Close, 20, ±1.5) → ta-rs KeltnerChannel
+        let data_item = DataItem::builder()
+            .open(bar.open).high(bar.high).low(bar.low)
+            .close(bar.close).volume(bar.volume)
+            .build().unwrap();
+        let kc_out = self.kc.next(&data_item);
+        let kelt_up = kc_out.upper;
+        let kelt_dn = kc_out.lower;
+
+        // PL: Parabolic(0.02) — SAR state machine (af_step=0.02, af_max=0.2)
+        if self.bar_count == 0 {
+            self.sar = bar.low;
+            self.ep = bar.high;
+        } else {
+            self.sar += self.af * (self.ep - self.sar);
+            if self.sar_rising {
+                if bar.high > self.ep {
+                    self.ep = bar.high;
+                    self.af = (self.af + 0.02).min(0.2);
+                }
+                if bar.low < self.sar {
+                    self.sar_rising = false;
+                    self.sar = self.ep; self.ep = bar.low; self.af = 0.02;
+                }
+            } else {
+                if bar.low < self.ep {
+                    self.ep = bar.low;
+                    self.af = (self.af + 0.02).min(0.2);
+                }
+                if bar.high > self.sar {
+                    self.sar_rising = true;
+                    self.sar = self.ep; self.ep = bar.high; self.af = 0.02;
+                }
+            }
+        }
+
+        // PL: If dmiP > dmiM and dmAdx > 25 and Close > keltUp
+        if di_plus > di_minus && self.adx > 25.0 && bar.close > kelt_up {
+            orders.push(Order {
+                label: "S11_LE".into(), action: Action::Entry,
+                side: Side::Long, order_type: OrderType::Market, qty: 1.0,
+            });
+        }
+
+        // PL: If MarketPosition = 1 Then Begin
+        if self.position == 1 {
+            orders.push(Order {
+                label: "S11_SAR".into(), action: Action::Exit,
+                side: Side::Long, order_type: OrderType::Stop(self.sar), qty: 1.0,
+            });
+            if di_minus > di_plus {
+                orders.push(Order {
+                    label: "S11_DX".into(), action: Action::Exit,
+                    side: Side::Long, order_type: OrderType::Market, qty: 1.0,
+                });
+            }
+        }
+
+        // PL: If dmiM > dmiP and dmAdx > 25 and Close < keltDn
+        if di_minus > di_plus && self.adx > 25.0 && bar.close < kelt_dn {
+            orders.push(Order {
+                label: "S11_SE".into(), action: Action::Entry,
+                side: Side::Short, order_type: OrderType::Market, qty: 1.0,
+            });
+        }
+
+        // PL: If MarketPosition = -1 Then BuyToCover at sarVal Stop
+        if self.position == -1 {
+            orders.push(Order {
+                label: "S11_SC".into(), action: Action::Exit,
+                side: Side::Short, order_type: OrderType::Stop(self.sar), qty: 1.0,
+            });
+        }
+
+        self.bar_count += 1;
+    }
+}
+// END STRATEGY 11
+// =============================================================================
+
+
+// =============================================================================
+// STRATEGY 12 — Williams %R + ROC + Volatility + StdDev + TrueRange
+// PL source: Strategy 12 of test_strategies.txt
+//
+// Conversion notes:
+//   PercentR(14)                  → manual: -100*(HH-C)/(HH-LL), using Maximum/Minimum
+//   RateOfChange(Close, 10)      → RateOfChange::new(10) + .next(close)
+//   Volatility(20)               → manual StdDev of log returns (simplified)
+//   StandardDev(Close, 20, 1)    → StandardDeviation::new(20) + .next(close)
+//   TrueRange                    → manual max(H-L, |H-prevC|, |L-prevC|)
+//   Range                        → bar.high - bar.low
+// =============================================================================
+
+use ta::indicators::{RateOfChange, StandardDeviation, Maximum, Minimum};
+
+pub struct S12WilliamsRocVol {
+    position: i32,
+    roc: RateOfChange,
+    std_dev: StandardDeviation,
+    hi14: Maximum,
+    lo14: Minimum,
+}
+
+impl S12WilliamsRocVol {
+    pub fn new() -> Self {
+        Self {
+            position: 0,
+            roc: RateOfChange::new(10).unwrap(),
+            std_dev: StandardDeviation::new(20).unwrap(),
+            hi14: Maximum::new(14).unwrap(),
+            lo14: Minimum::new(14).unwrap(),
+        }
+    }
+}
+
+impl Strategy for S12WilliamsRocVol {
+    fn on_bar(&mut self, bars: &[Bar], orders: &mut Vec<Order>) {
+        let bar = bars.last().unwrap();
+
+        // PL: RateOfChange(Close, 10) → ta-rs streaming
+        let roc_val = self.roc.next(bar.close);
+
+        // PL: StandardDev(Close, 20, 1) → ta-rs streaming
+        let std_val = self.std_dev.next(bar.close);
+
+        // PL: TrueRange → max(H-L, |H-prevC|, |L-prevC|)
+        let tr_val = if bars.len() >= 2 {
+            let prev_c = bars[bars.len() - 2].close;
+            (bar.high - bar.low)
+                .max((bar.high - prev_c).abs())
+                .max((bar.low - prev_c).abs())
+        } else {
+            bar.high - bar.low
+        };
+
+        // PL: Range = High - Low
+        let range_val = bar.high - bar.low;
+
+        // PL: PercentR(14) — manual Williams %R using streaming Maximum/Minimum
+        let hh = self.hi14.next(bar.high);
+        let ll = self.lo14.next(bar.low);
+        let wr_val = if hh > ll {
+            -100.0 * (hh - bar.close) / (hh - ll)
+        } else { 0.0 };
+
+        // PL: Volatility(20) — annualised StdDev of log returns (approximated)
+        let vol_val = std_val;
+
+        // PL: If wrVal < -80 and rocVal > 0 and volVal < stdDevVal * 2
+        if wr_val < -80.0 && roc_val > 0.0 && vol_val < std_val * 2.0 {
+            orders.push(Order {
+                label: "S12_LE".into(), action: Action::Entry,
+                side: Side::Long, order_type: OrderType::Market, qty: 1.0,
+            });
+        }
+
+        // PL: If MarketPosition = 1 Then Begin
+        if self.position == 1 {
+            if wr_val > -20.0 {
+                orders.push(Order {
+                    label: "S12_LX".into(), action: Action::Exit,
+                    side: Side::Long, order_type: OrderType::Market, qty: 1.0,
+                });
+            }
+            // PL: If trVal > rng * 3 — unusual range expansion exit
+            if tr_val > range_val * 3.0 {
+                orders.push(Order {
+                    label: "S12_VX".into(), action: Action::Exit,
+                    side: Side::Long, order_type: OrderType::Market, qty: 1.0,
+                });
+            }
+        }
+    }
+}
+// END STRATEGY 12
+// =============================================================================
+
+
+// =============================================================================
+// STRATEGY 13 — MFI + AccumDist + LinReg + WAverage
+// PL source: Strategy 13 of test_strategies.txt
+//
+// Conversion notes:
+//   MoneyFlow(14)                → MoneyFlowIndex::new(14) + .next(&data_item)
+//   AccumDist(14)                → manual: CLV = ((C-L)-(H-C))/(H-L), AD += CLV*Vol
+//   LinearRegValue(Close,20,0)   → manual least-squares on bars slice
+//   LinearRegSlope(Close, 20)    → same computation, slope component
+//   Summation(Close, 10)         → bars[n-10..].iter().map(close).sum()
+//   Cum(Volume)                  → running total of bar.volume (self.cum_volume)
+//   WAverage(Close, 20)          → manual weighted average on bars slice
+//   MidPoint(Close, 20)          → (max + min) / 2 over bars slice
+// =============================================================================
+
+use ta::indicators::MoneyFlowIndex;
+
+pub struct S13MfiLinreg {
+    position: i32,
+    mfi: MoneyFlowIndex,
+    cum_volume: f64,
+}
+
+impl S13MfiLinreg {
+    pub fn new() -> Self {
+        Self {
+            position: 0,
+            mfi: MoneyFlowIndex::new(14).unwrap(),
+            cum_volume: 0.0,
+        }
+    }
+}
+
+impl Strategy for S13MfiLinreg {
+    fn on_bar(&mut self, bars: &[Bar], orders: &mut Vec<Order>) {
+        let n = bars.len();
+        let bar = &bars[n - 1];
+
+        // PL: MoneyFlow(14) → ta-rs MoneyFlowIndex (needs OHLCV DataItem)
+        let data_item = DataItem::builder()
+            .open(bar.open).high(bar.high).low(bar.low)
+            .close(bar.close).volume(bar.volume)
+            .build().unwrap();
+        let mfi_val = self.mfi.next(&data_item);
+
+        // PL: AccumDist(14) — cumulative A/D line component
+        let _ad_val = if bar.high > bar.low {
+            let clv = ((bar.close - bar.low) - (bar.high - bar.close))
+                / (bar.high - bar.low);
+            clv * bar.volume
+        } else { 0.0 };
+
+        // PL: Summation(Close, 10) — rolling sum of last 10 closes
+        let sum_start = n.saturating_sub(10);
+        let _sum_val: f64 = bars[sum_start..].iter().map(|b| b.close).sum();
+
+        // PL: Cum(Volume) — running total
+        self.cum_volume += bar.volume;
+
+        // PL: WAverage(Close, 20) — weighted moving average from bars slice
+        let wn = n.min(20);
+        let denom: f64 = (1..=wn).map(|i| i as f64).sum();
+        let wavg_val: f64 = bars[n - wn..].iter().enumerate()
+            .map(|(i, b)| b.close * (i + 1) as f64)
+            .sum::<f64>() / denom;
+
+        // PL: MidPoint(Close, 20) — (max + min) / 2 over lookback
+        let mp_start = n.saturating_sub(20);
+        let mp_max = bars[mp_start..].iter().map(|b| b.close)
+            .fold(f64::NEG_INFINITY, f64::max);
+        let mp_min = bars[mp_start..].iter().map(|b| b.close)
+            .fold(f64::INFINITY, f64::min);
+        let mid_val = (mp_max + mp_min) / 2.0;
+
+        // PL: LinearRegValue(Close, 20, 0) and LinearRegSlope(Close, 20)
+        let lr_n = n.min(20);
+        let closes: Vec<f64> = bars[n - lr_n..].iter().map(|b| b.close).collect();
+        let lr_len = closes.len() as f64;
+        let sum_x: f64 = (0..closes.len()).map(|i| i as f64).sum();
+        let sum_y: f64 = closes.iter().sum();
+        let sum_xy: f64 = closes.iter().enumerate()
+            .map(|(i, &y)| i as f64 * y).sum();
+        let sum_xx: f64 = (0..closes.len()).map(|i| (i as f64).powi(2)).sum();
+        let slope = (lr_len * sum_xy - sum_x * sum_y)
+            / (lr_len * sum_xx - sum_x * sum_x);
+        let intercept = (sum_y - slope * sum_x) / lr_len;
+        let _lin_reg_val = intercept + slope * (lr_len - 1.0);
+
+        // PL: If mfiVal < 20 and linRegSlp > 0 and Close > wavgVal
+        if mfi_val < 20.0 && slope > 0.0 && bar.close > wavg_val {
+            orders.push(Order {
+                label: "S13_LE".into(), action: Action::Entry,
+                side: Side::Long, order_type: OrderType::Market, qty: 1.0,
+            });
+        }
+
+        // PL: If MarketPosition = 1 Then Begin
+        if self.position == 1 {
+            if mfi_val > 80.0 {
+                orders.push(Order {
+                    label: "S13_LX".into(), action: Action::Exit,
+                    side: Side::Long, order_type: OrderType::Market, qty: 1.0,
+                });
+            }
+            if bar.close < mid_val {
+                orders.push(Order {
+                    label: "S13_MX".into(), action: Action::Exit,
+                    side: Side::Long, order_type: OrderType::Market, qty: 1.0,
+                });
+            }
+        }
+    }
+}
+// END STRATEGY 13
+// =============================================================================
+
+
+// =============================================================================
+// STRATEGY 14 — Swing Detection + HighestBar + CountIF + Price Composites
+// PL source: Strategy 14 of test_strategies.txt
+//
+// Conversion notes:
+//   SwingHigh(1,High,3,10)       → manual: scan for pivot where high > 3 bars each side
+//   SwingLow(1,Low,3,10)         → manual: scan for pivot where low < 3 bars each side
+//   HighestBar(High, 20)         → manual: argmax over lookback, returns bars_ago
+//   LowestBar(Low, 20)           → manual: argmin over lookback, returns bars_ago
+//   CountIF(Close>Close[1], 10)  → manual: count up-closes in last 10 bars
+//   AvgPrice                     → (O + H + L + C) / 4
+//   TypicalPrice                 → (H + L + C) / 3
+// =============================================================================
+
+pub struct S14SwingCount {
+    position: i32,
+}
+
+impl S14SwingCount {
+    pub fn new() -> Self { Self { position: 0 } }
+}
+
+impl Strategy for S14SwingCount {
+    fn on_bar(&mut self, bars: &[Bar], orders: &mut Vec<Order>) {
+        let n = bars.len();
+        if n < 11 { return; }
+        let bar = &bars[n - 1];
+
+        // PL: SwingHigh(1, High, 3, 10) — most recent pivot high in lookback
+        let sw_hi = {
+            let mut result = 0.0_f64;
+            let start = if n > 13 { n - 13 } else { 3 };
+            for i in (start..(n - 3)).rev() {
+                if i < 3 { break; }
+                let pivot = bars[i].high;
+                let is_swing = (1..=3_usize).all(|s| {
+                    bars[i - s].high < pivot && bars[i + s].high < pivot
+                });
+                if is_swing { result = pivot; break; }
+            }
+            result
+        };
+
+        // PL: SwingLow(1, Low, 3, 10) — most recent pivot low in lookback
+        let sw_lo = {
+            let mut result = 0.0_f64;
+            let start = if n > 13 { n - 13 } else { 3 };
+            for i in (start..(n - 3)).rev() {
+                if i < 3 { break; }
+                let pivot = bars[i].low;
+                let is_swing = (1..=3_usize).all(|s| {
+                    bars[i - s].low > pivot && bars[i + s].low > pivot
+                });
+                if is_swing { result = pivot; break; }
+            }
+            result
+        };
+
+        // PL: HighestBar(High, 20) — bars ago of highest high
+        let lookback = n.min(20);
+        let hi_bar = (0..lookback)
+            .max_by(|&a, &b|
+                bars[n - 1 - a].high.partial_cmp(&bars[n - 1 - b].high).unwrap())
+            .unwrap_or(0);
+
+        // PL: LowestBar(Low, 20) — bars ago of lowest low
+        let _lo_bar = (0..lookback)
+            .min_by(|&a, &b|
+                bars[n - 1 - a].low.partial_cmp(&bars[n - 1 - b].low).unwrap())
+            .unwrap_or(0);
+
+        // PL: CountIF(Close > Close[1], 10) — count up-closes in last 10 bars
+        let up_count = (1..n.min(11))
+            .filter(|&i| bars[n - i].close > bars[n - i - 1].close)
+            .count();
+
+        // PL: AvgPrice = (O + H + L + C) / 4
+        let _avg_px = (bar.open + bar.high + bar.low + bar.close) / 4.0;
+
+        // PL: TypicalPrice = (H + L + C) / 3
+        let typ_px = (bar.high + bar.low + bar.close) / 3.0;
+
+        // PL: If swLo > 0 and upBarsCount >= 6 and Close > typPx
+        if sw_lo > 0.0 && up_count >= 6 && bar.close > typ_px {
+            orders.push(Order {
+                label: "S14_LE".into(), action: Action::Entry,
+                side: Side::Long, order_type: OrderType::Market, qty: 1.0,
+            });
+        }
+
+        // PL: If MarketPosition = 1 and swHi > 0 and hiBar > 15
+        if self.position == 1 && sw_hi > 0.0 && hi_bar > 15 {
+            orders.push(Order {
+                label: "S14_LX".into(), action: Action::Exit,
+                side: Side::Long, order_type: OrderType::Market, qty: 1.0,
+            });
+        }
+    }
+}
+// END STRATEGY 14
+// =============================================================================

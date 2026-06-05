@@ -5,7 +5,22 @@
 Variables:
     emaFast(0), emaSlow(0),
     rsiVal(0), atrVal(0), stopPx(0),
-    bbUp(0), bbLow(0);
+    bbUp(0), bbLow(0),
+    adxVal(0), cciVal(0),
+    momVal(0),
+    hiChan(0), loChan(0),
+    macdLine(0), signalLine(0), trailStop(0),
+    fastK(0), fastD(0), slowK(0), slowD(0), upCount(0),
+    dmiP(0), dmiM(0), dmDmiP(0), dmDmiM(0), dmAdx(0),
+    dmDIp(0), dmDIm(0), dmAdxr(0),
+    keltUp(0), keltDn(0), sarVal(0),
+    wrVal(0), rocVal(0), volVal(0), stdDevVal(0), trVal(0), rng(0),
+    mfiVal(0), adVal(0), linRegVal(0), linRegSlp(0),
+    sumVal(0), cumVal(0), wavgVal(0), midPtVal(0),
+    swHi(0), swLo(0), hiBar(0), loBar(0),
+    upBarsCount(0), avgPx(0), typPx(0);
+
+Arrays: kHistory[4](0);
 
 If False Then Begin
 
@@ -81,6 +96,393 @@ If False Then Begin
     If MarketPosition = 1 Then Begin
         stopPx = EntryPrice - 2 * atrVal;
         Sell ("P3_STP") 1 Contract Next Bar at stopPx Stop;
+    End;
+
+    { ================================================================ }
+    { === Strategy 4: Multi-Indicator + Risk Management === }
+    { Pine: ta.dmi(14, 14) => [diPlus, diMinus, adxVal] }
+    { Pine: ta.cci(close, 20) }
+    { Pine: ta.crossover(cciVal, -100) / ta.crossunder(cciVal, 100) }
+    { Pine: strategy.exit with loss= / profit= for SetStopLoss / SetProfitTarget }
+    { ================================================================ }
+
+    { Pine: [_, _, adxVal] = ta.dmi(14, 14) }
+    adxVal = ADX(14);
+
+    { Pine: cciVal = ta.cci(close, 20) }
+    cciVal = CCI(20);
+
+    { Pine: if adxVal > 25 and ta.crossover(cciVal, -100) => strategy.entry("P4_LE", strategy.long) }
+    If adxVal > 25 and cciVal crosses over -100 Then
+        Buy ("P4_LE") 1 Contract Next Bar at Market;
+
+    { Pine: if adxVal > 25 and ta.crossunder(cciVal, 100) => strategy.entry("P4_SE", strategy.short) }
+    If adxVal > 25 and cciVal crosses under 100 Then
+        SellShort ("P4_SE") 1 Contract Next Bar at Market;
+
+    { Pine: strategy.exit("P4_LE_exit", loss=500/syminfo.pointvalue, profit=1000/syminfo.pointvalue) }
+    SetStopLoss(500);
+
+    { Pine: strategy.exit("P4_SE_exit", loss=500/syminfo.pointvalue, profit=1000/syminfo.pointvalue) }
+    SetProfitTarget(1000);
+
+    { Pine: no direct equivalent — manual break-even logic via var and strategy.exit }
+    SetBreakEven(200);
+
+    { ================================================================ }
+    { === Strategy 5: Multi-Data Regime Filter === }
+    { Pine: request.security(syminfo.tickerid, "D", close) => Close of data2 }
+    { Pine: request.security(..., ta.sma(close, 50)) => Average(Close of data2, 50) }
+    { Pine: ta.rsi(close, 14) for data1 }
+    { ================================================================ }
+
+    { Pine: if dailyClose > dailySMA50 and ta.rsi(close, 14) < 30 => strategy.entry("P5_LE", strategy.long) }
+    If Close of data2 > Average(Close of data2, 50) Then Begin
+        If RSI(Close, 14) < 30 Then
+            Buy ("P5_LE") 1 Contract Next Bar at Market;
+    End;
+
+    { Pine: if strategy.position_size > 0 and ta.rsi(close, 14) > 70 => strategy.close("P5_LE") }
+    If MarketPosition = 1 and RSI(Close, 14) > 70 Then
+        Sell ("P5_LX") 1 Contract Next Bar at Market;
+
+    { ================================================================ }
+    { === Strategy 6: EMA Momentum + Limit Entry + Time Exit === }
+    { Pine: ta.ema(close, 12) / ta.ema(close, 26) }
+    { Pine: ta.mom(close, 10) }
+    { Pine: var float initClose = na, then assign on first bar }
+    { Pine: strategy.entry with limit= }
+    { Pine: ta.barssince for time exit }
+    { ================================================================ }
+
+    { Pine: emaFast = ta.ema(close, 12) }
+    emaFast = XAverage(Close, 12);
+
+    { Pine: emaSlow = ta.ema(close, 26) }
+    emaSlow = XAverage(Close, 26);
+
+    { Pine: momVal = ta.mom(close, 10) }
+    momVal = Momentum(Close, 10);
+
+    { Pine: var float initClose = na; if barstate.isfirst => initClose := close }
+    Once Begin
+        Value1 = Close;
+    End;
+
+    { Pine: if strategy.position_size == 0 and momVal > 0 and emaFast > emaSlow => strategy.entry("P6_LE", strategy.long, limit=close) }
+    If MarketPosition = 0 and momVal > 0 and emaFast > emaSlow Then
+        Buy ("P6_LE") 1 Contract Next Bar at Close Limit;
+
+    { Pine: if strategy.position_size > 0 and bar_index - strategy.opentrades.entry_bar_index(0) >= 10 => strategy.close("P6_LE") }
+    If MarketPosition = 1 and BarsSinceEntry >= 10 Then
+        Sell ("P6_TX") 1 Contract Next Bar at Market;
+
+    { Pine: if strategy.position_size > 0 and ta.crossunder(emaFast, emaSlow) => strategy.close("P6_LE") }
+    If MarketPosition = 1 and emaFast crosses under emaSlow Then
+        Sell ("P6_LX") 1 Contract Next Bar at Market;
+
+    { ================================================================ }
+    { === Strategy 7: Donchian Channel Breakout === }
+    { Pine: ta.highest(high, 20) / ta.lowest(low, 20) }
+    { Pine: [1] bar reference }
+    { Pine: strategy.entry / strategy.exit with stop= }
+    { ================================================================ }
+
+    { Pine: hiChan = ta.highest(high, 20) }
+    hiChan = Highest(High, 20);
+
+    { Pine: loChan = ta.lowest(low, 20) }
+    loChan = Lowest(Low, 20);
+
+    { Pine: if close > hiChan[1] => strategy.entry("P7_LE", strategy.long) }
+    If Close > hiChan[1] Then
+        Buy ("P7_LE") 1 Contract Next Bar at Market;
+
+    { Pine: if close < loChan[1] => strategy.entry("P7_SE", strategy.short) }
+    If Close < loChan[1] Then
+        SellShort ("P7_SE") 1 Contract Next Bar at Market;
+
+    { Pine: if strategy.position_size > 0 => strategy.exit("P7_LX", stop=loChan) }
+    If MarketPosition = 1 Then
+        Sell ("P7_LX") 1 Contract Next Bar at loChan Stop;
+
+    { Pine: if strategy.position_size < 0 => strategy.exit("P7_SX", stop=hiChan) }
+    If MarketPosition = -1 Then
+        BuyToCover ("P7_SX") 1 Contract Next Bar at hiChan Stop;
+
+    { ================================================================ }
+    { === Strategy 8: MACD Crossover + Trailing Stop === }
+    { Pine: ta.macd(close, 12, 26, 9) => [macdLine, signalLine, _] }
+    { Pine: ta.atr(14) for trailing stop }
+    { Pine: bar_index - strategy.opentrades.entry_bar_index(0) for BarsSinceEntry }
+    { ================================================================ }
+
+    { Pine: [macdLine, signalLine, _] = ta.macd(close, 12, 26, 9) }
+    macdLine = MACD(Close, 12, 26);
+
+    { Pine: signalLine = ta.ema(ta.macd(close, 12, 26, 9)[0], 9) }
+    signalLine = XAverage(MACD(Close, 12, 26), 9);
+
+    { Pine: if strategy.position_size == 0 and ta.crossover(macdLine, signalLine) => strategy.entry("P8_LE", strategy.long) }
+    If MarketPosition = 0 and macdLine crosses over signalLine Then
+        Buy ("P8_LE") 1 Contract Next Bar at Market;
+
+    { Pine: if strategy.position_size > 0 => trailing stop logic }
+    If MarketPosition = 1 Then Begin
+        { Pine: if bar_index == strategy.opentrades.entry_bar_index(0) => trailStop := strategy.position_avg_price - ta.atr(14) * 3 }
+        If BarsSinceEntry = 0 Then
+            trailStop = EntryPrice - AvgTrueRange(14) * 3;
+
+        { Pine: trailStop := math.max(trailStop, close - ta.atr(14) * 3) }
+        If Close - AvgTrueRange(14) * 3 > trailStop Then
+            trailStop = Close - AvgTrueRange(14) * 3;
+
+        { Pine: strategy.exit("P8_TS", stop=trailStop) }
+        Sell ("P8_TS") 1 Contract Next Bar at trailStop Stop;
+
+        { Pine: if ta.crossunder(macdLine, signalLine) => strategy.close("P8_LE") }
+        If macdLine crosses under signalLine Then
+            Sell ("P8_MX") 1 Contract Next Bar at Market;
+    End;
+
+    { ================================================================ }
+    { === Strategy 9: Stochastic + Switch + Array + For + Contracts === }
+    { Pine: ta.stoch(close, high, low, 14) with sma smoothing }
+    { Pine: array.unshift / array.pop for history }
+    { Pine: switch on strategy.position_size }
+    { Pine: strategy.position_size for CurrentContracts }
+    { ================================================================ }
+
+    { Pine: slowK = ta.sma(ta.stoch(close, high, low, 14), 3); slowD = ta.sma(slowK, 3) }
+    Value1 = Stochastic(High, Low, Close, 14, 3, 3, 1, fastK, fastD, slowK, slowD);
+
+    { Pine: shift array history — array.unshift(kHist, slowK); if array.size(kHist) > 5 => array.pop(kHist) }
+    For Value2 = 4 DownTo 1 Begin
+        kHistory[Value2] = kHistory[Value2 - 1];
+    End;
+    kHistory[0] = slowK;
+
+    { Pine: switch strategy.position_size == 0 / > 0 / < 0 }
+    Switch (MarketPosition)
+    Begin
+        Case 0: Begin
+            { Pine: if slowK < 20 and slowD < 20 => strategy.entry("P9_LE", strategy.long) }
+            If slowK < 20 and slowD < 20 Then
+                Buy ("P9_LE") 1 Contract Next Bar at Market;
+            { Pine: if slowK > 80 and slowD > 80 => strategy.entry("P9_SE", strategy.short) }
+            If slowK > 80 and slowD > 80 Then
+                SellShort ("P9_SE") 1 Contract Next Bar at Market;
+        End;
+        Case 1:
+            { Pine: if slowK > 80 or math.abs(strategy.position_size) > 2 => strategy.close_all() }
+            If slowK > 80 or CurrentContracts > 2 Then
+                Sell ("P9_LX") 1 Contract Next Bar at Market;
+        Case -1:
+            { Pine: if slowK < 20 or math.abs(strategy.position_size) > 2 => strategy.close_all() }
+            If slowK < 20 or CurrentContracts > 2 Then
+                BuyToCover ("P9_SX") 1 Contract Next Bar at Market;
+    End;
+
+    { ================================================================ }
+    { === Strategy 10: While Loop + Date/Time Filter + Print/Alert === }
+    { Pine: while loop counting consecutive up bars }
+    { Pine: hour/minute filter for session hours }
+    { Pine: log.info / alert for Print/Alert }
+    { ================================================================ }
+
+    { Pine: upCount = 0; i = 1; while i <= 5 and close[i-1] > close[i] => upCount += 1; i += 1 }
+    upCount = 0;
+    Value3 = 1;
+    While Value3 <= 5 and Close[Value3 - 1] > Close[Value3] Begin
+        upCount = upCount + 1;
+        Value3 = Value3 + 1;
+    End;
+
+    { Pine: if (hour >= 9 and minute >= 30) and hour < 15 => session filter }
+    If Time >= 930 and Time <= 1500 Then Begin
+        { Pine: if upCount >= 3 and strategy.position_size == 0 => strategy.entry("P10_LE", strategy.long) }
+        If upCount >= 3 and MarketPosition = 0 Then
+            Buy ("P10_LE") 1 Contract Next Bar at Market;
+    End;
+
+    { Pine: if strategy.position_size > 0 and hour >= 15 and minute >= 45 => strategy.close_all() }
+    If MarketPosition = 1 and Time > 1545 Then
+        Sell ("P10_TX") 1 Contract Next Bar at Market;
+
+    { Pine: log.info("upCount=" + str.tostring(upCount) + " MP=" + str.tostring(strategy.position_size)) }
+    Print("upCount=", upCount, " MP=", MarketPosition);
+
+    { Pine: if hour >= 15 and minute >= 30 and strategy.position_size != 0 => alert("session close approaching") }
+    If Time > 1530 and MarketPosition <> 0 Then
+        Alert("session close approaching");
+
+    { ================================================================ }
+    { === Strategy 11: DMI + Keltner Channel + Parabolic SAR === }
+    { Pine: ta.dmi(14, 14) => [diPlus, diMinus, adx] }
+    { Pine: ta.kc(close, 20, 1.5) => [middle, upper, lower] }
+    { Pine: ta.sar(0.02, 0.02, 0.2) }
+    { ================================================================ }
+
+    { Pine: [dmiP, dmiM, _] = ta.dmi(14, 14) — diPlus, diMinus }
+    dmiP = DMIPlus(14);
+    dmiM = DMIMinus(14);
+
+    { Pine: DirMovement multi-output (no direct Pine equivalent — ta.dmi covers the basics) }
+    Value1 = DirMovement(High, Low, Close, 14,
+        dmDmiP, dmDmiM, dmAdx, dmDIp, dmDIm, dmAdxr);
+
+    { Pine: [_, keltUp, keltDn] = ta.kc(close, 20, 1.5) }
+    keltUp = KeltnerChannel(Close, 20, 1.5);
+    keltDn = KeltnerChannel(Close, 20, -1.5);
+
+    { Pine: sarVal = ta.sar(0.02, 0.02, 0.2) }
+    sarVal = Parabolic(0.02);
+
+    { Pine: if dmiP > dmiM and dmAdx > 25 and close > keltUp => strategy.entry("P11_LE", strategy.long) }
+    If dmiP > dmiM and dmAdx > 25 and Close > keltUp Then
+        Buy ("P11_LE") 1 Contract Next Bar at Market;
+
+    { Pine: if strategy.position_size > 0 — SAR stop + DMI reversal }
+    If MarketPosition = 1 Then Begin
+        { Pine: strategy.exit("P11_SAR", stop=sarVal) }
+        Sell ("P11_SAR") 1 Contract Next Bar at sarVal Stop;
+        { Pine: if dmiM > dmiP => strategy.close("P11_LE") }
+        If dmiM > dmiP Then
+            Sell ("P11_DX") 1 Contract Next Bar at Market;
+    End;
+
+    { Pine: if dmiM > dmiP and dmAdx > 25 and close < keltDn => strategy.entry("P11_SE", strategy.short) }
+    If dmiM > dmiP and dmAdx > 25 and Close < keltDn Then
+        SellShort ("P11_SE") 1 Contract Next Bar at Market;
+
+    { Pine: if strategy.position_size < 0 => strategy.exit("P11_SC", stop=sarVal) }
+    If MarketPosition = -1 Then
+        BuyToCover ("P11_SC") 1 Contract Next Bar at sarVal Stop;
+
+    { ================================================================ }
+    { === Strategy 12: Williams %R + ROC + Volatility + StdDev === }
+    { Pine: ta.percentrank or manual Williams %R }
+    { Pine: ta.roc(close, 10) }
+    { Pine: ta.atr-based volatility / ta.stdev(close, 20) }
+    { Pine: ta.tr(true) / high - low for TrueRange / Range }
+    { ================================================================ }
+
+    { Pine: wrVal = -100 * (ta.highest(high, 14) - close) / (ta.highest(high, 14) - ta.lowest(low, 14)) }
+    wrVal = PercentR(14);
+
+    { Pine: rocVal = ta.roc(close, 10) }
+    rocVal = RateOfChange(Close, 10);
+
+    { Pine: volVal = ta.stdev(ta.roc(close, 1), 20) * math.sqrt(252) (annualised) }
+    volVal = Volatility(20);
+
+    { Pine: stdDevVal = ta.stdev(close, 20) }
+    stdDevVal = StandardDev(Close, 20, 1);
+
+    { Pine: trVal = ta.tr(true) }
+    trVal = TrueRange;
+
+    { Pine: rng = high - low }
+    rng = Range;
+
+    { Pine: if wrVal < -80 and rocVal > 0 and volVal < stdDevVal * 2 => strategy.entry("P12_LE", strategy.long) }
+    If wrVal < -80 and rocVal > 0 and volVal < stdDevVal * 2 Then
+        Buy ("P12_LE") 1 Contract Next Bar at Market;
+
+    { Pine: if strategy.position_size > 0 — overbought or volatility spike exit }
+    If MarketPosition = 1 Then Begin
+        { Pine: if wrVal > -20 => strategy.close("P12_LE") }
+        If wrVal > -20 Then
+            Sell ("P12_LX") 1 Contract Next Bar at Market;
+        { Pine: if trVal > rng * 3 => strategy.close("P12_LE") }
+        If trVal > rng * 3 Then
+            Sell ("P12_VX") 1 Contract Next Bar at Market;
+    End;
+
+    { ================================================================ }
+    { === Strategy 13: MFI + AccumDist + LinReg + WAverage === }
+    { Pine: ta.mfi(hlc3, 14) }
+    { Pine: ta.accdist }
+    { Pine: ta.linreg(close, 20, 0) / slope via manual calc }
+    { Pine: ta.wma(close, 20) / (high + low) / 2 midpoint }
+    { Pine: math.sum(close, 10) / ta.cum(volume) }
+    { ================================================================ }
+
+    { Pine: mfiVal = ta.mfi(hlc3, 14) }
+    mfiVal = MoneyFlow(14);
+
+    { Pine: adVal = ta.accdist (cumulative) — PL AccumDist takes a length }
+    adVal = AccumDist(14);
+
+    { Pine: linRegVal = ta.linreg(close, 20, 0) }
+    linRegVal = LinearRegValue(Close, 20, 0);
+
+    { Pine: linRegSlp — manual slope from linreg offset difference }
+    linRegSlp = LinearRegSlope(Close, 20);
+
+    { Pine: sumVal = math.sum(close, 10) }
+    sumVal = Summation(Close, 10);
+
+    { Pine: cumVal = ta.cum(volume) }
+    cumVal = Cum(Volume);
+
+    { Pine: wavgVal = ta.wma(close, 20) }
+    wavgVal = WAverage(Close, 20);
+
+    { Pine: midPtVal = (ta.highest(close, 20) + ta.lowest(close, 20)) / 2 }
+    midPtVal = MidPoint(Close, 20);
+
+    { Pine: if mfiVal < 20 and linRegSlp > 0 and close > wavgVal => strategy.entry("P13_LE", strategy.long) }
+    If mfiVal < 20 and linRegSlp > 0 and Close > wavgVal Then
+        Buy ("P13_LE") 1 Contract Next Bar at Market;
+
+    { Pine: if strategy.position_size > 0 — MFI overbought or midpoint exit }
+    If MarketPosition = 1 Then Begin
+        { Pine: if mfiVal > 80 => strategy.close("P13_LE") }
+        If mfiVal > 80 Then
+            Sell ("P13_LX") 1 Contract Next Bar at Market;
+        { Pine: if close < midPtVal => strategy.close("P13_LE") }
+        If Close < midPtVal Then
+            Sell ("P13_MX") 1 Contract Next Bar at Market;
+    End;
+
+    { ================================================================ }
+    { === Strategy 14: Swing + HighestBar + CountIF + Prices === }
+    { Pine: ta.pivothigh / ta.pivotlow for swing detection }
+    { Pine: ta.highestbars / ta.lowestbars (returns negative offset) }
+    { Pine: math.sum(close > close[1] ? 1 : 0, 10) for CountIF }
+    { Pine: hl2 for AvgPrice / hlc3 for TypicalPrice }
+    { ================================================================ }
+
+    { Pine: swHi = ta.pivothigh(high, 3, 10) (NaN if no pivot) }
+    swHi = SwingHigh(1, High, 3, 10);
+
+    { Pine: swLo = ta.pivotlow(low, 3, 10) }
+    swLo = SwingLow(1, Low, 3, 10);
+
+    { Pine: hiBar = -ta.highestbars(high, 20) (Pine returns negative offset) }
+    hiBar = HighestBar(High, 20);
+
+    { Pine: loBar = -ta.lowestbars(low, 20) }
+    loBar = LowestBar(Low, 20);
+
+    { Pine: upBarsCount = math.sum(close > close[1] ? 1 : 0, 10) }
+    upBarsCount = CountIF(Close > Close[1], 10);
+
+    { Pine: avgPx = hl2 }
+    avgPx = AvgPrice;
+
+    { Pine: typPx = hlc3 }
+    typPx = TypicalPrice;
+
+    { Pine: if not na(swLo) and upBarsCount >= 6 and close > hlc3 => strategy.entry("P14_LE", strategy.long) }
+    If swLo > 0 and upBarsCount >= 6 and Close > typPx Then
+        Buy ("P14_LE") 1 Contract Next Bar at Market;
+
+    { Pine: if strategy.position_size > 0 and not na(swHi) and hiBar > 15 => strategy.close("P14_LE") }
+    If MarketPosition = 1 Then Begin
+        If swHi > 0 and hiBar > 15 Then
+            Sell ("P14_LX") 1 Contract Next Bar at Market;
     End;
 
 End;

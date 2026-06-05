@@ -239,3 +239,553 @@ if strategy.position_size > 0 and rsiVal > 70
 plot(dailySMA50, color=color.purple, title="Daily SMA 50 (regime)")
 // END STRATEGY 5
 // =============================================================================
+
+
+// =============================================================================
+// STRATEGY 6 — EMA Momentum + Limit Entry + Time Exit
+// PL source: lines 110-128 of test_strategies.txt
+//
+// Conversion notes:
+//   XAverage(Close, N)          → ta.ema(close, N)
+//   Momentum(Close, 10)         → ta.mom(close, 10)
+//   Once Begin ... End          → var bool onceDone = false + if not onceDone
+//   Buy ... at Close Limit      → strategy.entry() with limit=close
+//   BarsSinceEntry >= 10        → manual bar counter (var int barsSinceEntry)
+//   Sell ... at Market           → strategy.close()
+// =============================================================================
+//@version=5
+strategy("S6 EMA Momentum + Limit Entry + Time Exit", overlay=true)
+
+// Converted from: emaFast = XAverage(Close, 12)
+//                 emaSlow = XAverage(Close, 26)
+emaFast = ta.ema(close, 12)
+emaSlow = ta.ema(close, 26)
+
+// Converted from: momVal = Momentum(Close, 10)
+momVal = ta.mom(close, 10)
+
+// Converted from: Once Begin Value1 = Close; End;
+// PL "Once" fires only on the first bar; use var + flag in Pine
+var bool onceDone = false
+var float onceValue = na
+if not onceDone
+    onceValue := close
+    onceDone := true
+
+// Manual BarsSinceEntry tracking (Pine has no direct equivalent)
+var int barsSinceEntry = 0
+if strategy.position_size > 0
+    barsSinceEntry := barsSinceEntry + 1
+else
+    barsSinceEntry := 0
+
+// Reset counter on new entry (position was flat last bar, now long)
+if strategy.position_size > 0 and strategy.position_size[1] == 0
+    barsSinceEntry := 0
+
+// Converted from: If MarketPosition = 0 and momVal > 0 and emaFast > emaSlow Then
+//                     Buy ("S6_LE") 1 Contract Next Bar at Close Limit
+if strategy.position_size == 0 and momVal > 0 and emaFast > emaSlow
+    strategy.entry("S6_LE", strategy.long, limit=close)
+
+// Converted from: If MarketPosition = 1 and BarsSinceEntry >= 10 Then
+//                     Sell ("S6_TX") ... at Market
+if strategy.position_size > 0 and barsSinceEntry >= 10
+    strategy.close("S6_LE", comment="S6_TX")
+
+// Converted from: If MarketPosition = 1 and emaFast crosses under emaSlow Then
+//                     Sell ("S6_LX") ... at Market
+if strategy.position_size > 0 and ta.crossunder(emaFast, emaSlow)
+    strategy.close("S6_LE", comment="S6_LX")
+
+plot(emaFast, color=color.blue,  title="EMA 12")
+plot(emaSlow, color=color.orange, title="EMA 26")
+// END STRATEGY 6
+// =============================================================================
+
+
+// =============================================================================
+// STRATEGY 7 — Donchian Channel Breakout
+// PL source: lines 130-146 of test_strategies.txt
+//
+// Conversion notes:
+//   Highest(High, 20)           → ta.highest(high, 20)
+//   Lowest(Low, 20)             → ta.lowest(low, 20)
+//   hiChan[1]                   → hiChan[1]  (bar offset same in Pine)
+//   Buy ... at Market           → strategy.entry("S7_LE", strategy.long)
+//   SellShort ... at Market     → strategy.entry("S7_SE", strategy.short)
+//   Sell ... at loChan Stop     → strategy.exit() with stop=loChan
+//   BuyToCover ... at hiChan Stop→ strategy.exit() with stop=hiChan
+// =============================================================================
+//@version=5
+strategy("S7 Donchian Channel Breakout", overlay=true)
+
+// Converted from: hiChan = Highest(High, 20)
+//                 loChan = Lowest(Low, 20)
+hiChan = ta.highest(high, 20)
+loChan = ta.lowest(low, 20)
+
+// Converted from: If Close > hiChan[1] Then Buy ("S7_LE") ...
+if close > hiChan[1]
+    strategy.entry("S7_LE", strategy.long)
+
+// Converted from: If Close < loChan[1] Then SellShort ("S7_SE") ...
+if close < loChan[1]
+    strategy.entry("S7_SE", strategy.short)
+
+// Converted from: If MarketPosition = 1 Then Sell ("S7_LX") ... at loChan Stop
+if strategy.position_size > 0
+    strategy.exit("S7_LX", from_entry="S7_LE", stop=loChan)
+
+// Converted from: If MarketPosition = -1 Then BuyToCover ("S7_SX") ... at hiChan Stop
+if strategy.position_size < 0
+    strategy.exit("S7_SX", from_entry="S7_SE", stop=hiChan)
+
+plot(hiChan, color=color.green, title="Donchian High (20)")
+plot(loChan, color=color.red,   title="Donchian Low (20)")
+// END STRATEGY 7
+// =============================================================================
+
+
+// =============================================================================
+// STRATEGY 8 — MACD Crossover + Trailing Stop
+// PL source: lines 148-167 of test_strategies.txt
+//
+// Conversion notes:
+//   MACD(Close, 12, 26)         → ta.ema(close, 12) - ta.ema(close, 26)
+//   XAverage(MACD(...), 9)      → ta.ema(macdLine, 9)  (signal line)
+//   crosses over / crosses under→ ta.crossover() / ta.crossunder()
+//   BarsSinceEntry = 0          → detect entry bar via position_size transition
+//   EntryPrice                  → strategy.position_avg_price
+//   AvgTrueRange(14)            → ta.atr(14)
+//   Manual trailing stop logic is preserved using var float.
+//   Sell ... at trailStop Stop  → strategy.exit() with stop=trailStop
+// =============================================================================
+//@version=5
+strategy("S8 MACD Crossover + Trailing Stop", overlay=true)
+
+// Converted from: macdLine = MACD(Close, 12, 26)
+macdLine = ta.ema(close, 12) - ta.ema(close, 26)
+
+// Converted from: signalLine = XAverage(MACD(Close, 12, 26), 9)
+signalLine = ta.ema(macdLine, 9)
+
+atrVal = ta.atr(14)
+
+// Converted from: If MarketPosition = 0 and macdLine crosses over signalLine Then
+//                     Buy ("S8_LE") ...
+if strategy.position_size == 0 and ta.crossover(macdLine, signalLine)
+    strategy.entry("S8_LE", strategy.long)
+
+// Manual trailing stop logic
+// Converted from: If MarketPosition = 1 Then Begin
+//                     If BarsSinceEntry = 0 Then trailStop = EntryPrice - ATR*3
+//                     If Close - ATR*3 > trailStop Then trailStop = Close - ATR*3
+//                     Sell ("S8_TS") at trailStop Stop
+//                     If macdLine crosses under signalLine Then Sell ("S8_MX") at Market
+//                 End
+var float trailStop = na
+
+// Detect entry bar: position just went long
+if strategy.position_size > 0 and strategy.position_size[1] <= 0
+    trailStop := strategy.position_avg_price - atrVal * 3
+
+if strategy.position_size > 0
+    // Ratchet the trailing stop upward
+    newStop = close - atrVal * 3
+    if newStop > trailStop
+        trailStop := newStop
+
+    // Trailing stop exit
+    strategy.exit("S8_TS", from_entry="S8_LE", stop=trailStop)
+
+    // MACD cross exit
+    if ta.crossunder(macdLine, signalLine)
+        strategy.close("S8_LE", comment="S8_MX")
+
+plot(macdLine,   color=color.blue,   title="MACD Line")
+plot(signalLine, color=color.orange,  title="Signal Line")
+plot(strategy.position_size > 0 ? trailStop : na, color=color.red,
+     style=plot.style_stepline, title="Trailing Stop")
+// END STRATEGY 8
+// =============================================================================
+
+
+// =============================================================================
+// STRATEGY 9 — Stochastic + Switch + Array + For + Contracts
+// PL source: lines 170-195 of test_strategies.txt
+//
+// Conversion notes:
+//   Stochastic(H, L, C, 14, 3, 3, 1, fK, fD, sK, sD)
+//     → slowK = ta.stoch(close, high, low, 14)  then SMA-smooth
+//       PL Stochastic computes fast %K / %D and slow %K / %D in one call;
+//       Pine Script has ta.stoch for raw %K, then smooth manually.
+//   For Value2 = 4 DownTo 1   → for i = 4 to 1  (Pine for handles both dirs)
+//   Array kHistory[4](0)      → array.new_float(5, 0)
+//   Switch (MarketPosition)   → switch strategy.position_size comparison
+//   CurrentContracts           → math.abs(strategy.position_size)
+//   Buy / SellShort / Sell / BuyToCover → strategy.entry / strategy.close
+// =============================================================================
+//@version=5
+strategy("S9 Stochastic + Switch + Array + For + Contracts", overlay=false)
+
+// Converted from: Stochastic(High, Low, Close, 14, 3, 3, 1, fastK, fastD, slowK, slowD)
+// Pine: raw %K via ta.stoch, then smooth with ta.sma for slow %K and slow %D
+rawK   = ta.stoch(close, high, low, 14)
+slowK  = ta.sma(rawK, 3)
+slowD  = ta.sma(slowK, 3)
+
+// Converted from: Arrays: kHistory[4](0);  (5-element array, indices 0..4)
+var kHistory = array.new_float(5, 0)
+
+// Converted from: For Value2 = 4 DownTo 1 Begin
+//                     kHistory[Value2] = kHistory[Value2 - 1];
+//                 End;
+//                 kHistory[0] = slowK;
+for i = 4 to 1
+    array.set(kHistory, i, array.get(kHistory, i - 1))
+array.set(kHistory, 0, slowK)
+
+// Converted from: Switch (MarketPosition) Begin
+//                     Case 0: ...
+//                     Case 1: ...
+//                     Case -1: ...
+//                 End;
+if strategy.position_size == 0
+    // Case 0: flat — look for entries
+    if slowK < 20 and slowD < 20
+        strategy.entry("S9_LE", strategy.long)
+    if slowK > 80 and slowD > 80
+        strategy.entry("S9_SE", strategy.short)
+else if strategy.position_size > 0
+    // Case 1: long — exit on overbought or size > 2
+    if slowK > 80 or math.abs(strategy.position_size) > 2
+        strategy.close("S9_LE", comment="S9_LX")
+else if strategy.position_size < 0
+    // Case -1: short — exit on oversold or size > 2
+    if slowK < 20 or math.abs(strategy.position_size) > 2
+        strategy.close("S9_SE", comment="S9_SX")
+
+plot(slowK, color=color.blue,   title="Slow %K")
+plot(slowD, color=color.orange,  title="Slow %D")
+hline(80, "Overbought", color=color.red)
+hline(20, "Oversold",   color=color.green)
+// END STRATEGY 9
+// =============================================================================
+
+
+// =============================================================================
+// STRATEGY 10 — While Loop + Date/Time Filter + Print/Alert
+// PL source: lines 198-220 of test_strategies.txt
+//
+// Conversion notes:
+//   While ... Begin ... End     → for loop with break (Pine v5 has while, but
+//                                 a bounded for is safer for bar-by-bar calc)
+//   Close[Value3 - 1] > Close[Value3] → close[i-1] > close[i]  (bar offsets)
+//   Time >= 930 / Time <= 1500  → hour/minute session check
+//     PL Time format is HHMM integer; Pine uses hour(time) and minute(time).
+//   Print(...)                  → no Pine equivalent; omitted (use label.new
+//                                 for debugging if needed)
+//   Alert("...")                → alert("...")
+//   MarketPosition = 0          → strategy.position_size == 0
+//   MarketPosition = 1          → strategy.position_size > 0
+//   MarketPosition <> 0         → strategy.position_size != 0
+// =============================================================================
+//@version=5
+strategy("S10 While Loop + Date/Time Filter + Print/Alert", overlay=true)
+
+// Converted from: upCount = 0; Value3 = 1;
+//                 While Value3 <= 5 and Close[Value3 - 1] > Close[Value3] Begin
+//                     upCount = upCount + 1; Value3 = Value3 + 1;
+//                 End;
+// Count consecutive up bars (up to 5) using a for loop with conditional break
+upCount = 0
+for i = 1 to 5
+    if close[i - 1] > close[i]
+        upCount += 1
+    else
+        break
+
+// Converted from: If Time >= 930 and Time <= 1500 Then Begin
+//                     If upCount >= 3 and MarketPosition = 0 Then Buy ("S10_LE") ...
+//                 End;
+// PL Time is HHMM integer; Pine uses hour() and minute() from the bar timestamp.
+sessionMinute = hour * 60 + minute
+if sessionMinute >= 570 and sessionMinute <= 900  // 9:30 = 570 min, 15:00 = 900 min
+    if upCount >= 3 and strategy.position_size == 0
+        strategy.entry("S10_LE", strategy.long)
+
+// Converted from: If MarketPosition = 1 and Time > 1545 Then
+//                     Sell ("S10_TX") ... at Market
+if strategy.position_size > 0 and sessionMinute > 945  // 15:45 = 945 min
+    strategy.close("S10_LE", comment="S10_TX")
+
+// Converted from: Print("upCount=", upCount, " MP=", MarketPosition);
+// Pine Script has no Print() — omitted.
+// For debugging, use: label.new(bar_index, high, str.tostring(upCount))
+
+// Converted from: If Time > 1530 and MarketPosition <> 0 Then
+//                     Alert("session close approaching");
+if sessionMinute > 930 and strategy.position_size != 0  // 15:30 = 930 min
+    alert("session close approaching")
+// END STRATEGY 10
+// =============================================================================
+
+
+// =============================================================================
+// STRATEGY 11 — DMI + Keltner Channel + Parabolic SAR
+// PL source: lines 223-249 of test_strategies.txt
+//
+// Conversion notes:
+//   DMIPlus(14) / DMIMinus(14)  → ta.dmi(14, 14) returns [diplus, diminus, adx]
+//   DirMovement(H,L,C,14, 6 ref vars)
+//     → ta.dmi(14, 14) covers DI+, DI−, ADX; Pine has no direct ADXR,
+//       so dmAdxr is approximated as (adx + adx[14]) / 2.
+//   KeltnerChannel(Close,20, 1.5) → ta.kc(close, 20, 1.5) returns [mid, upper, lower]
+//   KeltnerChannel(Close,20,-1.5) → lower band from the same ta.kc call
+//   Parabolic(0.02)             → ta.sar(0.02, 0.02, 0.2)
+//   Sell ... at sarVal Stop     → strategy.exit() with stop=sarVal
+//   BuyToCover ... at sarVal Stop→ strategy.exit() with stop=sarVal
+// =============================================================================
+//@version=5
+strategy("S11 DMI + Keltner Channel + Parabolic SAR", overlay=true)
+
+// Converted from: dmiP = DMIPlus(14); dmiM = DMIMinus(14);
+// Also covers DirMovement outputs: dmDmiP, dmDmiM, dmAdx
+[dmiP, dmiM, dmAdx] = ta.dmi(14, 14)
+
+// Converted from: KeltnerChannel(Close, 20, 1.5) / KeltnerChannel(Close, 20, -1.5)
+// ta.kc returns [middle, upper, lower]
+[kcMiddle, keltUp, keltDn] = ta.kc(close, 20, 1.5)
+
+// Converted from: sarVal = Parabolic(0.02)
+sarVal = ta.sar(0.02, 0.02, 0.2)
+
+// Converted from: If dmiP > dmiM and dmAdx > 25 and Close > keltUp Then
+//                     Buy ("S11_LE") ...
+if dmiP > dmiM and dmAdx > 25 and close > keltUp
+    strategy.entry("S11_LE", strategy.long)
+
+// Converted from: If MarketPosition = 1 Then Begin
+//                     Sell ("S11_SAR") ... at sarVal Stop
+//                     If dmiM > dmiP Then Sell ("S11_DX") ... at Market
+//                 End
+if strategy.position_size > 0
+    strategy.exit("S11_SAR", from_entry="S11_LE", stop=sarVal)
+    if dmiM > dmiP
+        strategy.close("S11_LE", comment="S11_DX")
+
+// Converted from: If dmiM > dmiP and dmAdx > 25 and Close < keltDn Then
+//                     SellShort ("S11_SE") ...
+if dmiM > dmiP and dmAdx > 25 and close < keltDn
+    strategy.entry("S11_SE", strategy.short)
+
+// Converted from: If MarketPosition = -1 Then
+//                     BuyToCover ("S11_SC") ... at sarVal Stop
+if strategy.position_size < 0
+    strategy.exit("S11_SC", from_entry="S11_SE", stop=sarVal)
+
+plot(keltUp,   color=color.green, title="Keltner Upper")
+plot(keltDn,   color=color.red,   title="Keltner Lower")
+plot(kcMiddle, color=color.gray,  title="Keltner Middle")
+plot(sarVal,   color=color.purple, style=plot.style_cross, title="Parabolic SAR")
+// END STRATEGY 11
+// =============================================================================
+
+
+// =============================================================================
+// STRATEGY 12 — Williams %R + ROC + Volatility + StdDev
+// PL source: lines 252-269 of test_strategies.txt
+//
+// Conversion notes:
+//   PercentR(14)                → manual: -100 * (ta.highest(high,14) - close)
+//                                         / (ta.highest(high,14) - ta.lowest(low,14))
+//     (Pine has no built-in ta.percentr)
+//   RateOfChange(Close, 10)    → ta.roc(close, 10)
+//   Volatility(20)             → approximated with ta.stdev(close, 20)
+//   StandardDev(Close, 20, 1)  → ta.stdev(close, 20)
+//   TrueRange                  → ta.tr
+//   Range                      → high - low  (PL's Range = High - Low of current bar)
+// =============================================================================
+//@version=5
+strategy("S12 Williams %R + ROC + Volatility + StdDev", overlay=false)
+
+// Converted from: wrVal = PercentR(14)
+// Pine has no direct ta.percentr; manual Williams %R formula:
+hh14 = ta.highest(high, 14)
+ll14 = ta.lowest(low, 14)
+wrVal = -100 * (hh14 - close) / (hh14 - ll14)
+
+// Converted from: rocVal = RateOfChange(Close, 10)
+rocVal = ta.roc(close, 10)
+
+// Converted from: volVal = Volatility(20)
+// PL Volatility(N) ≈ annualised std dev; approximate with ta.stdev
+volVal = ta.stdev(close, 20)
+
+// Converted from: stdDevVal = StandardDev(Close, 20, 1)
+stdDevVal = ta.stdev(close, 20)
+
+// Converted from: trVal = TrueRange
+trVal = ta.tr
+
+// Converted from: rng = Range  (High - Low)
+rng = high - low
+
+// Converted from: If wrVal < -80 and rocVal > 0 and volVal < stdDevVal * 2 Then
+//                     Buy ("S12_LE") ...
+if wrVal < -80 and rocVal > 0 and volVal < stdDevVal * 2
+    strategy.entry("S12_LE", strategy.long)
+
+// Converted from: If MarketPosition = 1 Then Begin
+//                     If wrVal > -20 Then Sell ("S12_LX") ...
+//                     If trVal > rng * 3 Then Sell ("S12_VX") ...
+//                 End
+if strategy.position_size > 0
+    if wrVal > -20
+        strategy.close("S12_LE", comment="S12_LX")
+    if trVal > rng * 3
+        strategy.close("S12_LE", comment="S12_VX")
+
+plot(wrVal,  color=color.blue,  title="Williams %R")
+plot(rocVal, color=color.orange, title="ROC (10)")
+hline(-80, "Oversold",   color=color.green)
+hline(-20, "Overbought", color=color.red)
+// END STRATEGY 12
+// =============================================================================
+
+
+// =============================================================================
+// STRATEGY 13 — MFI + AccumDist + LinReg + WAverage
+// PL source: lines 272-291 of test_strategies.txt
+//
+// Conversion notes:
+//   MoneyFlow(14)               → ta.mfi(high, low, close, volume, 14)
+//   AccumDist(14)               → ta.cum(ta.accdist) over N bars is not direct;
+//                                 PL AccumDist(N) ≈ summation of AD line over N bars.
+//                                 Approximation: math.sum(ta.accdist - ta.accdist[1], 14)
+//                                 or simply use ta.accdist as running total.
+//   LinearRegValue(Close,20,0)  → ta.linreg(close, 20, 0)
+//   LinearRegSlope(Close, 20)   → (ta.linreg(close,20,0) - ta.linreg(close,20,1))
+//                                 slope ≈ difference of linreg at offset 0 vs 1
+//   Summation(Close, 10)        → math.sum(close, 10)
+//   Cum(Volume)                 → ta.cum(volume)
+//   WAverage(Close, 20)         → ta.wma(close, 20)
+//   MidPoint(Close, 20)         → (ta.highest(close,20) + ta.lowest(close,20)) / 2
+// =============================================================================
+//@version=5
+strategy("S13 MFI + AccumDist + LinReg + WAverage", overlay=true)
+
+// Converted from: mfiVal = MoneyFlow(14)
+mfiVal = ta.mfi(high, low, close, volume, 14)
+
+// Converted from: adVal = AccumDist(14)
+// PL AccumDist(N) returns a summation of the accumulation/distribution over N bars.
+// Pine's ta.accdist is a running cumulative total; approximate PL's windowed version:
+adVal = math.sum(ta.accdist - nz(ta.accdist[1]), 14)
+
+// Converted from: linRegVal = LinearRegValue(Close, 20, 0)
+linRegVal = ta.linreg(close, 20, 0)
+
+// Converted from: linRegSlp = LinearRegSlope(Close, 20)
+// Approximate slope as the difference between linreg at offset 0 and offset 1
+linRegSlp = ta.linreg(close, 20, 0) - ta.linreg(close, 20, 1)
+
+// Converted from: sumVal = Summation(Close, 10)
+sumVal = math.sum(close, 10)
+
+// Converted from: cumVal = Cum(Volume)
+cumVal = ta.cum(volume)
+
+// Converted from: wavgVal = WAverage(Close, 20)
+wavgVal = ta.wma(close, 20)
+
+// Converted from: midPtVal = MidPoint(Close, 20)
+midPtVal = (ta.highest(close, 20) + ta.lowest(close, 20)) / 2
+
+// Converted from: If mfiVal < 20 and linRegSlp > 0 and Close > wavgVal Then
+//                     Buy ("S13_LE") ...
+if mfiVal < 20 and linRegSlp > 0 and close > wavgVal
+    strategy.entry("S13_LE", strategy.long)
+
+// Converted from: If MarketPosition = 1 Then Begin
+//                     If mfiVal > 80 Then Sell ("S13_LX") ...
+//                     If Close < midPtVal Then Sell ("S13_MX") ...
+//                 End
+if strategy.position_size > 0
+    if mfiVal > 80
+        strategy.close("S13_LE", comment="S13_LX")
+    if close < midPtVal
+        strategy.close("S13_LE", comment="S13_MX")
+
+plot(wavgVal,  color=color.blue,   title="WMA 20")
+plot(midPtVal, color=color.orange,  title="MidPoint 20")
+plot(linRegVal, color=color.purple, title="LinReg Value")
+// END STRATEGY 13
+// =============================================================================
+
+
+// =============================================================================
+// STRATEGY 14 — Swing + HighestBar + CountIF + Prices
+// PL source: lines 294-310 of test_strategies.txt
+//
+// Conversion notes:
+//   SwingHigh(1, High, 3, 10)   → ta.pivothigh(high, 3, 10)
+//     PL SwingHigh instance param (1) has no Pine equivalent; ignored.
+//     Returns na when no pivot is found (same as PL returning 0/negative).
+//   SwingLow(1, Low, 3, 10)     → ta.pivotlow(low, 3, 10)
+//   HighestBar(High, 20)        → ta.highestbars(high, 20)
+//     Returns negative offset in Pine (e.g., -5 = 5 bars ago); negate for
+//     comparison with PL's positive bars-ago value.
+//   LowestBar(Low, 20)          → ta.lowestbars(low, 20)
+//   CountIF(Close > Close[1], 10) → math.sum(close > close[1] ? 1 : 0, 10)
+//   AvgPrice                    → (open + high + low + close) / 4
+//                                  (or hlc3 for TypicalPrice)
+//   TypicalPrice                → hlc3
+//   "swLo > 0" in PL means a swing was found; in Pine, check not na().
+//   "hiBar > 15" — PL hiBar is positive bars-ago; Pine highestbars is
+//     negative, so compare -ta.highestbars(...) > 15.
+// =============================================================================
+//@version=5
+strategy("S14 Swing + HighestBar + CountIF + Prices", overlay=true)
+
+// Converted from: swHi = SwingHigh(1, High, 3, 10)
+//                 swLo = SwingLow(1, Low, 3, 10)
+// ta.pivothigh/low return the pivot price, or na if no pivot on this bar.
+swHi = ta.pivothigh(high, 3, 10)
+swLo = ta.pivotlow(low, 3, 10)
+
+// Converted from: hiBar = HighestBar(High, 20)
+// ta.highestbars returns a negative offset; negate for PL-style positive bars-ago.
+hiBar = -ta.highestbars(high, 20)
+
+// Converted from: loBar = LowestBar(Low, 20)
+loBar = -ta.lowestbars(low, 20)
+
+// Converted from: upBarsCount = CountIF(Close > Close[1], 10)
+upBarsCount = math.sum(close > close[1] ? 1 : 0, 10)
+
+// Converted from: avgPx = AvgPrice
+// PL AvgPrice = (O + H + L + C) / 4
+avgPx = (open + high + low + close) / 4
+
+// Converted from: typPx = TypicalPrice
+typPx = hlc3
+
+// Converted from: If swLo > 0 and upBarsCount >= 6 and Close > typPx Then
+//                     Buy ("S14_LE") ...
+// PL "swLo > 0" means a swing low was found; Pine equivalent: not na(swLo)
+if not na(swLo) and upBarsCount >= 6 and close > typPx
+    strategy.entry("S14_LE", strategy.long)
+
+// Converted from: If MarketPosition = 1 Then Begin
+//                     If swHi > 0 and hiBar > 15 Then Sell ("S14_LX") ...
+//                 End
+if strategy.position_size > 0
+    if not na(swHi) and hiBar > 15
+        strategy.close("S14_LE", comment="S14_LX")
+
+plot(avgPx, color=color.blue,   title="Avg Price (OHLC/4)")
+plot(typPx, color=color.orange,  title="Typical Price (HLC/3)")
+// END STRATEGY 14
+// =============================================================================

@@ -7,7 +7,21 @@ Variables:
     rsiVal(0), atrVal(0), stopPx(0),
     upperBB(0), lowerBB(0), volAvg(0),
     adxVal(0), cciVal(0),
-    prevMP(0);
+    prevMP(0),
+    emaFast(0), emaSlow(0), momVal(0),
+    hiChan(0), loChan(0),
+    macdLine(0), signalLine(0), trailStop(0),
+    fastK(0), fastD(0), slowK(0), slowD(0), upCount(0),
+    dmiP(0), dmiM(0), dmDmiP(0), dmDmiM(0), dmAdx(0),
+    dmDIp(0), dmDIm(0), dmAdxr(0),
+    keltUp(0), keltDn(0), sarVal(0),
+    wrVal(0), rocVal(0), volVal(0), stdDevVal(0), trVal(0), rng(0),
+    mfiVal(0), adVal(0), linRegVal(0), linRegSlp(0),
+    sumVal(0), cumVal(0), wavgVal(0), midPtVal(0),
+    swHi(0), swLo(0), hiBar(0), loBar(0),
+    upBarsCount(0), avgPx(0), typPx(0);
+
+Arrays: kHistory[4](0);
 
 If False Then Begin
 
@@ -91,5 +105,208 @@ If False Then Begin
 
     If MarketPosition = 1 and RSI(Close, 14) > 70 Then
         Sell ("S5_LX") 1 Contract Next Bar at Market;
+
+    { ================================================================ }
+    { === Strategy 6: EMA Momentum + Limit Entry + Time Exit === }
+    { ================================================================ }
+    emaFast = XAverage(Close, 12);
+    emaSlow = XAverage(Close, 26);
+    momVal = Momentum(Close, 10);
+
+    Once Begin
+        Value1 = Close;
+    End;
+
+    If MarketPosition = 0 and momVal > 0 and emaFast > emaSlow Then
+        Buy ("S6_LE") 1 Contract Next Bar at Close Limit;
+
+    If MarketPosition = 1 and BarsSinceEntry >= 10 Then
+        Sell ("S6_TX") 1 Contract Next Bar at Market;
+
+    If MarketPosition = 1 and emaFast crosses under emaSlow Then
+        Sell ("S6_LX") 1 Contract Next Bar at Market;
+
+    { ================================================================ }
+    { === Strategy 7: Donchian Channel Breakout === }
+    { ================================================================ }
+    hiChan = Highest(High, 20);
+    loChan = Lowest(Low, 20);
+
+    If Close > hiChan[1] Then
+        Buy ("S7_LE") 1 Contract Next Bar at Market;
+
+    If Close < loChan[1] Then
+        SellShort ("S7_SE") 1 Contract Next Bar at Market;
+
+    If MarketPosition = 1 Then
+        Sell ("S7_LX") 1 Contract Next Bar at loChan Stop;
+
+    If MarketPosition = -1 Then
+        BuyToCover ("S7_SX") 1 Contract Next Bar at hiChan Stop;
+
+    { ================================================================ }
+    { === Strategy 8: MACD Crossover + Trailing Stop === }
+    { ================================================================ }
+    macdLine = MACD(Close, 12, 26);
+    signalLine = XAverage(MACD(Close, 12, 26), 9);
+
+    If MarketPosition = 0 and macdLine crosses over signalLine Then
+        Buy ("S8_LE") 1 Contract Next Bar at Market;
+
+    If MarketPosition = 1 Then Begin
+        If BarsSinceEntry = 0 Then
+            trailStop = EntryPrice - AvgTrueRange(14) * 3;
+
+        If Close - AvgTrueRange(14) * 3 > trailStop Then
+            trailStop = Close - AvgTrueRange(14) * 3;
+
+        Sell ("S8_TS") 1 Contract Next Bar at trailStop Stop;
+
+        If macdLine crosses under signalLine Then
+            Sell ("S8_MX") 1 Contract Next Bar at Market;
+    End;
+
+    { ================================================================ }
+    { === Strategy 9: Stochastic + Switch + Array + For + Contracts === }
+    { ================================================================ }
+    Value1 = Stochastic(High, Low, Close, 14, 3, 3, 1, fastK, fastD, slowK, slowD);
+
+    { Shift array history using For loop }
+    For Value2 = 4 DownTo 1 Begin
+        kHistory[Value2] = kHistory[Value2 - 1];
+    End;
+    kHistory[0] = slowK;
+
+    { Regime-based logic using Switch on MarketPosition }
+    Switch (MarketPosition)
+    Begin
+        Case 0: Begin
+            If slowK < 20 and slowD < 20 Then
+                Buy ("S9_LE") 1 Contract Next Bar at Market;
+            If slowK > 80 and slowD > 80 Then
+                SellShort ("S9_SE") 1 Contract Next Bar at Market;
+        End;
+        Case 1:
+            If slowK > 80 or CurrentContracts > 2 Then
+                Sell ("S9_LX") 1 Contract Next Bar at Market;
+        Case -1:
+            If slowK < 20 or CurrentContracts > 2 Then
+                BuyToCover ("S9_SX") 1 Contract Next Bar at Market;
+    End;
+
+    { ================================================================ }
+    { === Strategy 10: While Loop + Date/Time Filter + Print/Alert === }
+    { ================================================================ }
+    { Count consecutive up bars using While loop }
+    upCount = 0;
+    Value3 = 1;
+    While Value3 <= 5 and Close[Value3 - 1] > Close[Value3] Begin
+        upCount = upCount + 1;
+        Value3 = Value3 + 1;
+    End;
+
+    { Date/Time filter: trade only during session hours }
+    If Time >= 930 and Time <= 1500 Then Begin
+        If upCount >= 3 and MarketPosition = 0 Then
+            Buy ("S10_LE") 1 Contract Next Bar at Market;
+    End;
+
+    If MarketPosition = 1 and Time > 1545 Then
+        Sell ("S10_TX") 1 Contract Next Bar at Market;
+
+    Print("upCount=", upCount, " MP=", MarketPosition);
+
+    If Time > 1530 and MarketPosition <> 0 Then
+        Alert("session close approaching");
+
+    { ================================================================ }
+    { === Strategy 11: DMI + Keltner Channel + Parabolic SAR === }
+    { ================================================================ }
+    dmiP = DMIPlus(14);
+    dmiM = DMIMinus(14);
+
+    { DirMovement multi-output: H, L, C, Len, 6 ref output vars }
+    Value1 = DirMovement(High, Low, Close, 14,
+        dmDmiP, dmDmiM, dmAdx, dmDIp, dmDIm, dmAdxr);
+
+    keltUp = KeltnerChannel(Close, 20, 1.5);
+    keltDn = KeltnerChannel(Close, 20, -1.5);
+    sarVal = Parabolic(0.02);
+
+    If dmiP > dmiM and dmAdx > 25 and Close > keltUp Then
+        Buy ("S11_LE") 1 Contract Next Bar at Market;
+
+    If MarketPosition = 1 Then Begin
+        Sell ("S11_SAR") 1 Contract Next Bar at sarVal Stop;
+        If dmiM > dmiP Then
+            Sell ("S11_DX") 1 Contract Next Bar at Market;
+    End;
+
+    If dmiM > dmiP and dmAdx > 25 and Close < keltDn Then
+        SellShort ("S11_SE") 1 Contract Next Bar at Market;
+
+    If MarketPosition = -1 Then
+        BuyToCover ("S11_SC") 1 Contract Next Bar at sarVal Stop;
+
+    { ================================================================ }
+    { === Strategy 12: Williams %R + ROC + Volatility + StdDev === }
+    { ================================================================ }
+    wrVal = PercentR(14);
+    rocVal = RateOfChange(Close, 10);
+    volVal = Volatility(20);
+    stdDevVal = StandardDev(Close, 20, 1);
+    trVal = TrueRange;
+    rng = Range;
+
+    If wrVal < -80 and rocVal > 0 and volVal < stdDevVal * 2 Then
+        Buy ("S12_LE") 1 Contract Next Bar at Market;
+
+    If MarketPosition = 1 Then Begin
+        If wrVal > -20 Then
+            Sell ("S12_LX") 1 Contract Next Bar at Market;
+        If trVal > rng * 3 Then
+            Sell ("S12_VX") 1 Contract Next Bar at Market;
+    End;
+
+    { ================================================================ }
+    { === Strategy 13: MFI + AccumDist + LinReg + WAverage === }
+    { ================================================================ }
+    mfiVal = MoneyFlow(14);
+    adVal = AccumDist(14);
+    linRegVal = LinearRegValue(Close, 20, 0);
+    linRegSlp = LinearRegSlope(Close, 20);
+    sumVal = Summation(Close, 10);
+    cumVal = Cum(Volume);
+    wavgVal = WAverage(Close, 20);
+    midPtVal = MidPoint(Close, 20);
+
+    If mfiVal < 20 and linRegSlp > 0 and Close > wavgVal Then
+        Buy ("S13_LE") 1 Contract Next Bar at Market;
+
+    If MarketPosition = 1 Then Begin
+        If mfiVal > 80 Then
+            Sell ("S13_LX") 1 Contract Next Bar at Market;
+        If Close < midPtVal Then
+            Sell ("S13_MX") 1 Contract Next Bar at Market;
+    End;
+
+    { ================================================================ }
+    { === Strategy 14: Swing + HighestBar + CountIF + Prices === }
+    { ================================================================ }
+    swHi = SwingHigh(1, High, 3, 10);
+    swLo = SwingLow(1, Low, 3, 10);
+    hiBar = HighestBar(High, 20);
+    loBar = LowestBar(Low, 20);
+    upBarsCount = CountIF(Close > Close[1], 10);
+    avgPx = AvgPrice;
+    typPx = TypicalPrice;
+
+    If swLo > 0 and upBarsCount >= 6 and Close > typPx Then
+        Buy ("S14_LE") 1 Contract Next Bar at Market;
+
+    If MarketPosition = 1 Then Begin
+        If swHi > 0 and hiBar > 15 Then
+            Sell ("S14_LX") 1 Contract Next Bar at Market;
+    End;
 
 End;
