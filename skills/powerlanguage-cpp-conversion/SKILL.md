@@ -187,6 +187,60 @@ TA-Lib RT is a community fork that adds streaming APIs: `TA_SMA_StateInit()`, `T
 | `Highest(Close, Length)` | `TA_MAX(0, endIdx, inClose, length, &outBeg, &outNB, outMax)` | Direct equivalent |
 | `Lowest(Close, Length)` | `TA_MIN(0, endIdx, inClose, length, &outBeg, &outNB, outMin)` | Direct equivalent |
 | `Momentum(Close, Length)` | `TA_MOM(0, endIdx, inClose, length, &outBeg, &outNB, outMom)` | Direct equivalent |
+| `TSI(Close, LongLen, ShortLen)` | Manual: compute momentum, apply `TA_EMA` twice (long then short) to both momentum and abs(momentum), then `100.0 * smoothed_mtm / smoothed_abs_mtm` | TA-Lib has no `TA_TSI`; chain two EMA passes |
+| `AverageFC(Close, Length)` | `TA_SMA(0, endIdx, inClose, length, &outBeg, &outNB, outSma)` | Same as `Average`; FC = "fast calculation" (PL optimization, no C++ equivalent) |
+| `WAverage(Close, Length)` | `TA_WMA(0, endIdx, inClose, length, &outBeg, &outNB, outWma)` | Weighted moving average; direct equivalent |
+| `AdaptiveMovAvg(Close, Length)` | `TA_KAMA(0, endIdx, inClose, length, &outBeg, &outNB, outKama)` | Kaufman Adaptive MA; direct equivalent |
+| `MidPoint(Close, Length)` | `TA_MIDPOINT(0, endIdx, inClose, length, &outBeg, &outNB, outMid)` | (Highest + Lowest) / 2 over period |
+| `MACD(Close, FastLen, SlowLen)` | `TA_MACD(0, endIdx, inClose, fastLen, slowLen, signalLen, &outBeg, &outNB, outMACD, outSignal, outHist)` | Returns three arrays: MACD line, signal, histogram |
+| `KeltnerChannel(Close, Length, Mult)` | Manual: `TA_EMA` for midline ± `Mult * TA_ATR` for bands | No single TA-Lib function; combine EMA + ATR |
+| `DMIPlus(Length)` | `TA_PLUS_DI(0, endIdx, inHigh, inLow, inClose, length, &outBeg, &outNB, outPlusDI)` | +DI component of DMI |
+| `DMIMinus(Length)` | `TA_MINUS_DI(0, endIdx, inHigh, inLow, inClose, length, &outBeg, &outNB, outMinusDI)` | −DI component of DMI |
+| `RateOfChange(Close, Length)` | `TA_ROC(0, endIdx, inClose, length, &outBeg, &outNB, outRoc)` | Percentage rate of change |
+| `PercentR(Length)` | `TA_WILLR(0, endIdx, inHigh, inLow, inClose, length, &outBeg, &outNB, outWillR)` | Williams %R; direct equivalent |
+| `MoneyFlow(Length)` | `TA_MFI(0, endIdx, inHigh, inLow, inClose, inVolume, length, &outBeg, &outNB, outMfi)` | Money Flow Index; requires HLCV arrays |
+| `Parabolic(AFStep, AFMax)` | `TA_SAR(0, endIdx, inHigh, inLow, AFStep, AFMax, &outBeg, &outNB, outSar)` | Parabolic SAR; requires HL arrays |
+| `Volatility(Length)` | `TA_STDDEV(0, endIdx, inClose, length, 1.0, &outBeg, &outNB, outStdDev)` | PL Volatility returns annualized StdDev of log returns; adjust scaling |
+| `UltimateOscillator(Len1, Len2, Len3)` | `TA_ULTOSC(0, endIdx, inHigh, inLow, inClose, len1, len2, len3, &outBeg, &outNB, outUltOsc)` | Three-period weighted oscillator |
+| `ChaikinOsc(FastLen, SlowLen)` | `TA_ADOSC(0, endIdx, inHigh, inLow, inClose, inVolume, fastLen, slowLen, &outBeg, &outNB, outAdosc)` | Chaikin A/D Oscillator; requires HLCV |
+| `PriceOscillator(FastLen, SlowLen)` | `TA_APO(0, endIdx, inClose, fastLen, slowLen, TA_MAType_SMA, &outBeg, &outNB, outApo)` | Absolute Price Oscillator |
+| `DirMovement(Length, oPlusDI, oMinusDI, oADX)` | Call `TA_PLUS_DI`, `TA_MINUS_DI`, and `TA_ADX` separately | Multi-output; split into three TA-Lib calls |
+| `Extremes(Length, oHighest, oLowest)` | Manual: track running max/min over lookback window | No single TA-Lib function; use `TA_MAX` + `TA_MIN` or manual loop |
+| `TrueRange` | `TA_TRANGE(0, endIdx, inHigh, inLow, inClose, &outBeg, &outNB, outTRange)` | Single-bar true range; direct equivalent |
+| `StandardDev(Close, Length)` | `TA_STDDEV(0, endIdx, inClose, length, 1.0, &outBeg, &outNB, outStdDev)` | `nbDev` param = 1.0 for one standard deviation |
+| `TrueHigh` | `std::max(bars[i].high, bars[i-1].close)` | Manual one-liner; guard `i > 0` |
+| `TrueLow` | `std::min(bars[i].low, bars[i-1].close)` | Manual one-liner; guard `i > 0` |
+| `Range` | `bars[i].high - bars[i].low` | Simple arithmetic; no TA-Lib needed |
+| `HighestBar(Close, Length)` | `TA_MAXINDEX(0, endIdx, inClose, length, &outBeg, &outNB, outIdx)` | Returns index of highest value; convert to bars-ago offset |
+| `LowestBar(Close, Length)` | `TA_MININDEX(0, endIdx, inClose, length, &outBeg, &outNB, outIdx)` | Returns index of lowest value; convert to bars-ago offset |
+| `NthHighest(N, Close, Length)` | Manual: copy window into temp array, `std::nth_element`, pick Nth | No TA-Lib equivalent |
+| `NthLowest(N, Close, Length)` | Manual: copy window, `std::nth_element`, pick Nth from low end | No TA-Lib equivalent |
+| `NthHighestBar(N, Close, Length)` | Manual: find Nth highest value, then scan for its bar index | No TA-Lib equivalent |
+| `NthLowestBar(N, Close, Length)` | Manual: find Nth lowest value, then scan for its bar index | No TA-Lib equivalent |
+| `SwingHigh(1, Close, LeftStr, RightStr)` | Manual: check `Close[RightStr+i] < Close[0]` for right side and `Close[LeftStr+i] < Close[0]` for left side | Pivot-point detection; no TA-Lib equivalent |
+| `SwingLow(1, Close, LeftStr, RightStr)` | Manual: check `Close[i] > Close[0]` on both sides of candidate bar | Mirror of SwingHigh with `>` comparisons |
+| `SwingHighBar(1, Close, LeftStr, RightStr)` | Manual: find SwingHigh, return bars-ago offset | Same pivot logic, return offset instead of price |
+| `SwingLowBar(1, Close, LeftStr, RightStr)` | Manual: find SwingLow, return bars-ago offset | Same pivot logic, return offset instead of price |
+| `Summation(Close, Length)` | `TA_SUM(0, endIdx, inClose, length, &outBeg, &outNB, outSum)` | Rolling sum; direct equivalent |
+| `Cum(Close)` | Manual: `cumulative_ += bars.back().close` (running total as member) | Cumulative sum from bar 1; no period param |
+| `LinearRegValue(Close, Length, Offset)` | `TA_LINEARREG(0, endIdx, inClose, length, &outBeg, &outNB, outLinReg)` | Offset projection requires manual adjustment |
+| `LinearRegAngle(Close, Length)` | `TA_LINEARREG_ANGLE(0, endIdx, inClose, length, &outBeg, &outNB, outAngle)` | Angle in degrees; direct equivalent |
+| `LinearRegSlope(Close, Length)` | `TA_LINEARREG_SLOPE(0, endIdx, inClose, length, &outBeg, &outNB, outSlope)` | Slope coefficient; direct equivalent |
+| `Correlation(Close, Close2, Length)` | `TA_CORREL(0, endIdx, inClose, inClose2, length, &outBeg, &outNB, outCorr)` | Pearson correlation; direct equivalent |
+| `RSquared(Close, Length)` | Manual: `pow(TA_CORREL result, 2)` | Coefficient of determination; square the correlation |
+| `StdError(Close, Length)` | Manual: `TA_STDDEV result / sqrt(length)` | Standard error of the mean |
+| `Median(Close, Length)` | Manual: copy window, `std::nth_element(begin, mid, end)`, read middle | No TA-Lib rolling median |
+| `ELDate` | Manual: convert `bar.time` to YYYMMDD format (YYY = year − 1900) | PL EasyLanguage date format |
+| `MinutesToTime(mins)` | Manual: `int hhmm = (mins / 60) * 100 + (mins % 60)` | Convert total minutes to HHMM integer |
+| `TimeToMinutes(hhmm)` | Manual: `int mins = (hhmm / 100) * 60 + (hhmm % 100)` | Convert HHMM integer to total minutes |
+| `AvgPrice` | `TA_AVGPRICE(0, endIdx, inOpen, inHigh, inLow, inClose, &outBeg, &outNB, outAvg)` | (O+H+L+C)/4; direct equivalent |
+| `MedianPrice` | `TA_MEDPRICE(0, endIdx, inHigh, inLow, &outBeg, &outNB, outMedPr)` | (H+L)/2; direct equivalent |
+| `TypicalPrice` | `TA_TYPPRICE(0, endIdx, inHigh, inLow, inClose, &outBeg, &outNB, outTyp)` | (H+L+C)/3; direct equivalent |
+| `WeightedClose` | `TA_WCLPRICE(0, endIdx, inHigh, inLow, inClose, &outBeg, &outNB, outWcl)` | (H+L+2C)/4; direct equivalent |
+| `CountIF(Cond, Length)` | Manual: `int count = 0; for (int j = 0; j < length; ++j) if (cond[size-1-j]) ++count;` | Count true occurrences in lookback window |
+| `MRO(Cond, Length, Instance)` | Manual: scan backwards through lookback for Nth true occurrence, return bars-ago | Most Recent Occurrence; manual loop |
+| `AccumDist` | `TA_AD(0, endIdx, inHigh, inLow, inClose, inVolume, &outBeg, &outNB, outAD)` | Cumulative A/D line; requires HLCV arrays |
+| `IFF(Cond, TrueVal, FalseVal)` | `cond ? trueVal : falseVal` | C++ ternary operator; direct equivalent |
 
 ---
 

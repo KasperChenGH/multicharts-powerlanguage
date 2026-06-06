@@ -202,6 +202,7 @@ The slice `bars[:i+1]` gives the strategy access to full history; `bars[-1]` is 
 | `Cum(Volume)` | `volumes.cumsum()` | `np.cumsum(volumes)` | Running total |
 | `WAverage(Close, N)` | `ta.wma(closes, length=N)` | `talib.WMA(closes, timeperiod=N)` | |
 | `MidPoint(Close, N)` | `ta.midpoint(closes, length=N)` | `talib.MIDPOINT(closes, timeperiod=N)` | |
+| `TSI(Close, LongLen, ShortLen)` | `ta.tsi(closes, fast=ShortLen, slow=LongLen)` | Manual: double-EMA of momentum / double-EMA of abs(momentum) | pandas-ta `fast`=short, `slow`=long (reversed naming vs PL) |
 | `SwingHigh(1, High, L, R)` | Manual: scan for pivot high | Manual: scan for pivot high | No direct library equivalent |
 | `SwingLow(1, Low, L, R)` | Manual: scan for pivot low | Manual: scan for pivot low | Same |
 | `HighestBar(High, N)` | `highs[-N:].idxmax()` → compute bars ago | `np.argmax(highs[-N:])` | Returns bars ago |
@@ -209,6 +210,36 @@ The slice `bars[:i+1]` gives the strategy access to full history; `bars[-1]` is 
 | `CountIF(cond, N)` | `cond_series.rolling(N).sum()` | Manual: `sum(1 for ...)` | Count True values |
 | `Crosses Over` | `prev_a <= prev_b and a > b` | Same | No built-in; store previous values |
 | `Crosses Under` | `prev_a >= prev_b and a < b` | Same | Same |
+| `AverageFC(Close, N)` | `ta.sma(closes, length=N)` | `talib.SMA(closes, timeperiod=N)` | Fast version of Average; same math, use SMA |
+| `AdaptiveMovAvg(Close, N)` | `ta.kama(closes, length=N)` | `talib.KAMA(closes, timeperiod=N)` | Kaufman Adaptive Moving Average |
+| `UltimateOscillator(7,14,28)` | `ta.uo(highs, lows, closes, fast=7, medium=14, slow=28)` | `talib.ULTOSC(highs, lows, closes, timeperiod1=7, timeperiod2=14, timeperiod3=28)` | Requires HLC |
+| `ChaikinOsc(3, 10)` | `ta.adosc(highs, lows, closes, volumes, fast=3, slow=10)` | `talib.ADOSC(highs, lows, closes, volumes, fastperiod=3, slowperiod=10)` | Requires HLCV |
+| `PriceOscillator(Fast, Slow)` | `ta.apo(closes, fast=Fast, slow=Slow)` | `talib.APO(closes, fastperiod=Fast, slowperiod=Slow)` | Absolute Price Oscillator |
+| `DirMovement(N, ...)` | `ta.dm(highs, lows, length=N)` + `ta.adx(...)` | `talib.PLUS_DI(...)` + `talib.MINUS_DI(...)` + `talib.ADX(...)` | Multi-output: +DI, −DI, ADX |
+| `Extremes(High, Low, N, oHH, oLL, oHHBar, oLLBar)` | Manual: rolling max/min + argmax/argmin | Manual: rolling max/min + argmax/argmin | Returns highest, lowest, and their bar offsets |
+| `TrueHigh` | `np.maximum(highs, closes.shift(1))` | Same | `max(High, Close[1])` |
+| `TrueLow` | `np.minimum(lows, closes.shift(1))` | Same | `min(Low, Close[1])` |
+| `Range` | `highs - lows` | Same | Per-bar range; no period |
+| `NthHighest(N, Close, Len)` | Manual: `closes.rolling(Len).apply(lambda x: np.sort(x)[-N])` | Manual: sort rolling window | Nth largest value in window |
+| `NthLowest(N, Close, Len)` | Manual: `closes.rolling(Len).apply(lambda x: np.sort(x)[N-1])` | Manual: sort rolling window | Nth smallest value in window |
+| `NthHighestBar(N, Close, Len)` | Manual: find bar offset of Nth highest | Manual: find bar offset of Nth highest | Returns bars ago of Nth highest |
+| `NthLowestBar(N, Close, Len)` | Manual: find bar offset of Nth lowest | Manual: find bar offset of Nth lowest | Returns bars ago of Nth lowest |
+| `SwingHighBar(1, High, L, R)` | Manual: pivot detection with bar offset | Manual: pivot detection with bar offset | Bars since Nth swing high |
+| `SwingLowBar(1, Low, L, R)` | Manual: pivot detection with bar offset | Manual: pivot detection with bar offset | Bars since Nth swing low |
+| `LinearRegAngle(Close, N)` | `np.degrees(np.arctan(ta.linreg(closes, length=N, slope=True)))` | `talib.LINEARREG_ANGLE(closes, timeperiod=N)` | Slope converted to degrees |
+| `Correlation(Close, Volume, N)` | `ta.correlation(closes, volumes, length=N)` | `talib.CORREL(closes, volumes, timeperiod=N)` | Pearson correlation |
+| `RSquared(Close, N)` | `ta.correlation(closes, ..., length=N) ** 2` | `talib.CORREL(closes, ..., timeperiod=N) ** 2` | Square of correlation |
+| `StdError(Close, N)` | Manual: `ta.stdev(closes, length=N) / np.sqrt(N)` | Manual: `talib.STDDEV(closes, timeperiod=N) / np.sqrt(N)` | Standard error of estimate |
+| `Median(Close, N)` | `ta.median(closes, length=N)` | `closes.rolling(N).median()` | Rolling median |
+| `ELDate(dt)` | Manual: `(y - 1900) * 10000 + m * 100 + d` | Same | EasyLanguage YYYMMDD date format |
+| `MinutesToTime(mins)` | Manual: `(mins // 60) * 100 + mins % 60` | Same | Minutes since midnight to HHMM |
+| `TimeToMinutes(hhmm)` | Manual: `(hhmm // 100) * 60 + hhmm % 100` | Same | HHMM to minutes since midnight |
+| `AvgPrice` | `(opens + highs + lows + closes) / 4` | `talib.AVGPRICE(opens, highs, lows, closes)` | Average of OHLC |
+| `MedianPrice` | `(highs + lows) / 2` | `talib.MEDPRICE(highs, lows)` | Median of HL |
+| `TypicalPrice` | `(highs + lows + closes) / 3` | `talib.TYPPRICE(highs, lows, closes)` | Typical price HLC |
+| `WeightedClose` | `(highs + lows + 2 * closes) / 4` | `talib.WCLPRICE(highs, lows, closes)` | Weighted close HLCC |
+| `MRO(cond, N, 1)` | Manual: find Nth True in `cond_series[-N:]` | Manual: iterate lookback | Most Recent Occurrence; returns bars ago |
+| `IFF(cond, trueVal, falseVal)` | `trueVal if cond else falseVal` | Same | Python ternary; or `np.where(cond, trueVal, falseVal)` for Series |
 
 ---
 

@@ -61,6 +61,60 @@ This skill covers the structural and semantic differences between MultiCharts Po
 | `Highest(Close, Length)` | `ta.highest(close, length)` | Direct equivalent |
 | `Lowest(Close, Length)` | `ta.lowest(close, length)` | Direct equivalent |
 | `Momentum(Close, Length)` | `ta.mom(close, length)` | Direct equivalent |
+| `TSI(Close, LongLen, ShortLen)` | `ta.tsi(close, LongLen, ShortLen)` | Direct equivalent; Pine returns −100..+100 |
+| `AverageFC(Close, Length)` | `ta.sma(close, length)` | Fast-ceiling variant; Pine `ta.sma` is equivalent |
+| `WAverage(Close, Length)` | `ta.wma(close, length)` | Direct equivalent |
+| `AdaptiveMovAvg(Close, Length)` | manual KAMA formula | No Pine built-in; implement Kaufman AMA manually |
+| `MidPoint(Close, Length)` | `(ta.highest(close, length) + ta.lowest(close, length)) / 2` | No built-in; average of highest and lowest |
+| `MACD(Close, FastLen, SlowLen)` | `[macdLine, signal, hist] = ta.macd(close, FastLen, SlowLen, sigLen)` | Pine returns a 3-tuple; PL returns a single value |
+| `KeltnerChannel(Close, Length, NumATRs)` | `[mid, upper, lower] = ta.kc(close, length, NumATRs)` | Pine returns a 3-tuple; select the band needed |
+| `DMIPlus(Length)` | `[diplus, diminus, adx] = ta.dmi(Length, Length)` | Destructure tuple; use `diplus` |
+| `DMIMinus(Length)` | `[diplus, diminus, adx] = ta.dmi(Length, Length)` | Destructure tuple; use `diminus` |
+| `RateOfChange(Close, Length)` | `ta.roc(close, length)` | Direct equivalent |
+| `PercentR(High, Low, Close, Length)` | manual: `−100 * (ta.highest(high,Length) − close) / (ta.highest(high,Length) − ta.lowest(low,Length))` | No Pine built-in; replicate Williams %R formula |
+| `MoneyFlow(Length)` | `ta.mfi(close, length)` | Pine `ta.mfi` is Money Flow Index |
+| `Parabolic(AFStep, AFLimit)` | manual Parabolic SAR formula | No Pine built-in; implement SAR loop manually |
+| `Volatility(Length)` | `ta.stdev(close, length)` | PL `Volatility` is standard deviation of closes |
+| `UltimateOscillator(Len1, Len2, Len3)` | manual formula using `ta.atr` and buying pressure sums | No Pine built-in; compute from three-period ratios |
+| `ChaikinOsc(FastLen, SlowLen)` | manual: `ta.ema(ad, FastLen) − ta.ema(ad, SlowLen)` | No Pine built-in; compute A/D line first, then EMA difference |
+| `PriceOscillator(Close, FastLen, SlowLen)` | manual: `ta.ema(close, FastLen) − ta.ema(close, SlowLen)` | No Pine built-in; difference of two EMAs |
+| `DirMovement(Length, oADX, oDMIPlus, oDMIMinus)` | `[diplus, diminus, adx] = ta.dmi(Length, Length)` | PL writes to reference params; Pine returns a tuple |
+| `Extremes(Price, Length, oHighest, oLowest)` | `h = ta.highest(Price, Length)` + `l = ta.lowest(Price, Length)` | PL writes to reference params; use two Pine calls |
+| `TrueRange` | `ta.tr` | Direct equivalent; both return current bar true range |
+| `StandardDev(Close, Length)` | `ta.stdev(close, length)` | Direct equivalent |
+| `TrueHigh` | `math.max(high, close[1])` | No Pine built-in; max of current high and prior close |
+| `TrueLow` | `math.min(low, close[1])` | No Pine built-in; min of current low and prior close |
+| `Range` | `high - low` | No Pine built-in; simple bar range |
+| `HighestBar(Close, Length)` | `ta.highestbars(close, length)` | Pine returns **negative** offset (e.g., −3); PL returns positive |
+| `LowestBar(Close, Length)` | `ta.lowestbars(close, length)` | Pine returns **negative** offset; PL returns positive |
+| `NthHighest(Close, Length, N)` | manual: sort last `Length` bars, pick Nth | No Pine built-in; use a loop or `array.sort` |
+| `NthLowest(Close, Length, N)` | manual: sort last `Length` bars, pick Nth | No Pine built-in; use a loop or `array.sort` |
+| `NthHighestBar(Close, Length, N)` | manual: find bar offset of Nth highest | No Pine built-in; combine loop with comparison |
+| `NthLowestBar(Close, Length, N)` | manual: find bar offset of Nth lowest | No Pine built-in; combine loop with comparison |
+| `SwingHigh(Strength, Close, LeftBars, RightBars)` | `ta.pivothigh(close, LeftBars, RightBars)` | Returns `na` when no pivot found |
+| `SwingLow(Strength, Close, LeftBars, RightBars)` | `ta.pivotlow(close, LeftBars, RightBars)` | Returns `na` when no pivot found |
+| `SwingHighBar(Strength, Close, LeftBars, RightBars, N)` | manual: track bar offset of `ta.pivothigh` | No direct built-in; record `bar_index` when pivot appears |
+| `SwingLowBar(Strength, Close, LeftBars, RightBars, N)` | manual: track bar offset of `ta.pivotlow` | No direct built-in; record `bar_index` when pivot appears |
+| `Summation(Close, Length)` | `ta.sma(close, length) * length` | No `ta.sum`; multiply SMA by length |
+| `Cum(Close)` | `ta.cum(close)` | Direct equivalent; cumulative sum from bar 0 |
+| `LinearRegValue(Close, Length, Offset)` | `ta.linreg(close, length, offset)` | Direct equivalent |
+| `LinearRegAngle(Close, Length, Offset)` | manual: `math.todegrees(math.atan(ta.linreg(close, length, offset) − ta.linreg(close, length, offset + 1)))` | No Pine built-in; derive from regression slope |
+| `LinearRegSlope(Close, Length)` | manual: `ta.linreg(close, length, 0) − ta.linreg(close, length, 1)` | No Pine built-in; approximate from two offsets |
+| `Correlation(X, Y, Length)` | `ta.correlation(X, Y, length)` | Direct equivalent |
+| `RSquared(Close, Length)` | `math.pow(ta.correlation(close, bar_index, length), 2)` | R-squared of linear regression; square the correlation |
+| `StdError(Close, Length)` | manual: compute from `ta.stdev` and regression residuals | No Pine built-in; implement standard error formula |
+| `Median(Close, Length)` | `ta.median(close, length)` | Direct equivalent |
+| `ELDate` | `(year(time) - 1900) * 10000 + month(time) * 100 + dayofmonth(time)` | PL YYYMMDD format (1900-based century); reconstruct in Pine |
+| `MinutesToTime(mins)` | manual: `int(mins / 60) * 100 + (mins % 60)` | PL returns HHMM integer; replicate arithmetic |
+| `TimeToMinutes(t)` | manual: `int(t / 100) * 60 + (t % 100)` | Inverse of MinutesToTime; convert HHMM to minutes |
+| `AvgPrice` | `ohlc4` | Pine built-in `ohlc4` = (O+H+L+C)/4 |
+| `MedianPrice` | `hl2` | Pine built-in `hl2` = (H+L)/2 |
+| `TypicalPrice` | `hlc3` | Pine built-in `hlc3` = (H+L+C)/3 |
+| `WeightedClose` | `(high + low + close * 2) / 4` | No Pine built-in; compute manually |
+| `CountIF(Cond, Length)` | manual: `ta.cum(Cond ? 1 : 0) − ta.cum(Cond ? 1 : 0)[length]` | No Pine built-in; rolling sum of boolean-as-int |
+| `MRO(Cond, Length, N)` | manual: loop back through `Length` bars | No Pine built-in; most recent occurrence of condition |
+| `AccumDist` | manual: `ta.cum(((close − low) − (high − close)) / (high − low) * volume)` | No Pine built-in; cumulative A/D line formula |
+| `IFF(Cond, TrueVal, FalseVal)` | `Cond ? TrueVal : FalseVal` | Pine ternary operator is the direct equivalent |
 
 ---
 

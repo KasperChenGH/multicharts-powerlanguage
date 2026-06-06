@@ -155,6 +155,60 @@ The slice `&bars[..=i]` gives the strategy access to full history; `bars.last().
 | `Highest(Close, Length)` | `Maximum::new(length).unwrap()` → `.next(bar.close)` | ta-rs `Maximum` indicator |
 | `Lowest(Close, Length)` | `Minimum::new(length).unwrap()` → `.next(bar.close)` | ta-rs `Minimum` indicator |
 | `Momentum(Close, Length)` | `close - bars[bars.len() - 1 - length].close` | No ta-rs built-in; compute directly from bar slice. Guard with `bars.len() > length`. |
+| `TSI(Close, LongLen, ShortLen)` | Manual: double-EMA of momentum / double-EMA of abs(momentum) | No ta-rs built-in; use two nested `ExponentialMovingAverage` pairs — one for `EMA(EMA(mtm, long), short)`, one for `EMA(EMA(abs(mtm), long), short)`, then `100 * ratio` |
+| `AverageFC(Close, Length)` | `SimpleMovingAverage::new(length).unwrap()` → `.next(bar.close)` | "Fast calculation" variant; same result as `Average` — use `SimpleMovingAverage` |
+| `WAverage(Close, Length)` | Manual: weighted sum `Σ(close[i] * (length - i)) / Σ(1..=length)` | No ta-rs built-in; iterate `bars[len-length..len]`, weight newest bar highest |
+| `AdaptiveMovAvg(Close, Length)` | `EfficiencyRatio::new(length)` + manual AMA smoothing | Use ta-rs `EfficiencyRatio`; AMA = `prev + er^2 * (close - prev)` (Kaufman formula) |
+| `MidPoint(Close, Length)` | `(Maximum::new(length).next(c) + Minimum::new(length).next(c)) / 2.0` | Combine ta-rs `Maximum` and `Minimum` |
+| `MACD(Close, FastLen, SlowLen)` | `ta::indicators::MovingAverageConvergenceDivergence::new(fast, slow, signal).unwrap()` → `.next(bar.close)` | Returns `MACDOutput { macd, signal, histogram }` |
+| `KeltnerChannel(Close, Length, Factor)` | `KeltnerChannel::new(length, factor).unwrap()` → `.next(&data_item)` | Returns `KeltnerChannelOutput { average, upper, lower }`; needs OHLC `DataItem` |
+| `DMIPlus(Length)` | Manual or `yata`; +DI = 100 × smoothed(+DM) / smoothed(TR) | Not in ta-rs; compute +DM = `max(high - prev_high, 0)` when > −DM, else 0 |
+| `DMIMinus(Length)` | Manual or `yata`; −DI = 100 × smoothed(−DM) / smoothed(TR) | Not in ta-rs; compute −DM = `max(prev_low - low, 0)` when > +DM, else 0 |
+| `RateOfChange(Close, Length)` | `RateOfChange::new(length).unwrap()` → `.next(bar.close)` | ta-rs `RateOfChange`; returns percentage change |
+| `PercentR(Length)` | Manual: `−100 × (highest − close) / (highest − lowest)` | Use ta-rs `Maximum`/`Minimum` over `length` bars for highest-high/lowest-low |
+| `MoneyFlow(Length)` | Manual: MFI = 100 − 100/(1 + pos_flow/neg_flow) | Classify each bar's typical-price × volume as positive or negative, sum over `length` |
+| `Parabolic(AFStep, AFMax)` | Manual state machine tracking AF and EP | No crate built-in; maintain `af`, `ep`, `sar`, flip on new extreme; complex — ~40 lines |
+| `Volatility(Length)` | `StandardDeviation::new(length).unwrap()` → `.next(bar.close)` | PL `Volatility` = standard deviation of close; ta-rs `StandardDeviation` matches |
+| `UltimateOscillator(Fast, Mid, Slow)` | Manual: weighted average of BP/TR ratios over three periods | BP = close − min(low, prev_close); sum BP and TR over 7/14/28, weight 4:2:1 |
+| `ChaikinOsc(FastLen, SlowLen)` | Manual: EMA(fast, ADL) − EMA(slow, ADL) | ADL = cum sum of `((close−low)−(high−close))/(high−low) × volume`; apply two EMAs |
+| `PriceOscillator(FastLen, SlowLen)` | Manual: `EMA(fast) − EMA(slow)` | Two `ExponentialMovingAverage` instances; subtract slow from fast |
+| `DirMovement(Length, oADX, oDIP, oDIM)` | Manual or `yata`: computes ADX, +DI, −DI together | Multi-output; return a struct `{ adx, di_plus, di_minus }` |
+| `Extremes(Length, oHi, oHiBar, oLo, oLoBar)` | Manual: scan `bars[len-length..len]` for max/min and their offsets | Multi-output; return `{ highest, highest_bar, lowest, lowest_bar }` |
+| `TrueRange` | `TrueRange::new()` → `.next(&data_item)` | ta-rs `TrueRange`; needs OHLC `DataItem` |
+| `StandardDev(Close, Length)` | `StandardDeviation::new(length).unwrap()` → `.next(bar.close)` | ta-rs `StandardDeviation` |
+| `TrueHigh` | Manual: `bar.high.max(prev_bar.close)` | Max of current high and previous close; guard `bars.len() > 1` |
+| `TrueLow` | Manual: `bar.low.min(prev_bar.close)` | Min of current low and previous close; guard `bars.len() > 1` |
+| `Range` | Manual: `bar.high - bar.low` | Current bar's high minus low |
+| `HighestBar(Close, Length)` | Manual: index of max in `bars[len-length..len]` | Returns bars-ago offset (0 = current bar); scan with `enumerate()` + `max_by()` |
+| `LowestBar(Close, Length)` | Manual: index of min in `bars[len-length..len]` | Returns bars-ago offset; scan with `enumerate()` + `min_by()` |
+| `NthHighest(N, Close, Length)` | Manual: sort last `length` closes descending, take index `N-1` | Collect into `Vec`, `sort_by()` descending, return `[n-1]` |
+| `NthLowest(N, Close, Length)` | Manual: sort last `length` closes ascending, take index `N-1` | Collect into `Vec`, `sort_by()` ascending, return `[n-1]` |
+| `NthHighestBar(N, Close, Length)` | Manual: sort with indices, return bars-ago of Nth highest | Pair `(value, offset)`, sort descending, return offset at `N-1` |
+| `NthLowestBar(N, Close, Length)` | Manual: sort with indices, return bars-ago of Nth lowest | Pair `(value, offset)`, sort ascending, return offset at `N-1` |
+| `SwingHigh(Instance, Close, LeftStr, RightStr)` | Manual: `bars[pivot]` > all `LeftStr` bars before and `RightStr` bars after | Confirmed only after `RightStr` bars pass; `Instance` selects Nth most recent swing |
+| `SwingLow(Instance, Close, LeftStr, RightStr)` | Manual: `bars[pivot]` < all `LeftStr` bars before and `RightStr` bars after | Same pivot logic, reversed comparison |
+| `SwingHighBar(Instance, Close, LeftStr, RightStr)` | Manual: bars-ago offset of the detected swing high | Same detection as `SwingHigh`; return `bars.len() - 1 - pivot_index` |
+| `SwingLowBar(Instance, Close, LeftStr, RightStr)` | Manual: bars-ago offset of the detected swing low | Same detection as `SwingLow`; return offset |
+| `Summation(Close, Length)` | Manual: `bars[len-length..len].iter().map(\|b\| b.close).sum::<f64>()` | Rolling sum over last `length` bars |
+| `Cum(Close)` | Manual: `self.cum_val += bar.close;` | Cumulative sum from bar 1; store running total in struct field |
+| `LinearRegValue(Close, Length, Offset)` | Manual: least-squares fit over `length` bars, evaluate at `Offset` | Compute slope/intercept via `Σxy`, `Σx²`; project forward by `Offset` bars |
+| `LinearRegAngle(Close, Length)` | Manual: `slope.atan().to_degrees()` | Angle in degrees of the regression line slope |
+| `LinearRegSlope(Close, Length)` | Manual: `(n*Σxy − Σx*Σy) / (n*Σx² − (Σx)²)` | Standard least-squares slope formula over `length` bars |
+| `Correlation(Close1, Close2, Length)` | Manual: Pearson `r` over `length` bars | `r = (nΣxy − ΣxΣy) / sqrt((nΣx²−(Σx)²)(nΣy²−(Σy)²))` |
+| `RSquared(Close, Length)` | Manual: `correlation(close, 1..=length)²` | R² of close vs bar index; square the Pearson `r` |
+| `StdError(Close, Length)` | Manual: std error of estimate around regression line | `sqrt(Σ(close − predicted)² / (length − 2))` |
+| `Median(Close, Length)` | Manual: collect last `length` values, sort, pick middle | `let mut v: Vec<f64> = ...; v.sort_by(\|a,b\| a.partial_cmp(b).unwrap()); v[length/2]` |
+| `ELDate(dt)` | `NaiveDate::from_ymd_opt(year, month, day)` (chrono crate) | PL returns YYYMMDD integer (YYY = year − 1900); Rust uses `chrono::NaiveDate` |
+| `MinutesToTime(mins)` | Manual: `let hhmm = (mins / 60) * 100 + mins % 60;` | PL returns HHMM integer; Rust can also use `NaiveTime::from_hms_opt(h, m, 0)` |
+| `TimeToMinutes(hhmm)` | Manual: `let mins = (hhmm / 100) * 60 + hhmm % 100;` | Inverse of `MinutesToTime`; converts HHMM integer to total minutes |
+| `AvgPrice` | Manual: `(bar.open + bar.high + bar.low + bar.close) / 4.0` | Average of OHLC |
+| `MedianPrice` | Manual: `(bar.high + bar.low) / 2.0` | Midpoint of high and low |
+| `TypicalPrice` | Manual: `(bar.high + bar.low + bar.close) / 3.0` | HLC average |
+| `WeightedClose` | Manual: `(bar.high + bar.low + bar.close * 2.0) / 4.0` | Close-weighted HLC |
+| `CountIF(Cond, Length)` | Manual: `bars[len-length..len].iter().filter(\|b\| cond(b)).count()` | Count bars satisfying condition over last `length` bars |
+| `MRO(Cond, Length, Instance)` | Manual: scan backward from current bar for `Instance`-th true | Returns bars-ago offset; iterate `(1..=length).rev()`, decrement instance counter on match |
+| `AccumDist` | Manual: `self.ad += ((close−low)−(high−close))/(high−low) * volume` | Cumulative; guard division by zero when `high == low` |
+| `IFF(Cond, TrueVal, FalseVal)` | `if cond { true_val } else { false_val }` | Direct Rust `if/else` expression; returns a value |
 
 ---
 

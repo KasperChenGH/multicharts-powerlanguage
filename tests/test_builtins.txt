@@ -67,6 +67,8 @@ If False Then Begin
     Value1 = ChaikinOsc(3, 10, 1);
     { PriceOscillator(Price, FastLen, SlowLen) }
     Value1 = PriceOscillator(Close, 12, 26);
+    { TSI(Price, LongLength, ShortLength) }
+    Value1 = TSI(Close, 25, 13);
 
     { ================================================================ }
     { === Directional Movement (multi-output) === }

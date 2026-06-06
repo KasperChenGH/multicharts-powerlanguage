@@ -174,6 +174,7 @@ MultiCharts ships with hundreds of pre-built Functions (`.elf` files) that are N
 | `UltimateOscillator` | `UltimateOscillator(Len1, Len2, Len3)` | numeric |
 | `ChaikinOsc` | `ChaikinOsc(FastLen, SlowLen, SmoothType)` | numeric |
 | `PriceOscillator` | `PriceOscillator(Price, FastLen, SlowLen)` | numeric |
+| `TSI` | `TSI(Price, LongLength, ShortLength)` | numeric (True Strength Index; double-smoothed momentum, range roughly −100 to +100) |
 
 **"No Price parameter" gotcha:** These functions take **no Price parameter** — passing `Close` as the first arg is a compile error:
 - **Length-only:** `CCI`, `ADX`, `DMIPlus`, `DMIMinus`, `AvgTrueRange`, `PercentR`, `MoneyFlow`, `Volatility`, `RSquared`, `AccumDist` — call as `ADX(14)`, not `ADX(Close, 14)`.

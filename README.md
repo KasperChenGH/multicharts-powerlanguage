@@ -4,9 +4,9 @@
 [![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)](https://github.com/KasperChenGH/multicharts-powerlanguage)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude_Code-plugin-blueviolet.svg)](https://github.com/KasperChenGH/multicharts-powerlanguage)
 
-A Claude Code plugin for [MultiCharts](https://www.multicharts.com/) PowerLanguage — gives Claude expert knowledge of PowerLanguage syntax, 947 keywords, 64 built-in functions, and bidirectional code conversion to [TradingView Pine Script](https://www.tradingview.com/), Python, Rust, and C++.
+A Claude Code plugin for [MultiCharts](https://www.multicharts.com/) PowerLanguage — gives Claude expert knowledge of PowerLanguage syntax, 947 keywords, 65 built-in functions, and bidirectional code conversion to [TradingView Pine Script](https://www.tradingview.com/), Python, Rust, and C++.
 
-**947 keywords · 64 compile-verified functions · 8 auto-activating skills · 4 conversion targets**
+**947 keywords · 65 compile-verified functions · 8 auto-activating skills · 4 conversion targets**
 
 ---
 
@@ -72,7 +72,7 @@ Buy ("Entry") 1 Contract Next Bar at Market;
 | Skill | Description |
 |---|---|
 | `multicharts-fundamentals` | Script types (Indicator / Signal / Function), execution model, multi-data series, order keywords |
-| `powerlanguage-syntax` | Declarations, `begin/end` semicolon rule, control flow, bar references, 64 built-in function signatures, code-generation gotchas |
+| `powerlanguage-syntax` | Declarations, `begin/end` semicolon rule, control flow, bar references, 65 built-in function signatures, code-generation gotchas |
 | `powerlanguage-keywords-reference` | 947 keywords across 40 categories — signature, parameters, description, and wiki link for each |
 
 ### Target language reference
@@ -158,7 +158,7 @@ Invoke-Pester scripts/tests/ -Output Detailed
 | `test_indicator.txt` | Indicator | 947 CHM keywords |
 | `test_signal.txt` | Signal | 947 CHM keywords |
 | `test_function.txt` | Function | 947 CHM keywords |
-| `test_builtins.txt` | Signal | 64 built-in function signatures |
+| `test_builtins.txt` | Signal | 65 built-in function signatures |
 | `test_syntax.txt` | Signal | Control flow, operators, crosses |
 | `test_orders.txt` | Signal | All order combinations + stops |
 | `test_declarations.txt` | Signal | Inputs, Variables, Arrays, multi-data |
