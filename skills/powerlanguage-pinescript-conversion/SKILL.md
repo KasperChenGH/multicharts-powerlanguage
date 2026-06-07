@@ -123,7 +123,7 @@ This skill covers the structural and semantic differences between MultiCharts Po
 | `FastKCustom(H, L, C, Length)` | `ta.stoch(C, H, L, Length)` | Custom prices; Pine signature is `(close, high, low, length)` |
 | `FastDCustom(H, L, C, Length)` | `ta.sma(ta.stoch(C, H, L, Length), 3)` | Smooth FastKCustom with SMA(3) |
 | `SlowKCustom(H, L, C, Length)` | `ta.sma(ta.stoch(C, H, L, Length), 3)` | Same as FastDCustom |
-| `SlowDCustom(H, L, C, Length, S1, S2)` | `ta.sma(ta.sma(ta.stoch(C, H, L, Length), S1), S2)` | Double-smoothed with custom periods |
+| `SlowDCustom(H, L, C, Length)` | `ta.sma(ta.sma(ta.stoch(C, H, L, Length), 3), 3)` | Slow %D with custom prices |
 | `StochasticExp(H, L, C, Length, S1, S2, ...)` | `ta.ema(ta.stoch(C, H, L, Length), S1)` | Uses EMA smoothing instead of SMA; compute %D from %K manually |
 | `ADXR(Length)` | `(ta.dmi(Length, Length)[2] + ta.dmi(Length, Length)[2][Length]) / 2` | Average of current ADX and ADX N bars ago; no Pine built-in |
 | `ADXCustom(H, L, C, Length)` | Manual: replicate ADX using custom H/L/C | No Pine built-in; implement Wilder smoothing with custom prices |
@@ -151,8 +151,8 @@ This skill covers the structural and semantic differences between MultiCharts Po
 | `PivotHighVSBar(Inst, Price, LStr, RStr, Length)` | Manual: track `bar_index` when `ta.pivothigh` fires | Record bar offset when pivot appears |
 | `PivotLowVSBar(Inst, Price, LStr, RStr, Length)` | Manual: track `bar_index` when `ta.pivotlow` fires | Record bar offset when pivot appears |
 | `Divergence(Price1, Price2, Str, Len, HiLo)` | Manual: compare pivots of two series | No Pine built-in; detect when price makes new high/low but indicator doesn't |
-| `TimeSeriesForecast(Close, Length, TgtBar)` | `ta.linreg(close, Length, -TgtBar)` | Negative offset for forward projection |
-| `LinearRegLine(Close, Length)` | `ta.linreg(close, Length, 0)` | Value on regression line at current bar |
+| `TimeSeriesForecast(Close, Length)` | `ta.linreg(close, Length, 0)` | Direct equivalent |
+
 | `SummationFC(Close, Length)` | `ta.sma(close, Length) * Length` | Fast calc Summation; same as `Summation` in Pine |
 | `OpenD(N)` | `request.security(syminfo.tickerid, "D", open[N])` | Daily open; requires `request.security` for MTF |
 | `HighD(N)` | `request.security(syminfo.tickerid, "D", high[N])` | Daily high |
@@ -181,14 +181,30 @@ This skill covers the structural and semantic differences between MultiCharts Po
 | `Fisher(Price)` | Manual: `0.5 * math.log((1 + norm) / (1 - norm))` | Normalize price to −0.999..+0.999 first |
 | `FisherINV(Price)` | Manual: `(math.exp(2 * Price) - 1) / (math.exp(2 * Price) + 1)` | Inverse Fisher transformation |
 | `C_Doji(Percent)` | Manual: `math.abs(close - open) <= (high - low) * Percent / 100` | Detect doji pattern |
-| `C_Hammer_HangingMan(BodyPct, ...)` | Manual: check body/shadow ratios | Lower shadow ≥ 2× body, small upper shadow |
-| `C_BullEng_BearEng(...)` | Manual: current body engulfs previous body | Bullish: down bar followed by larger up bar |
-| `C_BullHar_BearHar(...)` | Manual: current body inside previous body | Opposite of engulfing; small body inside large |
-| `C_MornDoji_EveDoji(Pct, ...)` | Manual: 3-bar pattern with middle doji | Morning/Evening star variant with doji middle |
-| `C_MornStar_EveStar(...)` | Manual: 3-bar reversal pattern | Down-small-up (morning) or up-small-down (evening) |
-| `C_PierceLine_DkCloud(...)` | Manual: 2-bar pattern, close pierces midpoint | Gap down then close above midpoint of prior bar |
-| `C_ShootingStar(BodyPct)` | Manual: small body at low, long upper shadow | Upper shadow ≥ 2× body, small lower shadow |
-| `C_3WhSolds_3BlkCrows(...)` | Manual: 3 consecutive bars in same direction | Three ascending closes (soldiers) or three descending (crows) |
+| `C_Hammer_HangingMan(Len, Factor, ...)` | Manual: check body/shadow ratios | Lower shadow ≥ 2× body, small upper shadow |
+| `C_BullEng_BearEng(Len, ...)` | Manual: current body engulfs previous body | Bullish: down bar followed by larger up bar |
+| `C_BullHar_BearHar(Len, ...)` | Manual: current body inside previous body | Opposite of engulfing; small body inside large |
+| `C_MornDoji_EveDoji(Len, Pct, ...)` | Manual: 3-bar pattern with middle doji | Morning/Evening star variant with doji middle |
+| `C_MornStar_EveStar(Len, ...)` | Manual: 3-bar reversal pattern | Down-small-up (morning) or up-small-down (evening) |
+| `C_PierceLine_DkCloud(Len, ...)` | Manual: 2-bar pattern, close pierces midpoint | Gap down then close above midpoint of prior bar |
+| `C_ShootingStar(Len, Factor)` | Manual: small body at low, long upper shadow | Upper shadow ≥ 2× body, small lower shadow |
+| `C_3WhSolds_3BlkCrows(Len, Factor, ...)` | Manual: 3 consecutive bars in same direction | Three ascending closes (soldiers) or three descending (crows) |
+| **Statistical extended** | | |
+| `AvgDeviation(Close, N)` | Manual: `math.sum(math.abs(close - ta.sma(close, N)), N) / N` | Mean absolute deviation |
+| `Variance(Close, N)` | `ta.variance(close, N)` | Population variance |
+| `Kurtosis(Close, N)` | Manual: 4th moment calculation | Excess kurtosis |
+| `Skew(Close, N)` | Manual: 3rd moment calculation | Skewness |
+| `PercentRank(ValToRank, Price, N)` | `ta.percentrank(close, N)` | Percent rank within lookback |
+| `Covariance(P1, P2, N)` | Manual: `ta.sma(P1*P2, N) - ta.sma(P1, N)*ta.sma(P2, N)` | Covariance |
+| `Quartile(Close, N, Q)` | `ta.percentile_nearest_rank(close, N, Q*25)` | Quartile value |
+| `TrimMean(Close, N, Pct)` | Manual: sort window, trim, average | Trimmed mean |
+| `Mode(Close, N, Type)` | Manual: frequency count over window | Modal value |
+| `HarmonicMean(Close, N)` | Manual: `N / math.sum(1/close, N)` | Harmonic mean |
+| **Moving averages extended** | | |
+| `SmoothedAverage(Close, N)` | `ta.rma(close, N)` | Wilder smoothing = RMA |
+| **Miscellaneous** | | |
+| `BarAnnualization` | Manual: compute from `timeframe.period` | Bars-per-year factor |
+| `LastBarOnChart` | `barstate.islast` | True on last bar |
 
 ---
 

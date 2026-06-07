@@ -218,7 +218,7 @@ These are convenience wrappers around the full `Stochastic` function. The defaul
 | `FastKCustom` | `FastKCustom(PriceH, PriceL, PriceC, StochLength)` | numeric (raw Fast %K with custom prices) |
 | `FastDCustom` | `FastDCustom(PriceH, PriceL, PriceC, StochLength)` | numeric (smoothed Fast %D with custom prices) |
 | `SlowKCustom` | `SlowKCustom(PriceH, PriceL, PriceC, StochLength)` | numeric (Slow %K with custom prices) |
-| `SlowDCustom` | `SlowDCustom(PriceH, PriceL, PriceC, StochLength, SmoothLen1, SmoothLen2)` | numeric (Slow %D with smoothing control) |
+| `SlowDCustom` | `SlowDCustom(PriceH, PriceL, PriceC, StochLength)` | numeric (Slow %D with custom prices) |
 | `StochasticExp` | `StochasticExp(PriceH, PriceL, PriceC, StochLength, SmoothLen1, SmoothLen2, oFastD, oSlowD)` | numeric (returns Fast %K); uses EMA smoothing, populates 2 ref vars |
 
 ### Multi-output functions
@@ -300,8 +300,8 @@ Like SwingHigh/Low but with independent left and right strength parameters.
 | `RSquared` | `RSquared(Length)` | numeric |
 | `StdError` | `StdError(Price, Length)` | numeric |
 | `Median` | `Median(Price, Length)` | numeric |
-| `TimeSeriesForecast` | `TimeSeriesForecast(Price, Length, TgtBar)` | numeric (projected regression value at target bar) |
-| `LinearRegLine` | `LinearRegLine(Price, Length)` | numeric (current value on the regression line) |
+| `TimeSeriesForecast` | `TimeSeriesForecast(Price, Length)` | numeric (projected regression value) |
+
 | `SummationFC` | `SummationFC(Price, Length)` | numeric (fast calculation Summation) |
 
 ### Date/Time conversion
@@ -374,6 +374,29 @@ These take no arguments — they use the current bar's OHLC automatically.
 | `IFF` | `IFF(Condition, TrueVal, FalseVal)` | numeric (inline ternary) |
 | `Fisher` | `Fisher(Price)` | numeric (Fisher transformation; input should be normalized −1 to +1) |
 | `FisherINV` | `FisherINV(Price)` | numeric (inverse Fisher transformation) |
+| `AvgDeviation` | `AvgDeviation(Price, Length)` | numeric (mean absolute deviation) |
+| `Variance` | `Variance(Price, Length)` | numeric (population variance) |
+| `Kurtosis` | `Kurtosis(Price, Length)` | numeric (excess kurtosis) |
+| `Skew` | `Skew(Price, Length)` | numeric (skewness) |
+| `PercentRank` | `PercentRank(PriceValueToRank, PriceValue, Length)` | numeric (percent rank of value within lookback) |
+| `Covariance` | `Covariance(Price1, Price2, Length)` | numeric |
+| `Quartile` | `Quartile(Price, Length, Q)` | numeric (Q: 1=25th, 2=50th, 3=75th) |
+| `TrimMean` | `TrimMean(Price, Length, TrimPct)` | numeric (trimmed mean) |
+| `Mode` | `Mode(PriceValue, Length, Type)` | numeric (modal value) |
+| `HarmonicMean` | `HarmonicMean(Price, Length)` | numeric |
+
+### Moving averages extended
+
+| Function | Signature | Returns |
+|---|---|---|
+| `SmoothedAverage` | `SmoothedAverage(Price, Length)` | numeric (Wilder smoothing) |
+
+### Miscellaneous
+
+| Function | Signature | Returns |
+|---|---|---|
+| `BarAnnualization` | `BarAnnualization` | numeric (no args; bars-per-year factor) |
+| `LastBarOnChart` | `LastBarOnChart` | truefalse (no args; true on last bar) |
 
 ### Candlestick patterns
 
@@ -382,14 +405,14 @@ These return 1 if the pattern is detected, 0 otherwise. Multi-output variants po
 | Function | Signature | Returns |
 |---|---|---|
 | `C_Doji` | `C_Doji(Percent)` | numeric (1 if doji; body within Percent of range) |
-| `C_Hammer_HangingMan` | `C_Hammer_HangingMan(BodyPercent, oHammer, oHangingMan)` | numeric; populates 2 ref vars |
-| `C_BullEng_BearEng` | `C_BullEng_BearEng(oBullEng, oBearEng)` | numeric; populates 2 ref vars |
-| `C_BullHar_BearHar` | `C_BullHar_BearHar(oBullHar, oBearHar)` | numeric; populates 2 ref vars |
-| `C_MornDoji_EveDoji` | `C_MornDoji_EveDoji(Percent, oMornDoji, oEveDoji)` | numeric; populates 2 ref vars |
-| `C_MornStar_EveStar` | `C_MornStar_EveStar(oMornStar, oEveStar)` | numeric; populates 2 ref vars |
-| `C_PierceLine_DkCloud` | `C_PierceLine_DkCloud(oPierce, oDkCloud)` | numeric; populates 2 ref vars |
-| `C_ShootingStar` | `C_ShootingStar(BodyPercent)` | numeric (1 if shooting star) |
-| `C_3WhSolds_3BlkCrows` | `C_3WhSolds_3BlkCrows(o3WhSolds, o3BlkCrows)` | numeric; populates 2 ref vars |
+| `C_Hammer_HangingMan` | `C_Hammer_HangingMan(Length, Factor, oHammer, oHangingMan)` | numeric; populates 2 ref vars |
+| `C_BullEng_BearEng` | `C_BullEng_BearEng(Length, oBullEng, oBearEng)` | numeric; populates 2 ref vars |
+| `C_BullHar_BearHar` | `C_BullHar_BearHar(Length, oBullHar, oBearHar)` | numeric; populates 2 ref vars |
+| `C_MornDoji_EveDoji` | `C_MornDoji_EveDoji(Length, Percent, oMornDoji, oEveDoji)` | numeric; populates 2 ref vars |
+| `C_MornStar_EveStar` | `C_MornStar_EveStar(Length, oMornStar, oEveStar)` | numeric; populates 2 ref vars |
+| `C_PierceLine_DkCloud` | `C_PierceLine_DkCloud(Length, oPierce, oDkCloud)` | numeric; populates 2 ref vars |
+| `C_ShootingStar` | `C_ShootingStar(Length, Factor)` | numeric (1 if shooting star) |
+| `C_3WhSolds_3BlkCrows` | `C_3WhSolds_3BlkCrows(Length, Factor, o3WhSolds, o3BlkCrows)` | numeric; populates 2 ref vars |
 
 ## Gotchas
 

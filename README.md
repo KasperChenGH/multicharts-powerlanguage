@@ -1,12 +1,12 @@
 # multicharts-powerlanguage
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.3.0-blue.svg)](https://github.com/KasperChenGH/multicharts-powerlanguage)
+[![Version](https://img.shields.io/badge/version-0.4.0-blue.svg)](https://github.com/KasperChenGH/multicharts-powerlanguage)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude_Code-plugin-blueviolet.svg)](https://github.com/KasperChenGH/multicharts-powerlanguage)
 
-A Claude Code plugin for [MultiCharts](https://www.multicharts.com/) PowerLanguage — gives Claude expert knowledge of PowerLanguage syntax, 947 keywords, 139 built-in functions, and bidirectional code conversion to [TradingView Pine Script](https://www.tradingview.com/), Python, Rust, and C++.
+A Claude Code plugin for [MultiCharts](https://www.multicharts.com/) PowerLanguage — gives Claude expert knowledge of PowerLanguage syntax, 947 keywords, 150 built-in functions, and bidirectional code conversion to [TradingView Pine Script](https://www.tradingview.com/), Python, Rust, and C++.
 
-**947 keywords · 139 compile-verified functions · 8 auto-activating skills · 4 conversion targets**
+**947 keywords · 150 compile-verified functions · 8 auto-activating skills · 4 conversion targets**
 
 ---
 
@@ -72,7 +72,7 @@ Buy ("Entry") 1 Contract Next Bar at Market;
 | Skill | Description |
 |---|---|
 | `multicharts-fundamentals` | Script types (Indicator / Signal / Function), execution model, multi-data series, order keywords |
-| `powerlanguage-syntax` | Declarations, `begin/end` semicolon rule, control flow, bar references, 139 built-in function signatures, code-generation gotchas |
+| `powerlanguage-syntax` | Declarations, `begin/end` semicolon rule, control flow, bar references, 150 built-in function signatures, code-generation gotchas |
 | `powerlanguage-keywords-reference` | 947 keywords across 40 categories — signature, parameters, description, and wiki link for each |
 
 ### Target language reference
@@ -125,7 +125,7 @@ multicharts-powerlanguage/
 │   ├── powerlanguage-python-conversion/
 │   ├── powerlanguage-rust-conversion/
 │   └── powerlanguage-cpp-conversion/
-├── tests/                                 # 14 compile-test files
+├── tests/                                 # 19 compile-test files
 ├── scripts/
 │   ├── lib/                               # 8 PowerShell build modules
 │   └── tests/                             # 10 Pester test files (67 tests)
@@ -149,7 +149,7 @@ Invoke-Pester scripts/tests/ -Output Detailed
 
 ### Manual compile tests
 
-14 plain-text files in `tests/` exercise keywords and conversion patterns. PowerLanguage files use unreachable `If False Then Begin … End;` blocks so the compiler checks syntax without executing.
+19 plain-text files in `tests/` exercise keywords and conversion patterns. PowerLanguage files use unreachable `If False Then Begin … End;` blocks so the compiler checks syntax without executing.
 
 **Keyword coverage (8 files):**
 
@@ -158,7 +158,7 @@ Invoke-Pester scripts/tests/ -Output Detailed
 | `test_indicator.txt` | Indicator | 947 CHM keywords |
 | `test_signal.txt` | Signal | 947 CHM keywords |
 | `test_function.txt` | Function | 947 CHM keywords |
-| `test_builtins.txt` | Signal | 139 built-in function signatures |
+| `test_builtins.txt` | Signal | 150 built-in function signatures |
 | `test_syntax.txt` | Signal | Control flow, operators, crosses |
 | `test_orders.txt` | Signal | All order combinations + stops |
 | `test_declarations.txt` | Signal | Inputs, Variables, Arrays, multi-data |
@@ -175,6 +175,16 @@ Invoke-Pester scripts/tests/ -Output Detailed
 | `test_cpp_from_pl.txt` | C++ | TA-Lib |
 
 The 14 strategies cover 39+ indicators: MA crossover, RSI+ATR stop, Bollinger breakout, ADX/CCI multi-indicator, regime filter, EMA momentum, Donchian channel, MACD trailing stop, Stochastic, time filter, DMI/Keltner/SAR, Williams %R/ROC/volatility, money flow/linear regression, and swing detection.
+
+**New function conversions (5 files, 84 functions each):**
+
+| File | Target | Library |
+|---|---|---|
+| `test_new_functions.txt` | PowerLanguage (compile test) | — |
+| `test_pine_new_functions.txt` | Pine Script | `ta.*` |
+| `test_python_new_functions.txt` | Python | pandas-ta / TA-Lib |
+| `test_rust_new_functions.txt` | Rust | ta-rs |
+| `test_cpp_new_functions.txt` | C++ | TA-Lib |
 
 To compile-test: open PowerLanguage Editor, create a new study matching the script type, paste the file contents, press **F3** (Verify). Expected: 0 errors, 0 warnings.
 

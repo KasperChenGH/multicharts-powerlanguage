@@ -217,7 +217,7 @@ The slice `&bars[..=i]` gives the strategy access to full history; `bars.last().
 | `FastKCustom(H, L, C, StochLen)` | Manual: `(c - lowest_l) / (highest_h - lowest_l) * 100` | Custom prices; use `Maximum`/`Minimum` on custom series |
 | `FastDCustom(H, L, C, StochLen)` | Manual: SMA(3) of FastKCustom | Same pattern |
 | `SlowKCustom(H, L, C, StochLen)` | Manual: SMA(3) of FastKCustom | Same as FastDCustom |
-| `SlowDCustom(H, L, C, StochLen, S1, S2)` | Manual: SMA(S2) of SMA(S1) of FastKCustom | Double smoothing with custom periods |
+| `SlowDCustom(H, L, C, StochLen)` | Manual: SMA(3) of FastKCustom | Slow %D with custom prices |
 | `StochasticExp(H, L, C, StochLen, S1, S2, ...)` | Manual: EMA smoothing of FastKCustom | Use `ExponentialMovingAverage` instead of SMA for smoothing |
 | `ADXR(Length)` | Manual: `(adx + adx_n_bars_ago) / 2.0` | Store ADX history; average current with N-bar-ago value |
 | `ADXCustom(H, L, C, Length)` | Manual or `yata::indicators::ADX` with custom prices | Same as `ADX` but with custom H/L/C inputs |
@@ -245,8 +245,8 @@ The slice `&bars[..=i]` gives the strategy access to full history; `bars.last().
 | `PivotHighVSBar(Inst, Price, LStr, RStr, Len)` | Manual: bars-ago offset of pivot high | Same detection, return `bars.len() - 1 - pivot_index` |
 | `PivotLowVSBar(Inst, Price, LStr, RStr, Len)` | Manual: bars-ago offset of pivot low | Same detection, return offset |
 | `Divergence(P1, P2, Str, Len, HiLo)` | Manual: compare pivot highs/lows of price vs indicator | Return 1 if divergence found between two series |
-| `TimeSeriesForecast(Close, Length, TgtBar)` | Manual: `linear_reg_value + slope * tgt_bar` | Project regression line forward; uses same slope/intercept as `LinearRegValue` |
-| `LinearRegLine(Close, Length)` | Manual: `linear_reg_value(close, length, 0)` | Value on regression line at current bar |
+| `TimeSeriesForecast(Close, Length)` | Manual: `linear_reg_value + slope` | Uses same slope/intercept as `LinearRegValue` |
+
 | `SummationFC(Close, Length)` | Manual: `bars[len-length..len].iter().map(\|b\| b.close).sum::<f64>()` | Same as `Summation`; fast calc variant |
 | `OpenD(N)` | Manual: aggregate bars into daily periods, return `daily_bars[daily_bars.len()-1-N].open` | Requires daily bar aggregation from intraday data |
 | `HighD(N)` | Manual: `daily_bars[..].high` | Aggregate highs per day |
@@ -275,14 +275,30 @@ The slice `&bars[..=i]` gives the strategy access to full history; `bars.last().
 | `Fisher(Price)` | Manual: normalize to −0.999..0.999, then `0.5 * ((1.0 + norm) / (1.0 - norm)).ln()` | Fisher transformation |
 | `FisherINV(Price)` | Manual: `((2.0 * price).exp() - 1.0) / ((2.0 * price).exp() + 1.0)` | Inverse Fisher |
 | `C_Doji(Pct)` | Manual: `(close - open).abs() <= (high - low) * pct / 100.0` | Doji detection |
-| `C_Hammer_HangingMan(Pct, ...)` | Manual: check body/shadow ratios | Lower shadow ≥ 2× body |
-| `C_BullEng_BearEng(...)` | Manual: current body engulfs previous | Compare current and previous OHLC |
-| `C_BullHar_BearHar(...)` | Manual: current body inside previous | Opposite of engulfing |
-| `C_MornDoji_EveDoji(Pct, ...)` | Manual: 3-bar pattern with middle doji | Check 3 consecutive bars |
-| `C_MornStar_EveStar(...)` | Manual: 3-bar reversal | Down-small-up or up-small-down |
-| `C_PierceLine_DkCloud(...)` | Manual: 2-bar piercing pattern | Gap + close past midpoint |
-| `C_ShootingStar(Pct)` | Manual: small body, long upper shadow | Upper shadow ≥ 2× body |
-| `C_3WhSolds_3BlkCrows(...)` | Manual: 3 consecutive trend bars | Three ascending or descending closes |
+| `C_Hammer_HangingMan(Len, Factor, ...)` | Manual: check body/shadow ratios | Lower shadow ≥ 2× body |
+| `C_BullEng_BearEng(Len, ...)` | Manual: current body engulfs previous | Compare current and previous OHLC |
+| `C_BullHar_BearHar(Len, ...)` | Manual: current body inside previous | Opposite of engulfing |
+| `C_MornDoji_EveDoji(Len, Pct, ...)` | Manual: 3-bar pattern with middle doji | Check 3 consecutive bars |
+| `C_MornStar_EveStar(Len, ...)` | Manual: 3-bar reversal | Down-small-up or up-small-down |
+| `C_PierceLine_DkCloud(Len, ...)` | Manual: 2-bar piercing pattern | Gap + close past midpoint |
+| `C_ShootingStar(Len, Factor)` | Manual: small body, long upper shadow | Upper shadow ≥ 2× body |
+| `C_3WhSolds_3BlkCrows(Len, Factor, ...)` | Manual: 3 consecutive trend bars | Three ascending or descending closes |
+| **Statistical extended** | | |
+| `AvgDeviation(Close, N)` | Manual: mean absolute deviation over window | MAD |
+| `Variance(Close, N)` | Manual: `sum((x - mean)^2) / N` | Population variance |
+| `Kurtosis(Close, N)` | Manual: 4th moment calculation | Excess kurtosis |
+| `Skew(Close, N)` | Manual: 3rd moment calculation | Skewness |
+| `PercentRank(ValToRank, Price, N)` | Manual: count values ≤ target / N | Percent rank |
+| `Covariance(P1, P2, N)` | Manual: `sum((P1-mean1)*(P2-mean2)) / N` | Covariance |
+| `Quartile(Close, N, Q)` | Manual: sort window, pick percentile | Quartile value |
+| `TrimMean(Close, N, Pct)` | Manual: sort, trim edges, average | Trimmed mean |
+| `Mode(Close, N, Type)` | Manual: frequency count over window | Modal value |
+| `HarmonicMean(Close, N)` | Manual: `N / sum(1/x)` | Harmonic mean |
+| **Moving averages extended** | | |
+| `SmoothedAverage(Close, N)` | Manual: Wilder smoothing `prev*(N-1)/N + val/N` | Same as RMA |
+| **Miscellaneous** | | |
+| `BarAnnualization` | Manual: compute from bar frequency | Bars-per-year factor |
+| `LastBarOnChart` | `bar_index == data.len() - 1` | True on last bar |
 
 ---
 

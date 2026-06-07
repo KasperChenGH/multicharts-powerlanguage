@@ -1,7 +1,7 @@
 {
   "name": "multicharts-powerlanguage",
   "description": "MultiCharts PowerLanguage skills for Claude: platform fundamentals, language syntax, keyword reference, Pine Script reference, and bidirectional code conversion to/from Pine Script, Python, Rust, and C++.",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "author": { "name": "Yu-An Chen" },
   "homepage": "https://github.com/KasperChenGH/multicharts-powerlanguage",
   "repository": "https://github.com/KasperChenGH/multicharts-powerlanguage",

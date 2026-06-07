@@ -1,0 +1,824 @@
+# =============================================================================
+# test_python_new_functions.txt
+# Python conversions of new PowerLanguage built-in functions not covered in
+# test_python_from_pl.txt.
+#
+# All conversions live in a single class NewFunctionsTest(Strategy) whose
+# on_bar method exercises every function, grouped by category.
+#
+# Dependencies: pandas-ta (primary), python-talib (alternative), numpy,
+#               scipy.stats (for statistical helpers)
+#
+# NOTE: This file is a reference showing how each PL function maps to Python.
+# It cannot be run as-is — the Strategy ABC, Bar, Order, Side, Action, and
+# OrderType types are defined by the execution engine.
+# =============================================================================
+
+
+# =============================================================================
+# NEW FUNCTIONS — Comprehensive Conversion Reference
+#
+# Conversion notes (all 84 functions):
+#
+# --- 1. Moving Averages ---
+#   TriAverage(Close, 14)                 -> ta.trima(closes, length=14)
+#   SmoothedAverage(Close, 14)            -> ta.rma(closes, length=14)
+#
+# --- 2. Stochastic Helpers ---
+#   FastK(14)                             -> ta.stoch(highs, lows, closes, k=14)["STOCHk_14_3_3"]
+#   FastD(14)                             -> ta.stoch(highs, lows, closes, k=14)["STOCHd_14_3_3"]
+#   SlowK(14)                             -> ta.stoch(highs, lows, closes, k=14, d=3)["STOCHk_14_3_3"]
+#   SlowD(14)                             -> ta.stoch(highs, lows, closes, k=14, d=3)["STOCHd_14_3_3"]
+#   FastKCustom(H, L, C, 14)             -> ta.stoch(H, L, C, k=14) use k column
+#   FastDCustom(H, L, C, 14)             -> ta.stoch(H, L, C, k=14, d=3) use d column
+#   SlowKCustom(H, L, C, 14)             -> ta.stoch(H, L, C, k=14, d=3) use k column
+#   SlowDCustom(H, L, C, 14)             -> ta.stoch(H, L, C, k=14, d=3) use d column
+#   StochasticExp(H,L,C,14,3,3,...)      -> manual: compute FastK then apply EMA smoothing
+#
+# --- 3. DM/ADX Variants ---
+#   ADXR(14)                              -> ta.adx(highs, lows, closes, length=14) then average with shifted
+#   ADXCustom(H,L,C,14)                  -> ta.adx(H, L, C, length=14) | talib.ADX(H, L, C, timeperiod=14)
+#   DMI(14)                               -> ta.adx(highs, lows, closes, length=14) | talib.DX(highs, lows, closes, 14)
+#   DMIPlusCustom(H,L,C,14)              -> manual | talib.PLUS_DI(H, L, C, 14)
+#   DMIMinusCustom(H,L,C,14)             -> manual | talib.MINUS_DI(H, L, C, 14)
+#   ParabolicCustom(0.02, 0.2)           -> manual | talib.SAR(highs, lows, acceleration=0.02, maximum=0.2)
+#
+# --- 4. Additional Oscillators ---
+#   TRIX(Close, 15)                       -> ta.trix(closes, length=15) | talib.TRIX(closes, timeperiod=15)
+#   MassIndex(9, 25)                      -> ta.massi(highs, lows, fast=9, slow=25)
+#   EaseOfMovement                        -> ta.eom(highs, lows, closes, volume)
+#   SwingIndex                            -> manual: Wilder's formula
+#   AccumSwingIndex                       -> manual: cumulative SwingIndex
+#   Detrend(Close, 14)                   -> closes - ta.sma(closes, length=14)
+#   PercentChange(Close, 14)             -> ta.roc(closes, length=14) | talib.ROC(closes, timeperiod=14)
+#   UlcerIndex(Close, 14)               -> ta.ui(closes, length=14)
+#
+# --- 5. Multi-Output ---
+#   ParabolicSAR(0.02,0.2,...)           -> manual multi-output | talib.SAR(highs, lows)
+#   LinearReg(Close,20,0,...)            -> ta.linreg(closes, length=20) | talib.LINEARREG(closes, timeperiod=20)
+#
+# --- 6. Volatility ---
+#   TrueRangeCustom(H,L,C)              -> ta.true_range(H, L, C) | talib.TRANGE(H, L, C)
+#   VolatilityStdDev(20)                 -> manual: stdev of log returns * sqrt(252)
+#   StandardDevAnnual(Close,20,1)        -> ta.stdev(closes, length=20) * np.sqrt(252)
+#
+# --- 7. Price Extremes ---
+#   HighestFC(High, 20)                  -> highs.rolling(20).max()
+#   LowestFC(Low, 20)                    -> lows.rolling(20).min()
+#
+# --- 8. Pivot ---
+#   PivotHighVS(1,High,3,3,20)          -> manual: compare with neighbors
+#   PivotLowVS(1,Low,3,3,20)            -> manual
+#   PivotHighVSBar(1,High,3,3,20)       -> manual: bars since pivot
+#   PivotLowVSBar(1,Low,3,3,20)         -> manual
+#
+# --- 9. Divergence ---
+#   Divergence(Close,RSI,3,20,-1)        -> manual: compare pivot highs/lows
+#
+# --- 10. Aggregation ---
+#   TimeSeriesForecast(Close,20)         -> ta.tsf(closes, length=20) | talib.TSF(closes, timeperiod=20)
+#   SummationFC(Close,14)                -> closes.rolling(14).sum()
+#
+# --- 11. Multi-Period OHLC ---
+#   OpenD(0)/HighD(0)/LowD(0)/CloseD(1) -> df.resample("D") or daily_df
+#   OpenW/HighW/LowW/CloseW             -> df.resample("W")
+#   OpenM/HighM/LowM/CloseM             -> df.resample("M")
+#   OpenY/HighY/LowY/CloseY             -> df.resample("Y")
+#
+# --- 12. Counting ---
+#   LRO(cond, 14, 1)                    -> manual: loop backwards for least recent
+#   SummationIf(cond, Volume, 14)        -> manual: conditional rolling sum
+#   IFFString(cond, "up", "down")        -> "up" if cond else "down"
+#
+# --- 13. Volume ---
+#   OBV                                  -> ta.obv(closes, volume) | talib.OBV(closes, volume)
+#   VolumeROC(14)                        -> ta.roc(volume, length=14)
+#   VolumeOsc(5, 20)                     -> manual: sma(vol,5) - sma(vol,20)
+#   PriceVolTrend                        -> ta.pvt(closes, volume)
+#   LWAccDis                             -> manual: Larry Williams A/D
+#
+# --- 14. Statistical ---
+#   Fisher(Close)                        -> manual: 0.5 * np.log((1+x)/(1-x))
+#   FisherINV(Close)                     -> manual: (np.exp(2*x)-1)/(np.exp(2*x)+1)
+#   AvgDeviation(Close,20)              -> ta.mad(closes, length=20) | manual
+#   Variance(Close,20)                  -> ta.variance(closes, length=20) | talib.VAR(closes, timeperiod=20)
+#   Kurtosis(Close,20)                  -> closes.rolling(20).kurt()
+#   Skew(Close,20)                      -> closes.rolling(20).skew()
+#   PercentRank(Close,Close,20)         -> closes.rolling(20).apply(lambda w: stats.percentileofscore(w, w.iloc[-1]))
+#   Covariance(Close,Volume,20)         -> closes.rolling(20).cov(volume)
+#   Quartile(Close,20,2)               -> closes.rolling(20).quantile(0.5)
+#   TrimMean(Close,20,10)              -> closes.rolling(20).apply(lambda w: stats.trim_mean(w, 0.1))
+#   Mode(Close,20,1)                   -> closes.rolling(20).apply(lambda w: w.mode().iloc[0])
+#   HarmonicMean(Close,20)            -> closes.rolling(20).apply(stats.hmean)
+#
+# --- 15. Candlestick ---
+#   C_Doji(5)                           -> manual | talib.CDLDOJI(opens, highs, lows, closes)
+#   C_Hammer_HangingMan(10,33,...)      -> manual | talib.CDLHAMMER / talib.CDLHANGINGMAN
+#   C_BullEng_BearEng(10,...)           -> manual | talib.CDLENGULFING
+#   C_BullHar_BearHar(10,...)           -> manual | talib.CDLHARAMI
+#   C_MornDoji_EveDoji(10,5,...)        -> manual | talib.CDLMORNINGDOJISTAR / talib.CDLEVENINGDOJISTAR
+#   C_MornStar_EveStar(10,...)          -> manual | talib.CDLMORNINGSTAR / talib.CDLEVENINGSTAR
+#   C_PierceLine_DkCloud(10,...)        -> manual | talib.CDLPIERCING / talib.CDLDARKCLOUDCOVER
+#   C_ShootingStar(10,33)               -> manual | talib.CDLSHOOTINGSTAR
+#   C_3WhSolds_3BlkCrows(10,33,...)     -> manual | talib.CDL3WHITESOLDIERS / talib.CDL3BLACKCROWS
+#
+# --- 16. Miscellaneous ---
+#   BarAnnualization                     -> manual: compute from bar frequency
+#   LastBarOnChart                       -> idx == len(df) - 1
+# =============================================================================
+
+import numpy as np
+import pandas as pd
+import pandas_ta as ta
+from scipy import stats
+
+
+class NewFunctionsTest(Strategy):
+    def __init__(self):
+        super().__init__()
+        self.position: int = 0
+        self.entry_price: float = 0.0
+
+    def on_bar(self, bars: list[Bar], orders: list[Order]) -> None:
+        if len(bars) < 30:
+            return
+
+        closes = pd.Series([b.close for b in bars])
+        highs = pd.Series([b.high for b in bars])
+        lows = pd.Series([b.low for b in bars])
+        opens = pd.Series([b.open for b in bars])
+        volume = pd.Series([b.volume for b in bars])
+        bar = bars[-1]
+        idx = len(bars) - 1
+
+        # =================================================================
+        # 1. Moving Averages
+        # =================================================================
+
+        # PL: TriAverage(Close, 14) — triangular moving average
+        tri_avg_series = ta.trima(closes, length=14)
+        tri_avg = tri_avg_series.iloc[-1] if tri_avg_series is not None else np.nan
+
+        # PL: SmoothedAverage(Close, 14) — Wilder's smoothed average (RMA)
+        smooth_avg_series = ta.rma(closes, length=14)
+        smooth_avg = smooth_avg_series.iloc[-1] if smooth_avg_series is not None else np.nan
+
+        # =================================================================
+        # 2. Stochastic Helpers
+        # =================================================================
+
+        # PL: FastK(14) — raw %K
+        stoch_df = ta.stoch(highs, lows, closes, k=14)
+        fast_k = stoch_df["STOCHk_14_3_3"].iloc[-1] if stoch_df is not None else np.nan
+
+        # PL: FastD(14) — SMA of raw %K
+        fast_d = stoch_df["STOCHd_14_3_3"].iloc[-1] if stoch_df is not None else np.nan
+
+        # PL: SlowK(14) — smoothed %K (SMA of FastK)
+        stoch_slow_df = ta.stoch(highs, lows, closes, k=14, d=3)
+        slow_k = stoch_slow_df["STOCHk_14_3_3"].iloc[-1] if stoch_slow_df is not None else np.nan
+
+        # PL: SlowD(14) — SMA of SlowK
+        slow_d = stoch_slow_df["STOCHd_14_3_3"].iloc[-1] if stoch_slow_df is not None else np.nan
+
+        # PL: FastKCustom(H, L, C, 14) — raw %K with custom OHLC
+        stoch_custom_df = ta.stoch(highs, lows, closes, k=14)
+        fast_k_custom = stoch_custom_df["STOCHk_14_3_3"].iloc[-1] if stoch_custom_df is not None else np.nan
+
+        # PL: FastDCustom(H, L, C, 14) — SMA of raw %K with custom OHLC
+        stoch_custom_d_df = ta.stoch(highs, lows, closes, k=14, d=3)
+        fast_d_custom = stoch_custom_d_df["STOCHd_14_3_3"].iloc[-1] if stoch_custom_d_df is not None else np.nan
+
+        # PL: SlowKCustom(H, L, C, 14) — smoothed %K with custom OHLC
+        slow_k_custom = stoch_custom_d_df["STOCHk_14_3_3"].iloc[-1] if stoch_custom_d_df is not None else np.nan
+
+        # PL: SlowDCustom(H, L, C, 14) — smoothed %D with custom OHLC
+        slow_d_custom = stoch_custom_d_df["STOCHd_14_3_3"].iloc[-1] if stoch_custom_d_df is not None else np.nan
+
+        # PL: StochasticExp(H, L, C, 14, 3, 3, ...) — exponential stochastic
+        #     Manual: compute FastK then apply EMA smoothing for K and D lines
+        ll = lows.rolling(14).min()
+        hh = highs.rolling(14).max()
+        raw_k = 100.0 * (closes - ll) / (hh - ll)
+        exp_k = raw_k.ewm(span=3, adjust=False).mean()   # EMA-smoothed K
+        exp_d = exp_k.ewm(span=3, adjust=False).mean()    # EMA-smoothed D
+        stoch_exp_k = exp_k.iloc[-1]
+        stoch_exp_d = exp_d.iloc[-1]
+
+        # =================================================================
+        # 3. DM/ADX Variants
+        # =================================================================
+
+        # PL: ADXR(14) — ADX Rating = average of current ADX and ADX 14 bars ago
+        adx_df = ta.adx(highs, lows, closes, length=14)
+        if adx_df is not None:
+            adx_series = adx_df["ADX_14"]
+            adxr_val = (adx_series.iloc[-1] + adx_series.iloc[-15]) / 2.0 if len(adx_series) >= 15 else np.nan
+        else:
+            adxr_val = np.nan
+
+        # PL: ADXCustom(H, L, C, 14) — ADX with custom OHLC inputs
+        #     pandas-ta: ta.adx(H, L, C, length=14)
+        #     TA-Lib alt: talib.ADX(H, L, C, timeperiod=14)
+        adx_custom_df = ta.adx(highs, lows, closes, length=14)
+        adx_custom = adx_custom_df["ADX_14"].iloc[-1] if adx_custom_df is not None else np.nan
+
+        # PL: DMI(14) — Directional Movement Index (same as DX)
+        #     pandas-ta: ta.adx() returns ADX_14 column (ADX is smoothed DX)
+        #     TA-Lib alt: talib.DX(highs, lows, closes, 14)
+        dmi_val = adx_df["ADX_14"].iloc[-1] if adx_df is not None else np.nan
+
+        # PL: DMIPlusCustom(H, L, C, 14) — +DI with custom OHLC
+        #     Manual: +DM / ATR * 100, smoothed over 14 periods
+        #     TA-Lib alt: talib.PLUS_DI(H, L, C, 14)
+        dmi_plus_custom = adx_custom_df["DMP_14"].iloc[-1] if adx_custom_df is not None else np.nan
+
+        # PL: DMIMinusCustom(H, L, C, 14) — -DI with custom OHLC
+        #     Manual: -DM / ATR * 100, smoothed over 14 periods
+        #     TA-Lib alt: talib.MINUS_DI(H, L, C, 14)
+        dmi_minus_custom = adx_custom_df["DMN_14"].iloc[-1] if adx_custom_df is not None else np.nan
+
+        # PL: ParabolicCustom(0.02, 0.2) — Parabolic SAR with custom AF params
+        #     Manual: Wilder's SAR algorithm with acceleration factor
+        #     TA-Lib alt: talib.SAR(highs, lows, acceleration=0.02, maximum=0.2)
+        psar_custom_df = ta.psar(highs, lows, af0=0.02, max_af=0.2)
+        if psar_custom_df is not None:
+            psar_l = psar_custom_df["PSARl_0.02_0.2"].iloc[-1]
+            psar_s = psar_custom_df["PSARs_0.02_0.2"].iloc[-1]
+            parabolic_custom = psar_l if pd.notna(psar_l) else psar_s
+        else:
+            parabolic_custom = np.nan
+
+        # =================================================================
+        # 4. Additional Oscillators
+        # =================================================================
+
+        # PL: TRIX(Close, 15) — triple EMA rate of change
+        #     TA-Lib alt: talib.TRIX(closes, timeperiod=15)
+        trix_series = ta.trix(closes, length=15)
+        trix_val = trix_series.iloc[-1] if trix_series is not None else np.nan
+
+        # PL: MassIndex(9, 25) — range expansion reversal signal
+        massi_series = ta.massi(highs, lows, fast=9, slow=25)
+        massi_val = massi_series.iloc[-1] if massi_series is not None else np.nan
+
+        # PL: EaseOfMovement — volume-weighted price movement
+        eom_series = ta.eom(highs, lows, closes, volume)
+        eom_val = eom_series.iloc[-1] if eom_series is not None else np.nan
+
+        # PL: SwingIndex — Wilder's Swing Index (single bar)
+        #     Manual: Wilder's formula using O, H, L, C and limit move
+        limit_move = 3.0  # exchange-specific daily limit
+        prev_bar = bars[-2]
+        k_sw = max(
+            abs(bar.high - prev_bar.close),
+            abs(bar.low - prev_bar.close),
+        )
+        r1 = abs(bar.high - prev_bar.close)
+        r2 = abs(bar.low - prev_bar.close)
+        r3 = abs(bar.high - bar.low)
+        if r1 >= r2 and r1 >= r3:
+            r = r1 - 0.5 * r2 + 0.25 * abs(prev_bar.close - prev_bar.open)
+        elif r2 >= r1 and r2 >= r3:
+            r = r2 - 0.5 * r1 + 0.25 * abs(prev_bar.close - prev_bar.open)
+        else:
+            r = r3 + 0.25 * abs(prev_bar.close - prev_bar.open)
+        if r != 0.0 and limit_move != 0.0:
+            swing_index = 50.0 * (
+                (bar.close - prev_bar.close)
+                + 0.5 * (bar.close - bar.open)
+                + 0.25 * (prev_bar.close - prev_bar.open)
+            ) / r * (k_sw / limit_move)
+        else:
+            swing_index = 0.0
+
+        # PL: AccumSwingIndex — cumulative Swing Index
+        #     Manual: running sum of SwingIndex over all bars
+        accum_swing_index = swing_index  # in practice, maintain cumulative sum across bars
+
+        # PL: Detrend(Close, 14) — detrended price oscillator
+        sma14_series = ta.sma(closes, length=14)
+        if sma14_series is not None:
+            detrend_val = closes.iloc[-1] - sma14_series.iloc[-1]
+        else:
+            detrend_val = np.nan
+
+        # PL: PercentChange(Close, 14) — rate of change as percentage
+        #     TA-Lib alt: talib.ROC(closes, timeperiod=14)
+        pct_change_series = ta.roc(closes, length=14)
+        pct_change_val = pct_change_series.iloc[-1] if pct_change_series is not None else np.nan
+
+        # PL: UlcerIndex(Close, 14) — downside volatility measure
+        ulcer_series = ta.ui(closes, length=14)
+        ulcer_val = ulcer_series.iloc[-1] if ulcer_series is not None else np.nan
+
+        # =================================================================
+        # 5. Multi-Output
+        # =================================================================
+
+        # PL: ParabolicSAR(0.02, 0.2, ...) — multi-output: SAR value, direction, AF
+        #     Manual: track SAR, EP, AF per bar; return (sar_value, direction, current_af)
+        #     TA-Lib alt: talib.SAR(highs, lows) returns SAR value only
+        psar_mo_df = ta.psar(highs, lows, af0=0.02, max_af=0.2)
+        if psar_mo_df is not None:
+            sar_long = psar_mo_df["PSARl_0.02_0.2"].iloc[-1]
+            sar_short = psar_mo_df["PSARs_0.02_0.2"].iloc[-1]
+            sar_value = sar_long if pd.notna(sar_long) else sar_short
+            sar_direction = 1 if pd.notna(sar_long) else -1
+        else:
+            sar_value = np.nan
+            sar_direction = 0
+
+        # PL: LinearReg(Close, 20, 0, ...) — multi-output: value, slope, R-squared
+        #     ta.linreg returns the regression value; slope/r2 via numpy
+        #     TA-Lib alt: talib.LINEARREG(closes, timeperiod=20)
+        linreg_series = ta.linreg(closes, length=20)
+        linreg_val = linreg_series.iloc[-1] if linreg_series is not None else np.nan
+
+        # Slope and R-squared via numpy polyfit
+        if len(closes) >= 20:
+            recent_c = closes.iloc[-20:].values
+            x = np.arange(20, dtype=float)
+            coeffs = np.polyfit(x, recent_c, 1)
+            linreg_slope = coeffs[0]
+            y_hat = np.polyval(coeffs, x)
+            ss_res = np.sum((recent_c - y_hat) ** 2)
+            ss_tot = np.sum((recent_c - np.mean(recent_c)) ** 2)
+            linreg_r2 = 1.0 - ss_res / ss_tot if ss_tot != 0.0 else 0.0
+        else:
+            linreg_slope = np.nan
+            linreg_r2 = np.nan
+
+        # =================================================================
+        # 6. Volatility
+        # =================================================================
+
+        # PL: TrueRangeCustom(H, L, C) — true range with custom OHLC
+        #     TA-Lib alt: talib.TRANGE(H, L, C)
+        tr_custom_series = ta.true_range(highs, lows, closes)
+        tr_custom = tr_custom_series.iloc[-1] if tr_custom_series is not None else np.nan
+
+        # PL: VolatilityStdDev(20) — annualized volatility from log returns
+        #     Manual: stdev of log returns * sqrt(252)
+        log_returns = np.log(closes / closes.shift(1))
+        vol_stddev = log_returns.rolling(20).std().iloc[-1] * np.sqrt(252)
+
+        # PL: StandardDevAnnual(Close, 20, 1) — annualized standard deviation
+        stddev_series = ta.stdev(closes, length=20)
+        stddev_annual = stddev_series.iloc[-1] * np.sqrt(252) if stddev_series is not None else np.nan
+
+        # =================================================================
+        # 7. Price Extremes
+        # =================================================================
+
+        # PL: HighestFC(High, 20) — highest value (function call variant)
+        highest_fc = highs.rolling(20).max().iloc[-1]
+
+        # PL: LowestFC(Low, 20) — lowest value (function call variant)
+        lowest_fc = lows.rolling(20).min().iloc[-1]
+
+        # =================================================================
+        # 8. Pivot
+        # =================================================================
+
+        # PL: PivotHighVS(1, High, 3, 3, 20)
+        #     Manual: find bar where High is higher than 3 bars on each side,
+        #     within last 20 bars; instance=1 means most recent
+        def pivot_high_vs(series, left: int, right: int, lookback: int, instance: int) -> float:
+            found = 0
+            for i in range(len(series) - 1 - right, max(len(series) - 1 - lookback, left) - 1, -1):
+                is_pivot = True
+                for j in range(1, left + 1):
+                    if series.iloc[i] <= series.iloc[i - j]:
+                        is_pivot = False
+                        break
+                if is_pivot:
+                    for j in range(1, right + 1):
+                        if i + j >= len(series) or series.iloc[i] <= series.iloc[i + j]:
+                            is_pivot = False
+                            break
+                if is_pivot:
+                    found += 1
+                    if found == instance:
+                        return series.iloc[i]
+            return 0.0
+
+        pivot_hi = pivot_high_vs(highs, left=3, right=3, lookback=20, instance=1)
+
+        # PL: PivotLowVS(1, Low, 3, 3, 20)
+        #     Manual: find bar where Low is lower than 3 bars on each side
+        def pivot_low_vs(series, left: int, right: int, lookback: int, instance: int) -> float:
+            found = 0
+            for i in range(len(series) - 1 - right, max(len(series) - 1 - lookback, left) - 1, -1):
+                is_pivot = True
+                for j in range(1, left + 1):
+                    if series.iloc[i] >= series.iloc[i - j]:
+                        is_pivot = False
+                        break
+                if is_pivot:
+                    for j in range(1, right + 1):
+                        if i + j >= len(series) or series.iloc[i] >= series.iloc[i + j]:
+                            is_pivot = False
+                            break
+                if is_pivot:
+                    found += 1
+                    if found == instance:
+                        return series.iloc[i]
+            return 0.0
+
+        pivot_lo = pivot_low_vs(lows, left=3, right=3, lookback=20, instance=1)
+
+        # PL: PivotHighVSBar(1, High, 3, 3, 20) — bars since the pivot high
+        #     Manual: same search as PivotHighVS but return distance in bars
+        def pivot_high_vs_bar(series, left: int, right: int, lookback: int, instance: int) -> int:
+            found = 0
+            end_idx = len(series) - 1
+            for i in range(end_idx - right, max(end_idx - lookback, left) - 1, -1):
+                is_pivot = True
+                for j in range(1, left + 1):
+                    if series.iloc[i] <= series.iloc[i - j]:
+                        is_pivot = False
+                        break
+                if is_pivot:
+                    for j in range(1, right + 1):
+                        if i + j >= len(series) or series.iloc[i] <= series.iloc[i + j]:
+                            is_pivot = False
+                            break
+                if is_pivot:
+                    found += 1
+                    if found == instance:
+                        return end_idx - i
+            return -1
+
+        pivot_hi_bar = pivot_high_vs_bar(highs, left=3, right=3, lookback=20, instance=1)
+
+        # PL: PivotLowVSBar(1, Low, 3, 3, 20) — bars since the pivot low
+        def pivot_low_vs_bar(series, left: int, right: int, lookback: int, instance: int) -> int:
+            found = 0
+            end_idx = len(series) - 1
+            for i in range(end_idx - right, max(end_idx - lookback, left) - 1, -1):
+                is_pivot = True
+                for j in range(1, left + 1):
+                    if series.iloc[i] >= series.iloc[i - j]:
+                        is_pivot = False
+                        break
+                if is_pivot:
+                    for j in range(1, right + 1):
+                        if i + j >= len(series) or series.iloc[i] >= series.iloc[i + j]:
+                            is_pivot = False
+                            break
+                if is_pivot:
+                    found += 1
+                    if found == instance:
+                        return end_idx - i
+            return -1
+
+        pivot_lo_bar = pivot_low_vs_bar(lows, left=3, right=3, lookback=20, instance=1)
+
+        # =================================================================
+        # 9. Divergence
+        # =================================================================
+
+        # PL: Divergence(Close, RSI, 3, 20, -1)
+        #     Manual: compare recent pivot highs/lows of price vs indicator;
+        #     -1 = bearish divergence (price higher high, indicator lower high)
+        rsi_series = ta.rsi(closes, length=14)
+        if rsi_series is not None:
+            price_ph1 = pivot_high_vs(closes, left=3, right=3, lookback=20, instance=1)
+            price_ph2 = pivot_high_vs(closes, left=3, right=3, lookback=20, instance=2)
+            rsi_ph1 = pivot_high_vs(rsi_series, left=3, right=3, lookback=20, instance=1)
+            rsi_ph2 = pivot_high_vs(rsi_series, left=3, right=3, lookback=20, instance=2)
+            # Bearish divergence: price makes higher high, RSI makes lower high
+            bearish_div = (price_ph1 > price_ph2 > 0.0 and 0.0 < rsi_ph1 < rsi_ph2)
+        else:
+            bearish_div = False
+
+        # =================================================================
+        # 10. Aggregation
+        # =================================================================
+
+        # PL: TimeSeriesForecast(Close, 20) — linear regression forecast
+        #     TA-Lib alt: talib.TSF(closes, timeperiod=20)
+        tsf_series = ta.tsf(closes, length=20)
+        tsf_val = tsf_series.iloc[-1] if tsf_series is not None else np.nan
+
+        # PL: SummationFC(Close, 14) — rolling sum (function call variant)
+        summation_fc = closes.rolling(14).sum().iloc[-1]
+
+        # =================================================================
+        # 11. Multi-Period OHLC
+        # =================================================================
+
+        # Build a DataFrame for resampling (requires datetime index)
+        df = pd.DataFrame({
+            "open": opens.values,
+            "high": highs.values,
+            "low": lows.values,
+            "close": closes.values,
+        })
+        # Assume bars carry a .time attribute (epoch); create DatetimeIndex
+        df.index = pd.to_datetime([b.time for b in bars], unit="s", utc=True)
+
+        # PL: OpenD(0) / HighD(0) / LowD(0) / CloseD(1)
+        daily = df.resample("D").agg({"open": "first", "high": "max", "low": "min", "close": "last"}).dropna()
+        open_d0 = daily["open"].iloc[-1] if len(daily) >= 1 else np.nan   # today's open
+        high_d0 = daily["high"].iloc[-1] if len(daily) >= 1 else np.nan   # today's high
+        low_d0 = daily["low"].iloc[-1] if len(daily) >= 1 else np.nan     # today's low
+        close_d1 = daily["close"].iloc[-2] if len(daily) >= 2 else np.nan  # yesterday's close
+
+        # PL: OpenW / HighW / LowW / CloseW
+        weekly = df.resample("W").agg({"open": "first", "high": "max", "low": "min", "close": "last"}).dropna()
+        open_w = weekly["open"].iloc[-1] if len(weekly) >= 1 else np.nan
+        high_w = weekly["high"].iloc[-1] if len(weekly) >= 1 else np.nan
+        low_w = weekly["low"].iloc[-1] if len(weekly) >= 1 else np.nan
+        close_w = weekly["close"].iloc[-1] if len(weekly) >= 1 else np.nan
+
+        # PL: OpenM / HighM / LowM / CloseM
+        monthly = df.resample("M").agg({"open": "first", "high": "max", "low": "min", "close": "last"}).dropna()
+        open_m = monthly["open"].iloc[-1] if len(monthly) >= 1 else np.nan
+        high_m = monthly["high"].iloc[-1] if len(monthly) >= 1 else np.nan
+        low_m = monthly["low"].iloc[-1] if len(monthly) >= 1 else np.nan
+        close_m = monthly["close"].iloc[-1] if len(monthly) >= 1 else np.nan
+
+        # PL: OpenY / HighY / LowY / CloseY
+        yearly = df.resample("Y").agg({"open": "first", "high": "max", "low": "min", "close": "last"}).dropna()
+        open_y = yearly["open"].iloc[-1] if len(yearly) >= 1 else np.nan
+        high_y = yearly["high"].iloc[-1] if len(yearly) >= 1 else np.nan
+        low_y = yearly["low"].iloc[-1] if len(yearly) >= 1 else np.nan
+        close_y = yearly["close"].iloc[-1] if len(yearly) >= 1 else np.nan
+
+        # =================================================================
+        # 12. Counting
+        # =================================================================
+
+        # PL: LRO(cond, 14, 1) — Least Recent Occurrence
+        #     Manual: loop backwards from current bar; find the 1st occurrence
+        #     of cond being True, return bars-ago of the least recent within 14
+        cond_series = closes > closes.shift(1)
+        def lro(cond: pd.Series, length: int, instance: int) -> int:
+            """Return bars-ago of the least recent True within length bars."""
+            count = 0
+            result = -1
+            for i in range(1, length + 1):
+                if len(cond) >= i and cond.iloc[-i]:
+                    count += 1
+                    result = i  # keep overwriting to get least recent
+            return result if count >= instance else -1
+
+        lro_val = lro(cond_series, 14, 1)
+
+        # PL: SummationIf(cond, Volume, 14) — conditional rolling sum
+        #     Manual: sum Volume for bars where cond is True, over last 14 bars
+        def summation_if(cond: pd.Series, values: pd.Series, length: int) -> float:
+            total = 0.0
+            for i in range(1, length + 1):
+                if len(cond) >= i and cond.iloc[-i]:
+                    total += values.iloc[-i]
+            return total
+
+        sum_if_val = summation_if(cond_series, volume, 14)
+
+        # PL: IFFString(cond, "up", "down") — inline conditional string
+        iff_result = "up" if bar.close > bar.open else "down"
+
+        # =================================================================
+        # 13. Volume
+        # =================================================================
+
+        # PL: OBV — On Balance Volume
+        #     TA-Lib alt: talib.OBV(closes, volume)
+        obv_series = ta.obv(closes, volume)
+        obv_val = obv_series.iloc[-1] if obv_series is not None else np.nan
+
+        # PL: VolumeROC(14) — rate of change of volume
+        vol_roc_series = ta.roc(volume, length=14)
+        vol_roc = vol_roc_series.iloc[-1] if vol_roc_series is not None else np.nan
+
+        # PL: VolumeOsc(5, 20) — volume oscillator: sma(vol,5) - sma(vol,20)
+        #     Manual: difference of two volume SMAs
+        vol_sma5 = ta.sma(volume, length=5)
+        vol_sma20 = ta.sma(volume, length=20)
+        if vol_sma5 is not None and vol_sma20 is not None:
+            vol_osc = vol_sma5.iloc[-1] - vol_sma20.iloc[-1]
+        else:
+            vol_osc = np.nan
+
+        # PL: PriceVolTrend — Price-Volume Trend
+        pvt_series = ta.pvt(closes, volume)
+        pvt_val = pvt_series.iloc[-1] if pvt_series is not None else np.nan
+
+        # PL: LWAccDis — Larry Williams Accumulation/Distribution
+        #     Manual: if close > open, AD = close - true_low; else AD = close - true_high
+        true_high = max(bar.high, bars[-2].close)
+        true_low = min(bar.low, bars[-2].close)
+        if bar.close > bar.open:
+            lw_ad = bar.close - true_low
+        elif bar.close < bar.open:
+            lw_ad = bar.close - true_high
+        else:
+            lw_ad = 0.0
+
+        # =================================================================
+        # 14. Statistical
+        # =================================================================
+
+        # PL: Fisher(Close) — Fisher Transform
+        #     Manual: normalize price to -1..1 range, then apply Fisher formula
+        max_hi = highs.rolling(20).max().iloc[-1]
+        min_lo = lows.rolling(20).min().iloc[-1]
+        if pd.notna(max_hi) and pd.notna(min_lo) and max_hi != min_lo:
+            x_norm = 2.0 * (bar.close - min_lo) / (max_hi - min_lo) - 1.0
+            x_norm = max(-0.999, min(0.999, x_norm))  # clamp to avoid log(0)
+            fisher_val = 0.5 * np.log((1.0 + x_norm) / (1.0 - x_norm))
+        else:
+            fisher_val = 0.0
+
+        # PL: FisherINV(Close) — Inverse Fisher Transform
+        #     Manual: inverse of the Fisher transform
+        fisher_inv = (np.exp(2.0 * fisher_val) - 1.0) / (np.exp(2.0 * fisher_val) + 1.0)
+
+        # PL: AvgDeviation(Close, 20) — mean absolute deviation
+        #     Manual alt: closes.rolling(20).apply(lambda w: (w - w.mean()).abs().mean())
+        mad_series = ta.mad(closes, length=20)
+        avg_dev = mad_series.iloc[-1] if mad_series is not None else np.nan
+
+        # PL: Variance(Close, 20)
+        #     TA-Lib alt: talib.VAR(closes, timeperiod=20)
+        var_series = ta.variance(closes, length=20)
+        variance_val = var_series.iloc[-1] if var_series is not None else np.nan
+
+        # PL: Kurtosis(Close, 20) — excess kurtosis of rolling window
+        kurtosis_val = closes.rolling(20).kurt().iloc[-1]
+
+        # PL: Skew(Close, 20) — skewness of rolling window
+        skew_val = closes.rolling(20).skew().iloc[-1]
+
+        # PL: PercentRank(Close, Close, 20) — percentile rank within window
+        pct_rank = closes.rolling(20).apply(
+            lambda w: stats.percentileofscore(w, w.iloc[-1])
+        ).iloc[-1]
+
+        # PL: Covariance(Close, Volume, 20) — rolling covariance
+        cov_val = closes.rolling(20).cov(volume).iloc[-1]
+
+        # PL: Quartile(Close, 20, 2) — rolling 2nd quartile (median)
+        quartile_val = closes.rolling(20).quantile(0.5).iloc[-1]
+
+        # PL: TrimMean(Close, 20, 10) — trimmed mean (cut 10% from each tail)
+        trim_mean_val = closes.rolling(20).apply(
+            lambda w: stats.trim_mean(w, 0.1)
+        ).iloc[-1]
+
+        # PL: Mode(Close, 20, 1) — mode of rolling window (1st mode)
+        mode_val = closes.rolling(20).apply(
+            lambda w: w.mode().iloc[0] if len(w.mode()) > 0 else np.nan
+        ).iloc[-1]
+
+        # PL: HarmonicMean(Close, 20) — harmonic mean of rolling window
+        harmonic_val = closes.rolling(20).apply(stats.hmean).iloc[-1]
+
+        # =================================================================
+        # 15. Candlestick
+        # =================================================================
+
+        # PL: C_Doji(5) — doji pattern (body <= 5% of range)
+        #     Manual: abs(close - open) <= 0.05 * (high - low)
+        #     TA-Lib alt: talib.CDLDOJI(opens, highs, lows, closes)
+        body = abs(bar.close - bar.open)
+        rng = bar.high - bar.low
+        is_doji = body <= 0.05 * rng if rng > 0 else False
+
+        # PL: C_Hammer_HangingMan(10, 33, ...) — hammer / hanging man
+        #     Manual: small body at top, long lower shadow >= 2x body, short upper shadow
+        #     TA-Lib alt: talib.CDLHAMMER / talib.CDLHANGINGMAN
+        upper_shadow = bar.high - max(bar.open, bar.close)
+        lower_shadow = min(bar.open, bar.close) - bar.low
+        is_hammer = (lower_shadow >= 2.0 * body and upper_shadow <= body * 0.33) if body > 0 else False
+
+        # PL: C_BullEng_BearEng(10, ...) — engulfing pattern
+        #     Manual: current body engulfs previous body; bullish if green engulfs red
+        #     TA-Lib alt: talib.CDLENGULFING
+        prev_body_lo = min(prev_bar.open, prev_bar.close)
+        prev_body_hi = max(prev_bar.open, prev_bar.close)
+        curr_body_lo = min(bar.open, bar.close)
+        curr_body_hi = max(bar.open, bar.close)
+        bull_engulfing = (bar.close > bar.open and prev_bar.close < prev_bar.open
+                          and curr_body_lo < prev_body_lo and curr_body_hi > prev_body_hi)
+        bear_engulfing = (bar.close < bar.open and prev_bar.close > prev_bar.open
+                          and curr_body_lo < prev_body_lo and curr_body_hi > prev_body_hi)
+
+        # PL: C_BullHar_BearHar(10, ...) — harami pattern
+        #     Manual: current body is contained within previous body
+        #     TA-Lib alt: talib.CDLHARAMI
+        bull_harami = (bar.close > bar.open and prev_bar.close < prev_bar.open
+                       and curr_body_lo > prev_body_lo and curr_body_hi < prev_body_hi)
+        bear_harami = (bar.close < bar.open and prev_bar.close > prev_bar.open
+                       and curr_body_lo > prev_body_lo and curr_body_hi < prev_body_hi)
+
+        # PL: C_MornDoji_EveDoji(10, 5, ...) — morning/evening doji star
+        #     Manual: 3-bar pattern; bar[-3] large body, bar[-2] doji with gap, bar[-1] large opposite body
+        #     TA-Lib alt: talib.CDLMORNINGDOJISTAR / talib.CDLEVENINGDOJISTAR
+        if len(bars) >= 3:
+            b3 = bars[-3]
+            b2 = bars[-2]
+            b1 = bar
+            b2_body = abs(b2.close - b2.open)
+            b2_range = b2.high - b2.low
+            b2_is_doji = b2_body <= 0.05 * b2_range if b2_range > 0 else False
+            morning_doji_star = (b3.close < b3.open and b2_is_doji
+                                 and b1.close > b1.open and b1.close > (b3.open + b3.close) / 2.0)
+            evening_doji_star = (b3.close > b3.open and b2_is_doji
+                                 and b1.close < b1.open and b1.close < (b3.open + b3.close) / 2.0)
+        else:
+            morning_doji_star = False
+            evening_doji_star = False
+
+        # PL: C_MornStar_EveStar(10, ...) — morning/evening star
+        #     Manual: 3-bar pattern; bar[-3] large body, bar[-2] small body with gap, bar[-1] large opposite
+        #     TA-Lib alt: talib.CDLMORNINGSTAR / talib.CDLEVENINGSTAR
+        if len(bars) >= 3:
+            b3 = bars[-3]
+            b2 = bars[-2]
+            b1 = bar
+            b2_body = abs(b2.close - b2.open)
+            b3_body = abs(b3.close - b3.open)
+            b2_small = b2_body < b3_body * 0.33
+            morning_star = (b3.close < b3.open and b2_small
+                            and b1.close > b1.open and b1.close > (b3.open + b3.close) / 2.0)
+            evening_star = (b3.close > b3.open and b2_small
+                            and b1.close < b1.open and b1.close < (b3.open + b3.close) / 2.0)
+        else:
+            morning_star = False
+            evening_star = False
+
+        # PL: C_PierceLine_DkCloud(10, ...) — piercing line / dark cloud cover
+        #     Manual: 2-bar reversal; piercing: gap down + close above midpoint; dark cloud: inverse
+        #     TA-Lib alt: talib.CDLPIERCING / talib.CDLDARKCLOUDCOVER
+        prev_mid = (prev_bar.open + prev_bar.close) / 2.0
+        piercing_line = (prev_bar.close < prev_bar.open and bar.open < prev_bar.close
+                         and bar.close > prev_mid and bar.close < prev_bar.open)
+        dark_cloud = (prev_bar.close > prev_bar.open and bar.open > prev_bar.close
+                      and bar.close < prev_mid and bar.close > prev_bar.open)
+
+        # PL: C_ShootingStar(10, 33) — shooting star
+        #     Manual: small body at bottom, long upper shadow >= 2x body, short lower shadow
+        #     TA-Lib alt: talib.CDLSHOOTINGSTAR
+        is_shooting_star = (upper_shadow >= 2.0 * body and lower_shadow <= body * 0.33) if body > 0 else False
+
+        # PL: C_3WhSolds_3BlkCrows(10, 33, ...) — three white soldiers / three black crows
+        #     Manual: 3 consecutive large-body bars in same direction
+        #     TA-Lib alt: talib.CDL3WHITESOLDIERS / talib.CDL3BLACKCROWS
+        if len(bars) >= 3:
+            b3 = bars[-3]
+            b2 = bars[-2]
+            b1 = bar
+            three_white = (b3.close > b3.open and b2.close > b2.open and b1.close > b1.open
+                           and b2.close > b3.close and b1.close > b2.close)
+            three_black = (b3.close < b3.open and b2.close < b2.open and b1.close < b1.open
+                           and b2.close < b3.close and b1.close < b2.close)
+        else:
+            three_white = False
+            three_black = False
+
+        # =================================================================
+        # 16. Miscellaneous
+        # =================================================================
+
+        # PL: BarAnnualization — annualization factor based on bar frequency
+        #     Manual: compute from bar interval (e.g., daily = 252, hourly = 252*6.5)
+        if len(bars) >= 2:
+            bar_interval_sec = bars[-1].time - bars[-2].time
+            bars_per_day = 86400.0 / bar_interval_sec if bar_interval_sec > 0 else 1.0
+            bar_annualization = bars_per_day * 252.0
+        else:
+            bar_annualization = 252.0
+
+        # PL: LastBarOnChart — True if this is the final bar in the dataset
+        last_bar_on_chart = (idx == len(bars) - 1)
+
+        # =================================================================
+        # Sample entry/exit logic using computed values
+        # =================================================================
+
+        if not (pd.notna(tri_avg) and pd.notna(smooth_avg) and pd.notna(tsf_val)):
+            return
+
+        # Example: enter long if TriAverage above SmoothedAverage and forecast rising
+        if self.position == 0:
+            if tri_avg > smooth_avg and pd.notna(tsf_val) and tsf_val > bar.close:
+                orders.append(Order(
+                    label="NF_LE", action=Action.ENTRY, side=Side.LONG,
+                    order_type=OrderType.MARKET, price=0.0, qty=1.0,
+                ))
+
+        # Example: exit long on bearish divergence or shooting star
+        if self.position == 1:
+            if bearish_div or is_shooting_star:
+                orders.append(Order(
+                    label="NF_LX", action=Action.EXIT, side=Side.LONG,
+                    order_type=OrderType.MARKET, price=0.0, qty=1.0,
+                ))
+
+
+# END NewFunctionsTest
+# =============================================================================

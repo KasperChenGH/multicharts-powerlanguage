@@ -1,0 +1,1084 @@
+// =============================================================================
+// test_cpp_new_functions.txt
+// C++ conversions of new PowerLanguage function mappings not covered by the
+// original test_cpp_from_pl.txt strategies.
+//
+// A single class NewFunctionsTest : public Strategy exercises every new
+// function conversion inside its on_bar method, grouped by category.
+//
+// Dependencies: TA-Lib (ta_libc.h)
+//
+// NOTE: This file is a reference showing how each PL function maps to C++
+// (TA-Lib primary, manual where no TA-Lib equivalent exists). It is not
+// intended to compile as a runnable strategy — it demonstrates all mappings
+// in one place.
+//
+// The Order struct includes an Action field to distinguish PL order semantics:
+//
+//   enum class Action { Entry, Exit, StopLoss, ProfitTarget, BreakEven };
+//   struct Order { std::string label; Action action; Side side;
+//                  OrderType type; double price; double qty; };
+// =============================================================================
+
+
+#include "ta_libc.h"
+#include <vector>
+#include <string>
+#include <cmath>
+#include <algorithm>
+#include <numeric>
+#include <map>
+#include <iostream>
+
+class NewFunctionsTest : public Strategy {
+public:
+    NewFunctionsTest() = default;
+
+    void on_bar(const std::vector<Bar>& bars,
+                std::vector<Order>& orders) override {
+        int n = static_cast<int>(bars.size());
+        if (n < 60) return;  // enough bars for all lookback periods
+
+        // --- Extract OHLCV arrays ---
+        std::vector<double> opens(n), highs(n), lows(n), closes(n), volumes(n);
+        for (int i = 0; i < n; ++i) {
+            opens[i]   = bars[i].open;
+            highs[i]   = bars[i].high;
+            lows[i]    = bars[i].low;
+            closes[i]  = bars[i].close;
+            volumes[i] = bars[i].volume;
+        }
+        int endIdx = n - 1;
+        int outBeg = 0, outNB = 0;
+
+
+        // =================================================================
+        // SECTION 1 — Moving Averages
+        //
+        // TriAverage(Close, 14)          → TA_TRIMA
+        // SmoothedAverage(Close, 14)     → manual: Wilder smoothing
+        // =================================================================
+
+        // PL: TriAverage(Close, 14) → TA_TRIMA
+        std::vector<double> trima_out(n);
+        TA_TRIMA(0, endIdx, closes.data(), 14,
+                 &outBeg, &outNB, trima_out.data());
+        double trima_val = (outNB > 0) ? trima_out[outNB - 1] : 0.0;
+
+        // PL: SmoothedAverage(Close, 14) → manual Wilder smoothing
+        //     Formula: prev * (N-1)/N + val / N
+        if (smoothed_avg_ == 0.0) {
+            // Seed with SMA of first N bars
+            double seed = 0.0;
+            for (int i = 0; i < 14 && i < n; ++i) seed += closes[i];
+            smoothed_avg_ = seed / 14.0;
+        } else {
+            smoothed_avg_ = smoothed_avg_ * 13.0 / 14.0 + closes.back() / 14.0;
+        }
+        double smoothed_val = smoothed_avg_;
+
+
+        // =================================================================
+        // SECTION 2 — Stochastic Helpers (9 functions)
+        //
+        // FastK(14)                      → TA_STOCHF, use outFastK
+        // FastD(14)                      → TA_STOCHF, use outFastD
+        // SlowK(14)                      → TA_STOCH, use outSlowK
+        // SlowD(14)                      → TA_STOCH, use outSlowD
+        // FastKCustom(H,L,C,14)          → TA_STOCHF with custom arrays
+        // FastDCustom(H,L,C,14)          → TA_STOCHF with custom arrays
+        // SlowKCustom(H,L,C,14)          → TA_STOCH with custom arrays
+        // SlowDCustom(H,L,C,14)          → TA_STOCH with custom arrays
+        // StochasticExp(H,L,C,14,3,3,..) → TA_STOCH with TA_MAType_EMA
+        // =================================================================
+
+        // PL: FastK(14), FastD(14) → TA_STOCHF
+        std::vector<double> fk_out(n), fd_out(n);
+        TA_STOCHF(0, endIdx, highs.data(), lows.data(), closes.data(),
+                  14, 1, TA_MAType_SMA,
+                  &outBeg, &outNB, fk_out.data(), fd_out.data());
+        double fast_k = (outNB > 0) ? fk_out[outNB - 1] : 0.0;
+        double fast_d = (outNB > 0) ? fd_out[outNB - 1] : 0.0;
+
+        // PL: SlowK(14), SlowD(14) → TA_STOCH
+        std::vector<double> sk_out(n), sd_out(n);
+        TA_STOCH(0, endIdx, highs.data(), lows.data(), closes.data(),
+                 14, 3, TA_MAType_SMA, 3, TA_MAType_SMA,
+                 &outBeg, &outNB, sk_out.data(), sd_out.data());
+        double slow_k = (outNB > 0) ? sk_out[outNB - 1] : 0.0;
+        double slow_d = (outNB > 0) ? sd_out[outNB - 1] : 0.0;
+
+        // PL: FastKCustom(H,L,C,14), FastDCustom(H,L,C,14) → TA_STOCHF
+        //     with custom H/L/C arrays (same call, different input vectors)
+        std::vector<double> fkc_out(n), fdc_out(n);
+        TA_STOCHF(0, endIdx, highs.data(), lows.data(), closes.data(),
+                  14, 1, TA_MAType_SMA,
+                  &outBeg, &outNB, fkc_out.data(), fdc_out.data());
+        double fast_k_custom = (outNB > 0) ? fkc_out[outNB - 1] : 0.0;
+        double fast_d_custom = (outNB > 0) ? fdc_out[outNB - 1] : 0.0;
+
+        // PL: SlowKCustom(H,L,C,14), SlowDCustom(H,L,C,14) → TA_STOCH
+        //     with custom H/L/C arrays
+        std::vector<double> skc_out(n), sdc_out(n);
+        TA_STOCH(0, endIdx, highs.data(), lows.data(), closes.data(),
+                 14, 3, TA_MAType_SMA, 3, TA_MAType_SMA,
+                 &outBeg, &outNB, skc_out.data(), sdc_out.data());
+        double slow_k_custom = (outNB > 0) ? skc_out[outNB - 1] : 0.0;
+        double slow_d_custom = (outNB > 0) ? sdc_out[outNB - 1] : 0.0;
+
+        // PL: StochasticExp(H,L,C,14,3,3,...) → TA_STOCH with TA_MAType_EMA
+        std::vector<double> ske_out(n), sde_out(n);
+        TA_STOCH(0, endIdx, highs.data(), lows.data(), closes.data(),
+                 14, 3, TA_MAType_EMA, 3, TA_MAType_EMA,
+                 &outBeg, &outNB, ske_out.data(), sde_out.data());
+        double stoch_exp_k = (outNB > 0) ? ske_out[outNB - 1] : 0.0;
+        double stoch_exp_d = (outNB > 0) ? sde_out[outNB - 1] : 0.0;
+
+
+        // =================================================================
+        // SECTION 3 — DM/ADX Variants (6 functions)
+        //
+        // ADXR(14)                       → TA_ADXR
+        // ADXCustom(H,L,C,14)            → TA_ADX with custom arrays
+        // DMI(14)                         → TA_DX
+        // DMIPlusCustom(H,L,C,14)        → TA_PLUS_DI with custom arrays
+        // DMIMinusCustom(H,L,C,14)       → TA_MINUS_DI with custom arrays
+        // ParabolicCustom(0.02, 0.2)     → TA_SAR
+        // =================================================================
+
+        // PL: ADXR(14) → TA_ADXR
+        std::vector<double> adxr_out(n);
+        TA_ADXR(0, endIdx, highs.data(), lows.data(), closes.data(),
+                14, &outBeg, &outNB, adxr_out.data());
+        double adxr_val = (outNB > 0) ? adxr_out[outNB - 1] : 0.0;
+
+        // PL: ADXCustom(H,L,C,14) → TA_ADX with custom arrays
+        std::vector<double> adxc_out(n);
+        TA_ADX(0, endIdx, highs.data(), lows.data(), closes.data(),
+               14, &outBeg, &outNB, adxc_out.data());
+        double adx_custom = (outNB > 0) ? adxc_out[outNB - 1] : 0.0;
+
+        // PL: DMI(14) → TA_DX (Directional Movement Index)
+        std::vector<double> dx_out(n);
+        TA_DX(0, endIdx, highs.data(), lows.data(), closes.data(),
+              14, &outBeg, &outNB, dx_out.data());
+        double dmi_val = (outNB > 0) ? dx_out[outNB - 1] : 0.0;
+
+        // PL: DMIPlusCustom(H,L,C,14) → TA_PLUS_DI with custom arrays
+        std::vector<double> pdic_out(n);
+        TA_PLUS_DI(0, endIdx, highs.data(), lows.data(), closes.data(),
+                   14, &outBeg, &outNB, pdic_out.data());
+        double dmi_plus_custom = (outNB > 0) ? pdic_out[outNB - 1] : 0.0;
+
+        // PL: DMIMinusCustom(H,L,C,14) → TA_MINUS_DI with custom arrays
+        std::vector<double> mdic_out(n);
+        TA_MINUS_DI(0, endIdx, highs.data(), lows.data(), closes.data(),
+                    14, &outBeg, &outNB, mdic_out.data());
+        double dmi_minus_custom = (outNB > 0) ? mdic_out[outNB - 1] : 0.0;
+
+        // PL: ParabolicCustom(0.02, 0.2) → TA_SAR
+        std::vector<double> sarc_out(n);
+        TA_SAR(0, endIdx, highs.data(), lows.data(),
+               0.02, 0.2, &outBeg, &outNB, sarc_out.data());
+        double sar_custom = (outNB > 0) ? sarc_out[outNB - 1] : 0.0;
+
+
+        // =================================================================
+        // SECTION 4 — Additional Oscillators (8 functions)
+        //
+        // TRIX(Close, 15)                → TA_TRIX
+        // MassIndex(9, 25)               → manual: EMA ratio summation
+        // EaseOfMovement                 → manual: midpoint change / box ratio
+        // SwingIndex                     → manual: Wilder formula
+        // AccumSwingIndex                → manual: cumulative SwingIndex
+        // Detrend(Close, 14)             → close - TA_SMA result
+        // PercentChange(Close, 14)       → TA_ROC
+        // UlcerIndex(Close, 14)          → manual: sqrt of mean squared drawdown
+        // =================================================================
+
+        // PL: TRIX(Close, 15) → TA_TRIX
+        std::vector<double> trix_out(n);
+        TA_TRIX(0, endIdx, closes.data(), 15,
+                &outBeg, &outNB, trix_out.data());
+        double trix_val = (outNB > 0) ? trix_out[outNB - 1] : 0.0;
+
+        // PL: MassIndex(9, 25) → manual: EMA ratio summation
+        //     No TA-Lib equivalent. Algorithm:
+        //     1) EMA(High - Low, 9) = single_ema
+        //     2) EMA(single_ema, 9) = double_ema
+        //     3) ratio = single_ema / double_ema
+        //     4) MassIndex = Sum(ratio, 25)
+        std::vector<double> hl_diff(n);
+        for (int i = 0; i < n; ++i) hl_diff[i] = highs[i] - lows[i];
+        std::vector<double> ema9_out(n), ema9d_out(n);
+        TA_EMA(0, endIdx, hl_diff.data(), 9,
+               &outBeg, &outNB, ema9_out.data());
+        int ema9_nb = outNB;
+        int ema9_beg = outBeg;
+        double mass_index = 0.0;
+        if (ema9_nb > 9) {
+            TA_EMA(0, ema9_nb - 1, ema9_out.data(), 9,
+                   &outBeg, &outNB, ema9d_out.data());
+            if (outNB >= 25) {
+                mass_index = 0.0;
+                for (int i = outNB - 25; i < outNB; ++i) {
+                    double denom = (ema9d_out[i] != 0.0) ? ema9d_out[i] : 1.0;
+                    // single_ema index offset: ema9d starts at outBeg within ema9
+                    mass_index += ema9_out[outBeg + i] / denom;
+                }
+            }
+        }
+
+        // PL: EaseOfMovement → manual: midpoint change / box ratio
+        //     EMV = ((H + L)/2 - (H[1] + L[1])/2) / ((Volume / 10000) / (H - L))
+        double emv_val = 0.0;
+        if (n >= 2) {
+            double mid_now  = (highs.back() + lows.back()) / 2.0;
+            double mid_prev = (highs[n - 2] + lows[n - 2]) / 2.0;
+            double hl_range = highs.back() - lows.back();
+            if (hl_range > 0.0 && volumes.back() > 0.0) {
+                double box_ratio = (volumes.back() / 10000.0) / hl_range;
+                emv_val = (mid_now - mid_prev) / box_ratio;
+            }
+        }
+
+        // PL: SwingIndex → manual: Wilder Swing Index formula
+        //     SI = 50 * (C1 - C + 0.5*(C1 - O1) + 0.25*(C - O)) / R * K / T
+        //     where R = largest of |H1-C|, |L1-C|, |H1-L1|, T = limit move
+        double swing_idx = 0.0;
+        if (n >= 2) {
+            double c1 = closes[n - 1], c0 = closes[n - 2];
+            double o1 = opens[n - 1],  o0 = opens[n - 2];
+            double h1 = highs[n - 1],  l1 = lows[n - 1];
+            double r1 = std::abs(h1 - c0);
+            double r2 = std::abs(l1 - c0);
+            double r3 = h1 - l1;
+            double R  = std::max({r1, r2, r3});
+            double limit_move = 3.0;  // instrument-specific
+            if (R > 0.0) {
+                double numer = c1 - c0 + 0.5 * (c1 - o1) + 0.25 * (c0 - o0);
+                swing_idx = 50.0 * numer / R * (1.0 / limit_move);
+            }
+        }
+
+        // PL: AccumSwingIndex → manual: cumulative SwingIndex
+        accum_swing_idx_ += swing_idx;
+        double asi_val = accum_swing_idx_;
+
+        // PL: Detrend(Close, 14) → close - TA_SMA result
+        std::vector<double> sma14_out(n);
+        TA_SMA(0, endIdx, closes.data(), 14,
+               &outBeg, &outNB, sma14_out.data());
+        double detrend_val = 0.0;
+        if (outNB > 0) {
+            detrend_val = closes.back() - sma14_out[outNB - 1];
+        }
+
+        // PL: PercentChange(Close, 14) → TA_ROC
+        std::vector<double> roc_out(n);
+        TA_ROC(0, endIdx, closes.data(), 14,
+               &outBeg, &outNB, roc_out.data());
+        double pct_change = (outNB > 0) ? roc_out[outNB - 1] : 0.0;
+
+        // PL: UlcerIndex(Close, 14) → manual: sqrt of mean squared drawdown
+        //     For each bar in lookback: pct_dd = 100 * (C - MaxC_over_period) / MaxC
+        //     UI = sqrt(mean(pct_dd^2))
+        double ulcer_idx = 0.0;
+        if (n >= 14) {
+            double max_c = 0.0;
+            double sum_sq = 0.0;
+            for (int i = n - 14; i < n; ++i) {
+                max_c = std::max(max_c, closes[i]);
+                double pct_dd = 100.0 * (closes[i] - max_c) / max_c;
+                sum_sq += pct_dd * pct_dd;
+            }
+            ulcer_idx = std::sqrt(sum_sq / 14.0);
+        }
+
+
+        // =================================================================
+        // SECTION 5 — Multi-Output Functions (2 functions)
+        //
+        // ParabolicSAR(0.02,0.2,...)     → TA_SAR + manual position tracking
+        // LinearReg(Close,20,0,...)       → TA_LINEARREG + _SLOPE + _ANGLE + _INTERCEPT
+        // =================================================================
+
+        // PL: ParabolicSAR(0.02, 0.2, ...) → TA_SAR + position/transition
+        std::vector<double> sar_out(n);
+        TA_SAR(0, endIdx, highs.data(), lows.data(),
+               0.02, 0.2, &outBeg, &outNB, sar_out.data());
+        double sar_val = (outNB > 0) ? sar_out[outNB - 1] : 0.0;
+        double prev_sar = (outNB > 1) ? sar_out[outNB - 2] : sar_val;
+        // Manual position tracking: SAR below price = long, above = short
+        int sar_position = (closes.back() > sar_val) ? 1 : -1;
+        int prev_sar_position = (n >= 2 && outNB > 1)
+            ? ((closes[n - 2] > prev_sar) ? 1 : -1) : sar_position;
+        bool sar_transition = (sar_position != prev_sar_position);
+
+        // PL: LinearReg(Close, 20, 0, ...) → multiple TA-Lib calls
+        //     Returns value, slope, angle, intercept
+        std::vector<double> lr_val_out(n), lr_slp_out(n);
+        std::vector<double> lr_ang_out(n), lr_int_out(n);
+
+        TA_LINEARREG(0, endIdx, closes.data(), 20,
+                     &outBeg, &outNB, lr_val_out.data());
+        double lr_value = (outNB > 0) ? lr_val_out[outNB - 1] : 0.0;
+
+        TA_LINEARREG_SLOPE(0, endIdx, closes.data(), 20,
+                           &outBeg, &outNB, lr_slp_out.data());
+        double lr_slope = (outNB > 0) ? lr_slp_out[outNB - 1] : 0.0;
+
+        TA_LINEARREG_ANGLE(0, endIdx, closes.data(), 20,
+                           &outBeg, &outNB, lr_ang_out.data());
+        double lr_angle = (outNB > 0) ? lr_ang_out[outNB - 1] : 0.0;
+
+        TA_LINEARREG_INTERCEPT(0, endIdx, closes.data(), 20,
+                               &outBeg, &outNB, lr_int_out.data());
+        double lr_intercept = (outNB > 0) ? lr_int_out[outNB - 1] : 0.0;
+
+
+        // =================================================================
+        // SECTION 6 — Volatility (3 functions)
+        //
+        // TrueRangeCustom(H,L,C)         → TA_TRANGE with custom arrays
+        // VolatilityStdDev(20)            → TA_STDDEV of log returns * sqrt(252)
+        // StandardDevAnnual(Close,20,1)   → TA_STDDEV * sqrt(252)
+        // =================================================================
+
+        // PL: TrueRangeCustom(H,L,C) → TA_TRANGE with custom arrays
+        std::vector<double> trc_out(n);
+        TA_TRANGE(0, endIdx, highs.data(), lows.data(), closes.data(),
+                  &outBeg, &outNB, trc_out.data());
+        double tr_custom = (outNB > 0) ? trc_out[outNB - 1] : 0.0;
+
+        // PL: VolatilityStdDev(20) → manual: TA_STDDEV of log returns * sqrt(252)
+        std::vector<double> log_ret(n, 0.0);
+        for (int i = 1; i < n; ++i) {
+            if (closes[i - 1] > 0.0) {
+                log_ret[i] = std::log(closes[i] / closes[i - 1]);
+            }
+        }
+        std::vector<double> volsd_out(n);
+        TA_STDDEV(0, endIdx, log_ret.data(), 20, 1.0,
+                  &outBeg, &outNB, volsd_out.data());
+        double vol_stddev = (outNB > 0)
+            ? volsd_out[outNB - 1] * std::sqrt(252.0) : 0.0;
+
+        // PL: StandardDevAnnual(Close, 20, 1) → TA_STDDEV * sqrt(252)
+        std::vector<double> sda_out(n);
+        TA_STDDEV(0, endIdx, closes.data(), 20, 1.0,
+                  &outBeg, &outNB, sda_out.data());
+        double std_annual = (outNB > 0)
+            ? sda_out[outNB - 1] * std::sqrt(252.0) : 0.0;
+
+
+        // =================================================================
+        // SECTION 7 — Price Extremes (2 functions)
+        //
+        // HighestFC(High, 20)            → TA_MAX
+        // LowestFC(Low, 20)              → TA_MIN
+        // =================================================================
+
+        // PL: HighestFC(High, 20) → TA_MAX
+        std::vector<double> hfc_out(n);
+        TA_MAX(0, endIdx, highs.data(), 20,
+               &outBeg, &outNB, hfc_out.data());
+        double highest_fc = (outNB > 0) ? hfc_out[outNB - 1] : 0.0;
+
+        // PL: LowestFC(Low, 20) → TA_MIN
+        std::vector<double> lfc_out(n);
+        TA_MIN(0, endIdx, lows.data(), 20,
+               &outBeg, &outNB, lfc_out.data());
+        double lowest_fc = (outNB > 0) ? lfc_out[outNB - 1] : 0.0;
+
+
+        // =================================================================
+        // SECTION 8 — Pivot Detection (4 functions)
+        //
+        // PivotHighVS(High, 3, 3)        → manual: left/right neighbor compare
+        // PivotLowVS(Low, 3, 3)          → manual: left/right neighbor compare
+        // PivotHighBar(High, 3, 3)       → manual: bars ago of pivot high
+        // PivotLowBar(Low, 3, 3)         → manual: bars ago of pivot low
+        // =================================================================
+
+        // PL: PivotHighVS(High, 3, 3) — pivot high with 3 left, 3 right bars
+        int left = 3, right = 3;
+        double pivot_hi = 0.0;
+        int pivot_hi_bar = -1;
+        for (int i = n - 1 - right; i >= left; --i) {
+            bool is_pivot = true;
+            for (int s = 1; s <= left && is_pivot; ++s) {
+                if (highs[i - s] >= highs[i]) is_pivot = false;
+            }
+            for (int s = 1; s <= right && is_pivot; ++s) {
+                if (highs[i + s] >= highs[i]) is_pivot = false;
+            }
+            if (is_pivot) {
+                pivot_hi = highs[i];
+                pivot_hi_bar = (n - 1) - i;  // bars ago
+                break;
+            }
+        }
+
+        // PL: PivotLowVS(Low, 3, 3) — pivot low with 3 left, 3 right bars
+        double pivot_lo = 0.0;
+        int pivot_lo_bar = -1;
+        for (int i = n - 1 - right; i >= left; --i) {
+            bool is_pivot = true;
+            for (int s = 1; s <= left && is_pivot; ++s) {
+                if (lows[i - s] <= lows[i]) is_pivot = false;
+            }
+            for (int s = 1; s <= right && is_pivot; ++s) {
+                if (lows[i + s] <= lows[i]) is_pivot = false;
+            }
+            if (is_pivot) {
+                pivot_lo = lows[i];
+                pivot_lo_bar = (n - 1) - i;  // bars ago
+                break;
+            }
+        }
+
+        // PL: PivotHighBar(High, 3, 3) → pivot_hi_bar computed above
+        // PL: PivotLowBar(Low, 3, 3)  → pivot_lo_bar computed above
+
+
+        // =================================================================
+        // SECTION 9 — Divergence Detection (1 function)
+        //
+        // Divergence(RSI vs Price)       → manual: compare pivot highs/lows
+        // =================================================================
+
+        // PL: Divergence — compare consecutive pivot highs/lows between
+        //     indicator and price to detect bullish/bearish divergence.
+        //     Example: price makes lower low but RSI makes higher low = bullish
+        std::vector<double> rsi_out(n);
+        TA_RSI(0, endIdx, closes.data(), 14,
+               &outBeg, &outNB, rsi_out.data());
+        double rsi_val = (outNB > 0) ? rsi_out[outNB - 1] : 50.0;
+
+        // Find two most recent price pivot lows and corresponding RSI values
+        bool bullish_div = false;
+        {
+            double price_lo1 = 0.0, price_lo2 = 0.0;
+            double rsi_lo1 = 0.0, rsi_lo2 = 0.0;
+            int found = 0;
+            for (int i = n - 1 - right; i >= left && found < 2; --i) {
+                bool is_pivot = true;
+                for (int s = 1; s <= left && is_pivot; ++s)
+                    if (lows[i - s] <= lows[i]) is_pivot = false;
+                for (int s = 1; s <= right && is_pivot; ++s)
+                    if (lows[i + s] <= lows[i]) is_pivot = false;
+                if (is_pivot) {
+                    if (found == 0) {
+                        price_lo1 = lows[i];
+                        int rsi_idx = i - outBeg;
+                        rsi_lo1 = (rsi_idx >= 0 && rsi_idx < outNB)
+                            ? rsi_out[rsi_idx] : 50.0;
+                    } else {
+                        price_lo2 = lows[i];
+                        int rsi_idx = i - outBeg;
+                        rsi_lo2 = (rsi_idx >= 0 && rsi_idx < outNB)
+                            ? rsi_out[rsi_idx] : 50.0;
+                    }
+                    found++;
+                }
+            }
+            // Bullish divergence: price_lo1 < price_lo2 but rsi_lo1 > rsi_lo2
+            if (found == 2 && price_lo1 < price_lo2 && rsi_lo1 > rsi_lo2) {
+                bullish_div = true;
+            }
+        }
+
+
+        // =================================================================
+        // SECTION 10 — Aggregation / Forecasting (2 functions)
+        //
+        // TimeSeriesForecast(Close, 20)  → TA_TSF
+        // SummationFC(Close, 14)         → TA_SUM
+        // =================================================================
+
+        // PL: TimeSeriesForecast(Close, 20) → TA_TSF
+        std::vector<double> tsf_out(n);
+        TA_TSF(0, endIdx, closes.data(), 20,
+               &outBeg, &outNB, tsf_out.data());
+        double tsf_val = (outNB > 0) ? tsf_out[outNB - 1] : 0.0;
+
+        // PL: SummationFC(Close, 14) → TA_SUM
+        std::vector<double> sum_out(n);
+        TA_SUM(0, endIdx, closes.data(), 14,
+               &outBeg, &outNB, sum_out.data());
+        double sum_fc = (outNB > 0) ? sum_out[outNB - 1] : 0.0;
+
+
+        // =================================================================
+        // SECTION 11 — Multi-Period OHLC (16 functions)
+        //
+        // All manual: aggregate bars by calendar period (daily, weekly, monthly).
+        // DailyOpen, DailyHigh, DailyLow, DailyClose
+        // WeeklyOpen, WeeklyHigh, WeeklyLow, WeeklyClose
+        // MonthlyOpen, MonthlyHigh, MonthlyLow, MonthlyClose
+        // QuarterlyOpen, QuarterlyHigh, QuarterlyLow, QuarterlyClose
+        // =================================================================
+
+        // PL: DailyOpen/High/Low/Close → aggregate intraday bars into daily
+        //     Track session boundaries by date change
+        time_t t = static_cast<time_t>(bars.back().time);
+        auto* tm = std::gmtime(&t);
+        int today = tm->tm_year * 10000 + tm->tm_mon * 100 + tm->tm_mday;
+
+        if (today != current_day_) {
+            // New day — reset daily OHLC
+            daily_open_ = opens.back();
+            daily_high_ = highs.back();
+            daily_low_  = lows.back();
+            current_day_ = today;
+        } else {
+            daily_high_ = std::max(daily_high_, highs.back());
+            daily_low_  = std::min(daily_low_, lows.back());
+        }
+        double daily_close = closes.back();
+
+        // PL: WeeklyOpen/High/Low/Close → aggregate by week
+        int weekday = tm->tm_wday;  // 0=Sun ... 6=Sat
+        if (weekday < prev_weekday_) {
+            // New week detected (weekday rolled back)
+            weekly_open_ = opens.back();
+            weekly_high_ = highs.back();
+            weekly_low_  = lows.back();
+        } else {
+            weekly_high_ = std::max(weekly_high_, highs.back());
+            weekly_low_  = std::min(weekly_low_, lows.back());
+        }
+        prev_weekday_ = weekday;
+        double weekly_close = closes.back();
+
+        // PL: MonthlyOpen/High/Low/Close → aggregate by month
+        int month = tm->tm_year * 100 + tm->tm_mon;
+        if (month != current_month_) {
+            monthly_open_ = opens.back();
+            monthly_high_ = highs.back();
+            monthly_low_  = lows.back();
+            current_month_ = month;
+        } else {
+            monthly_high_ = std::max(monthly_high_, highs.back());
+            monthly_low_  = std::min(monthly_low_, lows.back());
+        }
+        double monthly_close = closes.back();
+
+        // PL: QuarterlyOpen/High/Low/Close → aggregate by quarter
+        int quarter = tm->tm_year * 10 + (tm->tm_mon / 3);
+        if (quarter != current_quarter_) {
+            quarterly_open_ = opens.back();
+            quarterly_high_ = highs.back();
+            quarterly_low_  = lows.back();
+            current_quarter_ = quarter;
+        } else {
+            quarterly_high_ = std::max(quarterly_high_, highs.back());
+            quarterly_low_  = std::min(quarterly_low_, lows.back());
+        }
+        double quarterly_close = closes.back();
+
+
+        // =================================================================
+        // SECTION 12 — Counting / Conditional (3 functions)
+        //
+        // LRO (Largest Recent Occurrence) → manual loop
+        // SummationIf                     → manual conditional sum
+        // IFFString                       → ternary
+        // =================================================================
+
+        // PL: LRO — Largest Recent Occurrence
+        //     Find the most recent bar index where a condition was true
+        //     Example: most recent bar where Close > Open (up bar)
+        int lro_val = -1;
+        for (int i = n - 1; i >= 0; --i) {
+            if (closes[i] > opens[i]) {
+                lro_val = (n - 1) - i;  // bars ago
+                break;
+            }
+        }
+
+        // PL: SummationIf — conditional sum over lookback
+        //     Example: sum of volume on bars where Close > Open over last 14 bars
+        double sum_if = 0.0;
+        for (int i = std::max(0, n - 14); i < n; ++i) {
+            if (closes[i] > opens[i]) {
+                sum_if += volumes[i];
+            }
+        }
+
+        // PL: IFFString(cond, "up", "down") → ternary
+        std::string iff_str = (closes.back() > opens.back()) ? "up" : "down";
+
+
+        // =================================================================
+        // SECTION 13 — Volume Indicators (5 functions)
+        //
+        // OBV                            → TA_OBV
+        // VolumeROC(14)                  → TA_ROC on volume array
+        // VolumeOsc(5, 20)               → TA_SMA(vol,5) - TA_SMA(vol,20)
+        // PriceVolTrend                  → manual: cumulative (pct_change * volume)
+        // LWAccDis                       → manual: Larry Williams A/D
+        // =================================================================
+
+        // PL: OBV → TA_OBV
+        std::vector<double> obv_out(n);
+        TA_OBV(0, endIdx, closes.data(), volumes.data(),
+               &outBeg, &outNB, obv_out.data());
+        double obv_val = (outNB > 0) ? obv_out[outNB - 1] : 0.0;
+
+        // PL: VolumeROC(14) → TA_ROC on volume array
+        std::vector<double> vroc_out(n);
+        TA_ROC(0, endIdx, volumes.data(), 14,
+               &outBeg, &outNB, vroc_out.data());
+        double vol_roc = (outNB > 0) ? vroc_out[outNB - 1] : 0.0;
+
+        // PL: VolumeOsc(5, 20) → TA_SMA(vol, 5) - TA_SMA(vol, 20)
+        std::vector<double> vol5_out(n), vol20_out(n);
+        TA_SMA(0, endIdx, volumes.data(), 5,
+               &outBeg, &outNB, vol5_out.data());
+        double vol_sma5 = (outNB > 0) ? vol5_out[outNB - 1] : 0.0;
+        TA_SMA(0, endIdx, volumes.data(), 20,
+               &outBeg, &outNB, vol20_out.data());
+        double vol_sma20 = (outNB > 0) ? vol20_out[outNB - 1] : 0.0;
+        double vol_osc = vol_sma5 - vol_sma20;
+
+        // PL: PriceVolTrend → manual: cumulative (pct_change * volume)
+        if (n >= 2 && closes[n - 2] > 0.0) {
+            double pct = (closes.back() - closes[n - 2]) / closes[n - 2];
+            pvt_ += pct * volumes.back();
+        }
+        double pvt_val = pvt_;
+
+        // PL: LWAccDis → manual: Larry Williams Accumulation/Distribution
+        //     If C > O: AD = C - TrueLow;  If C < O: AD = C - TrueHigh
+        //     TrueLow = min(Low, Close[1]); TrueHigh = max(High, Close[1])
+        double lw_ad = 0.0;
+        if (n >= 2) {
+            double prev_c = closes[n - 2];
+            double true_low  = std::min(lows.back(), prev_c);
+            double true_high = std::max(highs.back(), prev_c);
+            if (closes.back() > opens.back()) {
+                lw_ad = closes.back() - true_low;
+            } else if (closes.back() < opens.back()) {
+                lw_ad = closes.back() - true_high;
+            }
+        }
+        lw_accum_dist_ += lw_ad;
+        double lw_ad_val = lw_accum_dist_;
+
+
+        // =================================================================
+        // SECTION 14 — Statistical Functions (2 + 10 functions)
+        //
+        // Fisher(Close, 10)              → manual: Fisher transform
+        // FisherINV(val)                 → manual: inverse Fisher transform
+        // AvgDeviation(Close, 20)        → manual: mean absolute deviation
+        // Variance(Close, 20)            → TA_VAR
+        // Kurtosis(Close, 20)            → manual: 4th moment
+        // Skew(Close, 20)               → manual: 3rd moment
+        // PercentRank(Close, 20)         → manual: pct of values below current
+        // Covariance(Close, Volume, 20)  → manual: cov formula
+        // Quartile(Close, 20, 1)         → manual: sorted percentile
+        // TrimMean(Close, 20, 10)        → manual: trimmed mean
+        // Mode(Close, 20)               → manual: most frequent value
+        // HarmonicMean(Close, 20)        → manual: N / sum(1/x)
+        // =================================================================
+
+        // PL: Fisher(Close, 10) → manual Fisher transform
+        //     Normalize price to [-1,1], then Fisher = 0.5 * ln((1+x)/(1-x))
+        double fisher_val = 0.0;
+        {
+            int fp = 10;
+            double hi = *std::max_element(closes.end() - fp, closes.end());
+            double lo = *std::min_element(closes.end() - fp, closes.end());
+            double range = hi - lo;
+            if (range > 0.0) {
+                double x = 2.0 * (closes.back() - lo) / range - 1.0;
+                x = std::max(-0.999, std::min(0.999, x));  // clamp
+                fisher_val = 0.5 * std::log((1.0 + x) / (1.0 - x));
+            }
+        }
+
+        // PL: FisherINV(val) → manual inverse Fisher transform
+        //     InvFisher = (exp(2*val) - 1) / (exp(2*val) + 1)
+        double fisher_inv = (std::exp(2.0 * fisher_val) - 1.0)
+                          / (std::exp(2.0 * fisher_val) + 1.0);
+
+        // PL: AvgDeviation(Close, 20) → manual: mean absolute deviation
+        double avg_dev = 0.0;
+        {
+            int p = 20;
+            double mean = 0.0;
+            for (int i = n - p; i < n; ++i) mean += closes[i];
+            mean /= p;
+            for (int i = n - p; i < n; ++i) avg_dev += std::abs(closes[i] - mean);
+            avg_dev /= p;
+        }
+
+        // PL: Variance(Close, 20) → TA_VAR
+        std::vector<double> var_out(n);
+        TA_VAR(0, endIdx, closes.data(), 20, 1.0,
+               &outBeg, &outNB, var_out.data());
+        double variance = (outNB > 0) ? var_out[outNB - 1] : 0.0;
+
+        // PL: Kurtosis(Close, 20) → manual: 4th moment / variance^2 - 3
+        double kurtosis = 0.0;
+        {
+            int p = 20;
+            double mean = 0.0;
+            for (int i = n - p; i < n; ++i) mean += closes[i];
+            mean /= p;
+            double m2 = 0.0, m4 = 0.0;
+            for (int i = n - p; i < n; ++i) {
+                double d = closes[i] - mean;
+                m2 += d * d;
+                m4 += d * d * d * d;
+            }
+            m2 /= p;
+            m4 /= p;
+            if (m2 > 0.0) kurtosis = m4 / (m2 * m2) - 3.0;
+        }
+
+        // PL: Skew(Close, 20) → manual: 3rd moment / variance^1.5
+        double skew = 0.0;
+        {
+            int p = 20;
+            double mean = 0.0;
+            for (int i = n - p; i < n; ++i) mean += closes[i];
+            mean /= p;
+            double m2 = 0.0, m3 = 0.0;
+            for (int i = n - p; i < n; ++i) {
+                double d = closes[i] - mean;
+                m2 += d * d;
+                m3 += d * d * d;
+            }
+            m2 /= p;
+            m3 /= p;
+            double sd = std::sqrt(m2);
+            if (sd > 0.0) skew = m3 / (sd * sd * sd);
+        }
+
+        // PL: PercentRank(Close, 20) → manual: pct of values below current
+        double pct_rank = 0.0;
+        {
+            int p = 20;
+            int below = 0;
+            for (int i = n - p; i < n - 1; ++i) {
+                if (closes[i] < closes.back()) ++below;
+            }
+            pct_rank = 100.0 * below / (p - 1);
+        }
+
+        // PL: Covariance(Close, Volume, 20) → manual
+        double covariance = 0.0;
+        {
+            int p = 20;
+            double mean_c = 0.0, mean_v = 0.0;
+            for (int i = n - p; i < n; ++i) {
+                mean_c += closes[i];
+                mean_v += volumes[i];
+            }
+            mean_c /= p;
+            mean_v /= p;
+            for (int i = n - p; i < n; ++i) {
+                covariance += (closes[i] - mean_c) * (volumes[i] - mean_v);
+            }
+            covariance /= p;
+        }
+
+        // PL: Quartile(Close, 20, 1) → manual: 25th percentile (Q1)
+        double quartile_q1 = 0.0;
+        {
+            int p = 20;
+            std::vector<double> sorted_c(closes.end() - p, closes.end());
+            std::sort(sorted_c.begin(), sorted_c.end());
+            int q1_idx = static_cast<int>(p * 0.25);
+            quartile_q1 = sorted_c[q1_idx];
+        }
+
+        // PL: TrimMean(Close, 20, 10) → manual: trim 10% from each tail
+        double trim_mean = 0.0;
+        {
+            int p = 20;
+            int trim = static_cast<int>(p * 0.10);  // 10% = 2 bars each side
+            std::vector<double> sorted_c(closes.end() - p, closes.end());
+            std::sort(sorted_c.begin(), sorted_c.end());
+            double sum = 0.0;
+            for (int i = trim; i < p - trim; ++i) sum += sorted_c[i];
+            trim_mean = sum / (p - 2 * trim);
+        }
+
+        // PL: Mode(Close, 20) → manual: most frequent value (rounded)
+        double mode_val = 0.0;
+        {
+            int p = 20;
+            std::map<int, int> freq;
+            for (int i = n - p; i < n; ++i) {
+                int key = static_cast<int>(closes[i] * 100);  // round to 2 dec
+                freq[key]++;
+            }
+            int max_count = 0;
+            for (const auto& kv : freq) {
+                if (kv.second > max_count) {
+                    max_count = kv.second;
+                    mode_val = kv.first / 100.0;
+                }
+            }
+        }
+
+        // PL: HarmonicMean(Close, 20) → manual: N / sum(1/x)
+        double harmonic_mean = 0.0;
+        {
+            int p = 20;
+            double inv_sum = 0.0;
+            for (int i = n - p; i < n; ++i) {
+                if (closes[i] > 0.0) inv_sum += 1.0 / closes[i];
+            }
+            if (inv_sum > 0.0) harmonic_mean = p / inv_sum;
+        }
+
+
+        // =================================================================
+        // SECTION 15 — Candlestick Patterns (9 functions)
+        //
+        // C_Doji                         → TA_CDLDOJI
+        // C_Hammer_HangingMan            → TA_CDLHAMMER / TA_CDLHANGINGMAN
+        // C_BullEng_BearEng              → TA_CDLENGULFING
+        // C_BullHar_BearHar              → TA_CDLHARAMI
+        // C_MornDoji_EveDoji             → TA_CDLMORNINGDOJISTAR / TA_CDLEVENINGDOJISTAR
+        // C_MornStar_EveStar             → TA_CDLMORNINGSTAR / TA_CDLEVENINGSTAR
+        // C_PierceLine_DkCloud           → TA_CDLPIERCING / TA_CDLDARKCLOUDCOVER
+        // C_ShootingStar                 → TA_CDLSHOOTINGSTAR
+        // C_3WhSolds_3BlkCrows           → TA_CDL3WHITESOLDIERS / TA_CDL3BLACKCROWS
+        // =================================================================
+
+        // All candlestick functions return int arrays: +100 = bullish, -100 = bearish
+
+        // PL: C_Doji → TA_CDLDOJI
+        std::vector<int> doji_out(n);
+        TA_CDLDOJI(0, endIdx, opens.data(), highs.data(),
+                   lows.data(), closes.data(),
+                   &outBeg, &outNB, doji_out.data());
+        int doji = (outNB > 0) ? doji_out[outNB - 1] : 0;
+
+        // PL: C_Hammer_HangingMan → TA_CDLHAMMER + TA_CDLHANGINGMAN
+        std::vector<int> hammer_out(n), hanging_out(n);
+        TA_CDLHAMMER(0, endIdx, opens.data(), highs.data(),
+                     lows.data(), closes.data(),
+                     &outBeg, &outNB, hammer_out.data());
+        int hammer = (outNB > 0) ? hammer_out[outNB - 1] : 0;
+
+        TA_CDLHANGINGMAN(0, endIdx, opens.data(), highs.data(),
+                         lows.data(), closes.data(),
+                         &outBeg, &outNB, hanging_out.data());
+        int hanging_man = (outNB > 0) ? hanging_out[outNB - 1] : 0;
+
+        // PL: C_BullEng_BearEng → TA_CDLENGULFING
+        std::vector<int> engulf_out(n);
+        TA_CDLENGULFING(0, endIdx, opens.data(), highs.data(),
+                        lows.data(), closes.data(),
+                        &outBeg, &outNB, engulf_out.data());
+        int engulfing = (outNB > 0) ? engulf_out[outNB - 1] : 0;
+        // +100 = bullish engulfing, -100 = bearish engulfing
+
+        // PL: C_BullHar_BearHar → TA_CDLHARAMI
+        std::vector<int> harami_out(n);
+        TA_CDLHARAMI(0, endIdx, opens.data(), highs.data(),
+                     lows.data(), closes.data(),
+                     &outBeg, &outNB, harami_out.data());
+        int harami = (outNB > 0) ? harami_out[outNB - 1] : 0;
+        // +100 = bullish harami, -100 = bearish harami
+
+        // PL: C_MornDoji_EveDoji → TA_CDLMORNINGDOJISTAR / TA_CDLEVENINGDOJISTAR
+        std::vector<int> mds_out(n), eds_out(n);
+        TA_CDLMORNINGDOJISTAR(0, endIdx, opens.data(), highs.data(),
+                              lows.data(), closes.data(), 0.0,
+                              &outBeg, &outNB, mds_out.data());
+        int morning_doji_star = (outNB > 0) ? mds_out[outNB - 1] : 0;
+
+        TA_CDLEVENINGDOJISTAR(0, endIdx, opens.data(), highs.data(),
+                              lows.data(), closes.data(), 0.0,
+                              &outBeg, &outNB, eds_out.data());
+        int evening_doji_star = (outNB > 0) ? eds_out[outNB - 1] : 0;
+
+        // PL: C_MornStar_EveStar → TA_CDLMORNINGSTAR / TA_CDLEVENINGSTAR
+        std::vector<int> ms_out(n), es_out(n);
+        TA_CDLMORNINGSTAR(0, endIdx, opens.data(), highs.data(),
+                          lows.data(), closes.data(), 0.0,
+                          &outBeg, &outNB, ms_out.data());
+        int morning_star = (outNB > 0) ? ms_out[outNB - 1] : 0;
+
+        TA_CDLEVENINGSTAR(0, endIdx, opens.data(), highs.data(),
+                          lows.data(), closes.data(), 0.0,
+                          &outBeg, &outNB, es_out.data());
+        int evening_star = (outNB > 0) ? es_out[outNB - 1] : 0;
+
+        // PL: C_PierceLine_DkCloud → TA_CDLPIERCING / TA_CDLDARKCLOUDCOVER
+        std::vector<int> pierce_out(n), dcc_out(n);
+        TA_CDLPIERCING(0, endIdx, opens.data(), highs.data(),
+                       lows.data(), closes.data(),
+                       &outBeg, &outNB, pierce_out.data());
+        int piercing = (outNB > 0) ? pierce_out[outNB - 1] : 0;
+
+        TA_CDLDARKCLOUDCOVER(0, endIdx, opens.data(), highs.data(),
+                             lows.data(), closes.data(), 0.0,
+                             &outBeg, &outNB, dcc_out.data());
+        int dark_cloud = (outNB > 0) ? dcc_out[outNB - 1] : 0;
+
+        // PL: C_ShootingStar → TA_CDLSHOOTINGSTAR
+        std::vector<int> shoot_out(n);
+        TA_CDLSHOOTINGSTAR(0, endIdx, opens.data(), highs.data(),
+                           lows.data(), closes.data(),
+                           &outBeg, &outNB, shoot_out.data());
+        int shooting_star = (outNB > 0) ? shoot_out[outNB - 1] : 0;
+
+        // PL: C_3WhSolds_3BlkCrows → TA_CDL3WHITESOLDIERS / TA_CDL3BLACKCROWS
+        std::vector<int> ws3_out(n), bc3_out(n);
+        TA_CDL3WHITESOLDIERS(0, endIdx, opens.data(), highs.data(),
+                             lows.data(), closes.data(),
+                             &outBeg, &outNB, ws3_out.data());
+        int three_white_soldiers = (outNB > 0) ? ws3_out[outNB - 1] : 0;
+
+        TA_CDL3BLACKCROWS(0, endIdx, opens.data(), highs.data(),
+                          lows.data(), closes.data(),
+                          &outBeg, &outNB, bc3_out.data());
+        int three_black_crows = (outNB > 0) ? bc3_out[outNB - 1] : 0;
+
+
+        // =================================================================
+        // SECTION 16 — Miscellaneous (2 functions)
+        //
+        // BarAnnualization                → manual: compute from bar frequency
+        // LastBarOnChart                  → bar_index == data_size - 1
+        // =================================================================
+
+        // PL: BarAnnualization → manual: compute annualization factor
+        //     Daily bars: 252, Weekly: 52, Monthly: 12, Intraday: 252 * bars/day
+        //     Heuristic: estimate from inter-bar time difference
+        double bar_annual = 252.0;  // default to daily
+        if (n >= 2) {
+            double dt = bars.back().time - bars[n - 2].time;
+            if (dt > 0.0) {
+                double bars_per_day = 86400.0 / dt;
+                if (bars_per_day > 1.5) {
+                    // Intraday
+                    bar_annual = 252.0 * bars_per_day;
+                } else if (bars_per_day < 0.25) {
+                    // Weekly
+                    bar_annual = 52.0;
+                }
+                // else daily, keep 252
+            }
+        }
+
+        // PL: LastBarOnChart → bar_index == data_size - 1
+        int bar_index = n - 1;
+        int data_size = n;
+        bool last_bar_on_chart = (bar_index == data_size - 1);
+
+
+        // =================================================================
+        // Example usage: combine several indicators for a demo signal
+        // =================================================================
+
+        // Suppress unused-variable warnings — all values above are exercised
+        (void)trima_val; (void)smoothed_val;
+        (void)fast_k; (void)fast_d; (void)slow_k; (void)slow_d;
+        (void)fast_k_custom; (void)fast_d_custom;
+        (void)slow_k_custom; (void)slow_d_custom;
+        (void)stoch_exp_k; (void)stoch_exp_d;
+        (void)adxr_val; (void)adx_custom; (void)dmi_val;
+        (void)dmi_plus_custom; (void)dmi_minus_custom; (void)sar_custom;
+        (void)trix_val; (void)mass_index; (void)emv_val;
+        (void)swing_idx; (void)asi_val; (void)detrend_val;
+        (void)pct_change; (void)ulcer_idx;
+        (void)sar_val; (void)sar_transition; (void)sar_position;
+        (void)lr_value; (void)lr_slope; (void)lr_angle; (void)lr_intercept;
+        (void)tr_custom; (void)vol_stddev; (void)std_annual;
+        (void)highest_fc; (void)lowest_fc;
+        (void)pivot_hi; (void)pivot_lo; (void)pivot_hi_bar; (void)pivot_lo_bar;
+        (void)bullish_div; (void)rsi_val;
+        (void)tsf_val; (void)sum_fc;
+        (void)daily_close; (void)weekly_close;
+        (void)monthly_close; (void)quarterly_close;
+        (void)lro_val; (void)sum_if; (void)iff_str;
+        (void)obv_val; (void)vol_roc; (void)vol_osc;
+        (void)pvt_val; (void)lw_ad_val;
+        (void)fisher_val; (void)fisher_inv; (void)avg_dev; (void)variance;
+        (void)kurtosis; (void)skew; (void)pct_rank; (void)covariance;
+        (void)quartile_q1; (void)trim_mean; (void)mode_val; (void)harmonic_mean;
+        (void)doji; (void)hammer; (void)hanging_man;
+        (void)engulfing; (void)harami;
+        (void)morning_doji_star; (void)evening_doji_star;
+        (void)morning_star; (void)evening_star;
+        (void)piercing; (void)dark_cloud; (void)shooting_star;
+        (void)three_white_soldiers; (void)three_black_crows;
+        (void)bar_annual; (void)last_bar_on_chart;
+
+        // Demo signal: trend + momentum + volatility filter
+        if (position_ == 0
+            && trima_val > smoothed_val
+            && adxr_val > 20.0
+            && fast_k < 30.0
+            && bullish_div
+            && morning_star != 0) {
+            orders.push_back({"NF_LE", Action::Entry, Side::Long,
+                              OrderType::Market, 0.0, 1.0});
+        }
+
+        if (position_ == 1) {
+            // Exit on SAR flip or extreme stochastic
+            if (sar_transition && sar_position == -1) {
+                orders.push_back({"NF_SAR_LX", Action::Exit, Side::Long,
+                                  OrderType::Market, 0.0, 1.0});
+            }
+            if (slow_k > 80.0 && stoch_exp_k > 80.0) {
+                orders.push_back({"NF_STOCH_LX", Action::Exit, Side::Long,
+                                  OrderType::Market, 0.0, 1.0});
+            }
+            // Trailing stop at lowest_fc
+            orders.push_back({"NF_TS", Action::Exit, Side::Long,
+                              OrderType::Stop, lowest_fc, 1.0});
+        }
+
+        // Print on last bar
+        if (last_bar_on_chart) {
+            std::cout << "NewFunctions complete — "
+                      << "TRIMA=" << trima_val
+                      << " ADXR=" << adxr_val
+                      << " Fisher=" << fisher_val
+                      << " UI=" << ulcer_idx
+                      << std::endl;
+        }
+    }
+
+private:
+    int position_ = 0;
+    double entry_price_ = 0.0;
+
+    // Section 1 — SmoothedAverage state
+    double smoothed_avg_ = 0.0;
+
+    // Section 4 — AccumSwingIndex state
+    double accum_swing_idx_ = 0.0;
+
+    // Section 11 — Multi-period OHLC state
+    int current_day_ = 0;
+    double daily_open_ = 0.0, daily_high_ = 0.0, daily_low_ = 1e18;
+
+    int prev_weekday_ = -1;
+    double weekly_open_ = 0.0, weekly_high_ = 0.0, weekly_low_ = 1e18;
+
+    int current_month_ = 0;
+    double monthly_open_ = 0.0, monthly_high_ = 0.0, monthly_low_ = 1e18;
+
+    int current_quarter_ = 0;
+    double quarterly_open_ = 0.0, quarterly_high_ = 0.0, quarterly_low_ = 1e18;
+
+    // Section 13 — Volume state
+    double pvt_ = 0.0;
+    double lw_accum_dist_ = 0.0;
+};
+// END NewFunctionsTest
+// =============================================================================

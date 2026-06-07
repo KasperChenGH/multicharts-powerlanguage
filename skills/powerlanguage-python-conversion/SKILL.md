@@ -248,7 +248,7 @@ The slice `bars[:i+1]` gives the strategy access to full history; `bars[-1]` is 
 | `FastKCustom(H, L, C, N)` | `ta.stoch(H, L, C, k=N, d=1, smooth_k=1)['STOCHk_...']` | `talib.STOCHF(H, L, C, fastk_period=N)` | Custom prices |
 | `FastDCustom(H, L, C, N)` | `ta.stoch(H, L, C, k=N, d=3)['STOCHd_...']` | `talib.STOCHF(H, L, C, fastk_period=N, fastd_period=3)` | Custom prices |
 | `SlowKCustom(H, L, C, N)` | `ta.stoch(H, L, C, k=N, d=3)['STOCHk_...']` | `talib.STOCH(H, L, C, fastk_period=N, slowk_period=3)` | Custom prices |
-| `SlowDCustom(H, L, C, N, S1, S2)` | `ta.stoch(H, L, C, k=N, d=S1, smooth_k=S2)` | `talib.STOCH(H, L, C, fastk_period=N, slowk_period=S1, slowd_period=S2)` | Custom smoothing |
+| `SlowDCustom(H, L, C, N)` | `ta.stoch(H, L, C, k=N, d=3)["STOCHd_N_3_3"]` | `talib.STOCH(H, L, C, fastk_period=N)[2]` | Slow %D with custom prices |
 | `StochasticExp(H, L, C, N, S1, S2, ...)` | Manual: compute FastK then apply EMA smoothing | Manual: compute with `talib.STOCHF` then `talib.EMA` | Exponential smoothing variant |
 | `ADXR(N)` | `ta.adx(highs, lows, closes, length=N)` then `(adx + adx.shift(N)) / 2` | `talib.ADXR(highs, lows, closes, timeperiod=N)` | TA-Lib has direct ADXR |
 | `ADXCustom(H, L, C, N)` | `ta.adx(H, L, C, length=N)` | `talib.ADX(H, L, C, timeperiod=N)` | Pass custom price Series |
@@ -276,8 +276,8 @@ The slice `bars[:i+1]` gives the strategy access to full history; `bars[-1]` is 
 | `PivotHighVSBar(Inst, Price, LStr, RStr, Len)` | Manual: bars ago of pivot high | Manual: same | Returns offset |
 | `PivotLowVSBar(Inst, Price, LStr, RStr, Len)` | Manual: bars ago of pivot low | Manual: same | Returns offset |
 | `Divergence(P1, P2, Str, Len, HiLo)` | Manual: compare pivot highs/lows of two series | Manual: same | No library built-in |
-| `TimeSeriesForecast(Close, N, TgtBar)` | `ta.tsf(closes, length=N)` | `talib.TSF(closes, timeperiod=N)` | Time Series Forecast |
-| `LinearRegLine(Close, N)` | `ta.linreg(closes, length=N)` | `talib.LINEARREG(closes, timeperiod=N)` | Value on regression line |
+| `TimeSeriesForecast(Close, N)` | `ta.tsf(closes, length=N)` | `talib.TSF(closes, timeperiod=N)` | Time Series Forecast |
+
 | `SummationFC(Close, N)` | `closes.rolling(N).sum()` | `talib.SUM(closes, timeperiod=N)` | Same as Summation |
 | `OpenD(N)` | `df.resample('D').first()['open'].iloc[-1-N]` | Manual: resample to daily | Daily open |
 | `HighD(N)` | `df.resample('D').max()['high'].iloc[-1-N]` | Manual: resample | Daily high |
@@ -306,14 +306,30 @@ The slice `bars[:i+1]` gives the strategy access to full history; `bars[-1]` is 
 | `Fisher(Price)` | Manual: normalize, then `0.5 * np.log((1 + norm) / (1 - norm))` | Manual: same | Fisher transformation |
 | `FisherINV(Price)` | Manual: `(np.exp(2 * Price) - 1) / (np.exp(2 * Price) + 1)` | Manual: same | Inverse Fisher |
 | `C_Doji(Pct)` | Manual: `abs(close - open) <= (high - low) * Pct / 100` | `talib.CDLDOJI(opens, highs, lows, closes)` | TA-Lib has CDL* family |
-| `C_Hammer_HangingMan(Pct, ...)` | Manual: body/shadow ratios | `talib.CDLHAMMER(...)` / `talib.CDLHANGINGMAN(...)` | Separate TA-Lib functions |
-| `C_BullEng_BearEng(...)` | Manual: engulfing detection | `talib.CDLENGULFING(opens, highs, lows, closes)` | +100=bullish, -100=bearish |
-| `C_BullHar_BearHar(...)` | Manual: harami detection | `talib.CDLHARAMI(opens, highs, lows, closes)` | +100=bullish, -100=bearish |
-| `C_MornDoji_EveDoji(Pct, ...)` | Manual: 3-bar doji star | `talib.CDLMORNINGDOJISTAR(...)` / `talib.CDLEVENINGDOJISTAR(...)` | Separate functions |
-| `C_MornStar_EveStar(...)` | Manual: 3-bar star | `talib.CDLMORNINGSTAR(...)` / `talib.CDLEVENINGSTAR(...)` | Separate functions |
-| `C_PierceLine_DkCloud(...)` | Manual: piercing/cloud | `talib.CDLPIERCING(...)` / `talib.CDLDARKCLOUDCOVER(...)` | Separate functions |
-| `C_ShootingStar(Pct)` | Manual: shooting star | `talib.CDLSHOOTINGSTAR(opens, highs, lows, closes)` | TA-Lib direct |
-| `C_3WhSolds_3BlkCrows(...)` | Manual: 3-bar trend | `talib.CDL3WHITESOLDIERS(...)` / `talib.CDL3BLACKCROWS(...)` | Separate functions |
+| `C_Hammer_HangingMan(Len, Factor, ...)` | Manual: body/shadow ratios | `talib.CDLHAMMER(...)` / `talib.CDLHANGINGMAN(...)` | Separate TA-Lib functions |
+| `C_BullEng_BearEng(Len, ...)` | Manual: engulfing detection | `talib.CDLENGULFING(opens, highs, lows, closes)` | +100=bullish, -100=bearish |
+| `C_BullHar_BearHar(Len, ...)` | Manual: harami detection | `talib.CDLHARAMI(opens, highs, lows, closes)` | +100=bullish, -100=bearish |
+| `C_MornDoji_EveDoji(Len, Pct, ...)` | Manual: 3-bar doji star | `talib.CDLMORNINGDOJISTAR(...)` / `talib.CDLEVENINGDOJISTAR(...)` | Separate functions |
+| `C_MornStar_EveStar(Len, ...)` | Manual: 3-bar star | `talib.CDLMORNINGSTAR(...)` / `talib.CDLEVENINGSTAR(...)` | Separate functions |
+| `C_PierceLine_DkCloud(Len, ...)` | Manual: piercing/cloud | `talib.CDLPIERCING(...)` / `talib.CDLDARKCLOUDCOVER(...)` | Separate functions |
+| `C_ShootingStar(Len, Factor)` | Manual: shooting star | `talib.CDLSHOOTINGSTAR(opens, highs, lows, closes)` | TA-Lib direct |
+| `C_3WhSolds_3BlkCrows(Len, Factor, ...)` | Manual: 3-bar trend | `talib.CDL3WHITESOLDIERS(...)` / `talib.CDL3BLACKCROWS(...)` | Separate functions |
+| **Statistical extended** | | | |
+| `AvgDeviation(Close, N)` | `ta.mad(closes, length=N)` | Manual: `(closes - closes.rolling(N).mean()).abs().rolling(N).mean()` | Mean absolute deviation |
+| `Variance(Close, N)` | `ta.variance(closes, length=N)` | `talib.VAR(closes, timeperiod=N)` | Population variance |
+| `Kurtosis(Close, N)` | `closes.rolling(N).kurt()` | Manual: 4th moment | Excess kurtosis |
+| `Skew(Close, N)` | `closes.rolling(N).skew()` | Manual: 3rd moment | Skewness |
+| `PercentRank(ValToRank, Price, N)` | `closes.rolling(N).apply(lambda w: stats.percentileofscore(w, w.iloc[-1]))` | Manual | Percent rank |
+| `Covariance(P1, P2, N)` | `P1.rolling(N).cov(P2)` | Manual | Covariance |
+| `Quartile(Close, N, Q)` | `closes.rolling(N).quantile(Q*0.25)` | Manual | Quartile value |
+| `TrimMean(Close, N, Pct)` | `closes.rolling(N).apply(lambda w: stats.trim_mean(w, Pct/100))` | Manual | Trimmed mean |
+| `Mode(Close, N, Type)` | `closes.rolling(N).apply(lambda w: w.mode().iloc[0])` | Manual | Modal value |
+| `HarmonicMean(Close, N)` | `closes.rolling(N).apply(stats.hmean)` | Manual | Harmonic mean |
+| **Moving averages extended** | | | |
+| `SmoothedAverage(Close, N)` | `ta.rma(closes, length=N)` | Manual: Wilder smoothing | Wilder/RMA |
+| **Miscellaneous** | | | |
+| `BarAnnualization` | Manual: compute from bar frequency | Manual | Bars-per-year factor |
+| `LastBarOnChart` | `idx == len(df) - 1` | Manual | True on last bar |
 
 ---
 

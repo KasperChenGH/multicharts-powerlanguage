@@ -1,0 +1,253 @@
+{ test_new_functions.txt -- exercises 74 NEW built-in functions added in v0.4.0 }
+{ Paste this whole file into a new Signal study in PowerLanguage Editor and Verify (F3). }
+{ Expected: 0 errors, 0 warnings. }
+
+Variables:
+    sResult(""),
+    oParCl(0), oParOp(0), oPosition(0), oTransition(0),
+    oSlope(0), oAngle(0), oIntercept(0), oValueRaw(0),
+    oFastD(0), oSlowD(0),
+    oHammer(0), oHangingMan(0),
+    oBullEng(0), oBearEng(0),
+    oBullHar(0), oBearHar(0),
+    oMornDoji(0), oEveDoji(0),
+    oMornStar(0), oEveStar(0),
+    oPierce(0), oDkCloud(0),
+    o3WhSolds(0), o3BlkCrows(0);
+
+If False Then Begin
+
+    { ================================================================ }
+    { === 1. Moving averages (1 new) === }
+    { ================================================================ }
+    { TriAverage(Price, Length) -- triangular MA }
+    Value1 = TriAverage(Close, 14);
+
+    { ================================================================ }
+    { === 2. Stochastic helper functions (9 new) === }
+    { ================================================================ }
+    { FastK(StochLength) -- raw Fast %K, default H/L/C }
+    Value1 = FastK(14);
+    { FastD(StochLength) -- smoothed Fast %D, default H/L/C }
+    Value1 = FastD(14);
+    { SlowK(StochLength) -- Slow %K, default H/L/C }
+    Value1 = SlowK(14);
+    { SlowD(StochLength) -- Slow %D, default H/L/C }
+    Value1 = SlowD(14);
+    { FastKCustom(PriceH, PriceL, PriceC, StochLength) -- custom prices }
+    Value1 = FastKCustom(High, Low, Close, 14);
+    { FastDCustom(PriceH, PriceL, PriceC, StochLength) -- custom prices }
+    Value1 = FastDCustom(High, Low, Close, 14);
+    { SlowKCustom(PriceH, PriceL, PriceC, StochLength) -- custom prices }
+    Value1 = SlowKCustom(High, Low, Close, 14);
+    { SlowDCustom(PriceH, PriceL, PriceC, StochLength) -- custom prices }
+    Value1 = SlowDCustom(High, Low, Close, 14);
+    { StochasticExp(PriceH, PriceL, PriceC, StochLength, SmoothLen1, SmoothLen2, oFastD, oSlowD) }
+    Value1 = StochasticExp(High, Low, Close, 14, 3, 3, oFastD, oSlowD);
+
+    { ================================================================ }
+    { === 3. DM/ADX variants (6 new) === }
+    { ================================================================ }
+    { ADXR(Length) -- ADX Rating }
+    Value1 = ADXR(14);
+    { ADXCustom(PriceH, PriceL, PriceC, Length) -- ADX with custom H/L/C }
+    Value1 = ADXCustom(High, Low, Close, 14);
+    { DMI(Length) -- Directional Movement Index }
+    Value1 = DMI(14);
+    { DMIPlusCustom(PriceH, PriceL, PriceC, Length) -- +DI custom }
+    Value1 = DMIPlusCustom(High, Low, Close, 14);
+    { DMIMinusCustom(PriceH, PriceL, PriceC, Length) -- -DI custom }
+    Value1 = DMIMinusCustom(High, Low, Close, 14);
+    { ParabolicCustom(AfStep, AfLimit) -- SAR with limit }
+    Value1 = ParabolicCustom(0.02, 0.2);
+
+    { ================================================================ }
+    { === 4. Additional oscillators (8 new) === }
+    { ================================================================ }
+    { TRIX(Price, Length) -- triple EMA ROC }
+    Value1 = TRIX(Close, 15);
+    { MassIndex(SmoothingLength, SummationLength) }
+    Value1 = MassIndex(9, 25);
+    { EaseOfMovement -- no arguments }
+    Value1 = EaseOfMovement;
+    { SwingIndex -- no arguments, Wilder swing index }
+    Value1 = SwingIndex;
+    { AccumSwingIndex -- no arguments, cumulative swing index }
+    Value1 = AccumSwingIndex;
+    { Detrend(Price, Length) -- detrended price }
+    Value1 = Detrend(Close, 14);
+    { PercentChange(Price, Length) -- pct change vs N bars ago }
+    Value1 = PercentChange(Close, 14);
+    { UlcerIndex(Price, Length) -- downside volatility }
+    Value1 = UlcerIndex(Close, 14);
+
+    { ================================================================ }
+    { === 5. Multi-output functions (2 new) === }
+    { ================================================================ }
+    { ParabolicSAR(AfStep, AfLimit, oParCl, oParOp, oPosition, oTransition) }
+    Value1 = ParabolicSAR(0.02, 0.2, oParCl, oParOp, oPosition, oTransition);
+    { LinearReg(Price, Length, TgtBar, oSlope, oAngle, oIntercept, oValueRaw) }
+    Value1 = LinearReg(Close, 20, 0, oSlope, oAngle, oIntercept, oValueRaw);
+
+    { ================================================================ }
+    { === 6. Volatility extended (3 new) === }
+    { ================================================================ }
+    { TrueRangeCustom(HPrice, LPrice, CPrice) -- true range with custom H/L/C }
+    Value1 = TrueRangeCustom(High, Low, Close);
+    { VolatilityStdDev(NumDays) -- historical vol based on stdev }
+    Value1 = VolatilityStdDev(20);
+    { StandardDevAnnual(Price, Length, DataType) -- annualized stdev }
+    Value1 = StandardDevAnnual(Close, 20, 1);
+
+    { ================================================================ }
+    { === 7. Price extremes fast-calc (2 new) === }
+    { ================================================================ }
+    { HighestFC(Price, Length) -- fast calculation Highest }
+    Value1 = HighestFC(High, 20);
+    { LowestFC(Price, Length) -- fast calculation Lowest }
+    Value1 = LowestFC(Low, 20);
+
+    { ================================================================ }
+    { === 8. Pivot with variable strength (4 new) === }
+    { ================================================================ }
+    { PivotHighVS(Instance, Price, LeftStrength, RightStrength, Length) }
+    Value1 = PivotHighVS(1, High, 3, 3, 20);
+    { PivotLowVS(Instance, Price, LeftStrength, RightStrength, Length) }
+    Value1 = PivotLowVS(1, Low, 3, 3, 20);
+    { PivotHighVSBar(Instance, Price, LeftStrength, RightStrength, Length) }
+    Value1 = PivotHighVSBar(1, High, 3, 3, 20);
+    { PivotLowVSBar(Instance, Price, LeftStrength, RightStrength, Length) }
+    Value1 = PivotLowVSBar(1, Low, 3, 3, 20);
+
+    { ================================================================ }
+    { === 9. Divergence detection (1 new) === }
+    { ================================================================ }
+    { Divergence(Price1, Price2, Strength, Length, HiLo) }
+    { HiLo: -1 = bullish divergence, 1 = bearish divergence }
+    Value1 = Divergence(Close, RSI(Close, 14), 3, 20, -1);
+
+    { ================================================================ }
+    { === 10. Aggregation extended (3 new) === }
+    { ================================================================ }
+    { TimeSeriesForecast(Price, Length) }
+    Value1 = TimeSeriesForecast(Close, 20);
+    { SummationFC(Price, Length) -- fast calculation Summation }
+    Value1 = SummationFC(Close, 14);
+
+    { ================================================================ }
+    { === 11. Multi-period OHLC reference (16 new) === }
+    { ================================================================ }
+    { Daily OHLC -- PeriodsAgo: 0 = today, 1 = yesterday }
+    Value1 = OpenD(0);
+    Value1 = HighD(0);
+    Value1 = LowD(0);
+    Value1 = CloseD(1);
+    { Weekly OHLC }
+    Value1 = OpenW(0);
+    Value1 = HighW(0);
+    Value1 = LowW(0);
+    Value1 = CloseW(1);
+    { Monthly OHLC }
+    Value1 = OpenM(0);
+    Value1 = HighM(0);
+    Value1 = LowM(0);
+    Value1 = CloseM(1);
+    { Yearly OHLC }
+    Value1 = OpenY(0);
+    Value1 = HighY(0);
+    Value1 = LowY(0);
+    Value1 = CloseY(1);
+
+    { ================================================================ }
+    { === 12. Counting extended (3 new) === }
+    { ================================================================ }
+    { LRO(Condition, Length, Occurrence) -- Least Recent Occurrence }
+    Value1 = LRO(Close > Close[1], 14, 1);
+    { SummationIf(Condition, Price, Length) -- conditional rolling sum }
+    Value1 = SummationIf(Close > Close[1], Volume, 14);
+    { IFFString(Condition, TrueVal, FalseVal) -- string ternary }
+    sResult = IFFString(Close > Open, "up", "down");
+
+    { ================================================================ }
+    { === 13. Volume indicators (5 new) === }
+    { ================================================================ }
+    { OBV -- On Balance Volume, no arguments }
+    Value1 = OBV;
+    { VolumeROC(Length) -- volume rate of change }
+    Value1 = VolumeROC(14);
+    { VolumeOsc(ShortLen, LongLen) -- volume oscillator }
+    Value1 = VolumeOsc(5, 20);
+    { PriceVolTrend -- cumulative price-volume trend, no arguments }
+    Value1 = PriceVolTrend;
+    { LWAccDis -- Larry Williams Accumulation/Distribution, no arguments }
+    Value1 = LWAccDis;
+
+    { ================================================================ }
+    { === 14. Statistical (2 new) === }
+    { ================================================================ }
+    { Fisher(Price) -- Fisher transformation }
+    Value1 = Fisher(Close);
+    { FisherINV(Price) -- inverse Fisher transformation }
+    Value1 = FisherINV(Close);
+
+    { ================================================================ }
+    { === 15. Candlestick patterns (9 new) === }
+    { ================================================================ }
+    { C_Doji(Percent) -- 1 if doji, 0 otherwise }
+    Value1 = C_Doji(5);
+    { C_Hammer_HangingMan(Length, Factor, oHammer, oHangingMan) }
+    Value1 = C_Hammer_HangingMan(10, 33, oHammer, oHangingMan);
+    { C_BullEng_BearEng(Length, oBullEng, oBearEng) }
+    Value1 = C_BullEng_BearEng(10, oBullEng, oBearEng);
+    { C_BullHar_BearHar(Length, oBullHar, oBearHar) }
+    Value1 = C_BullHar_BearHar(10, oBullHar, oBearHar);
+    { C_MornDoji_EveDoji(Length, Percent, oMornDoji, oEveDoji) }
+    Value1 = C_MornDoji_EveDoji(10, 5, oMornDoji, oEveDoji);
+    { C_MornStar_EveStar(Length, oMornStar, oEveStar) }
+    Value1 = C_MornStar_EveStar(10, oMornStar, oEveStar);
+    { C_PierceLine_DkCloud(Length, oPierce, oDkCloud) }
+    Value1 = C_PierceLine_DkCloud(10, oPierce, oDkCloud);
+    { C_ShootingStar(Length, Factor) }
+    Value1 = C_ShootingStar(10, 33);
+    { C_3WhSolds_3BlkCrows(Length, Factor, o3WhSolds, o3BlkCrows) }
+    Value1 = C_3WhSolds_3BlkCrows(10, 33, o3WhSolds, o3BlkCrows);
+
+    { ================================================================ }
+    { === 16. Statistical extended (10 candidates) === }
+    { ================================================================ }
+    { AvgDeviation(Price, Length) -- mean absolute deviation }
+    Value1 = AvgDeviation(Close, 20);
+    { Variance(Price, Length) -- population variance }
+    Value1 = Variance(Close, 20);
+    { Kurtosis(Price, Length) -- excess kurtosis }
+    Value1 = Kurtosis(Close, 20);
+    { Skew(Price, Length) -- skewness }
+    Value1 = Skew(Close, 20);
+    { PercentRank(PriceValueToRank, PriceValue, Length) -- percent rank }
+    Value1 = PercentRank(Close, Close, 20);
+    { Covariance(Price1, Price2, Length) -- covariance }
+    Value1 = Covariance(Close, Volume, 20);
+    { Quartile(Price, Length, Q) -- quartile value }
+    Value1 = Quartile(Close, 20, 2);
+    { TrimMean(Price, Length, TrimPct) -- trimmed mean }
+    Value1 = TrimMean(Close, 20, 10);
+    { Mode(PriceValue, Length, Type) -- modal value }
+    Value1 = Mode(Close, 20, 1);
+    { HarmonicMean(Price, Length) -- harmonic mean }
+    Value1 = HarmonicMean(Close, 20);
+
+    { ================================================================ }
+    { === 17. Moving averages extended (1 candidate) === }
+    { ================================================================ }
+    { SmoothedAverage(Price, Length) -- Wilder smoothing }
+    Value1 = SmoothedAverage(Close, 14);
+
+    { ================================================================ }
+    { === 18. Miscellaneous (2 candidates) === }
+    { ================================================================ }
+    { BarAnnualization -- bars-per-year factor, no arguments }
+    Value1 = BarAnnualization;
+    { LastBarOnChart -- true on last bar, no arguments }
+    Condition1 = LastBarOnChart;
+
+End;

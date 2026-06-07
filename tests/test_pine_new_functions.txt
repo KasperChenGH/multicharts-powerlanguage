@@ -1,0 +1,649 @@
+// =============================================================================
+// test_pine_new_functions.txt
+// Pine Script (v5) conversions of new PowerLanguage function mappings.
+//
+// This is a single indicator (NOT a strategy) that exercises every new function
+// conversion.  Each section is grouped by category with the PL signature and
+// its Pine Script equivalent shown in comments.
+//
+// For functions marked "manual", a brief inline implementation or a helper
+// function is provided at the top of the script.
+// =============================================================================
+
+//@version=5
+indicator("New Functions Conversion Test", overlay=false, max_bars_back=500)
+
+
+// =============================================================================
+// Helper functions (manual conversions that need reusable logic)
+// =============================================================================
+
+// --- Swing Index (Wilder) ---
+// PL: SwingIndex → manual Wilder formula
+// Inputs: O, H, L, C of current and previous bar, limit move T
+swingIndex(float o1, float h1, float l1, float c1, float o0, float h0, float l0, float c0, float T) =>
+    k  = math.max(h0 - c1, l0 - c1)
+    r1 = math.abs(h0 - c1) - 0.5 * math.abs(l0 - c1) + 0.25 * math.abs(c1 - o1)
+    r2 = math.abs(l0 - c1) - 0.5 * math.abs(h0 - c1) + 0.25 * math.abs(c1 - o1)
+    r3 = math.abs(h0 - l0) + 0.25 * math.abs(c1 - o1)
+    r  = r1
+    if math.abs(l0 - c1) > math.abs(h0 - c1) and math.abs(l0 - c1) > math.abs(h0 - l0)
+        r := r2
+    else if math.abs(h0 - l0) >= math.abs(h0 - c1) and math.abs(h0 - l0) >= math.abs(l0 - c1)
+        r := r3
+    r == 0 ? 0.0 : 50.0 * ((c0 - c1) + 0.5 * (c0 - o0) + 0.25 * (c1 - o1)) / r * (k / T)
+
+// --- Fisher Transform ---
+// PL: Fisher(Close) → 0.5 * ln((1+x)/(1-x)) where x is normalized price
+fisherTransform(float src, int len) =>
+    h = ta.highest(src, len)
+    l = ta.lowest(src, len)
+    raw = h == l ? 0.0 : 2.0 * ((src - l) / (h - l) - 0.5)
+    x = math.max(-0.999, math.min(0.999, raw))
+    0.5 * math.log((1.0 + x) / (1.0 - x))
+
+// --- Fisher Inverse ---
+// PL: FisherINV(x) → (exp(2x)-1)/(exp(2x)+1)
+fisherInverse(float x) =>
+    e2x = math.exp(2.0 * x)
+    (e2x - 1.0) / (e2x + 1.0)
+
+// --- Average Deviation ---
+// PL: AvgDeviation(Close, 20) → mean absolute deviation
+avgDeviation(float src, int len) =>
+    m = ta.sma(src, len)
+    sum = 0.0
+    for i = 0 to len - 1
+        sum += math.abs(src[i] - m)
+    sum / len
+
+// --- Kurtosis ---
+// PL: Kurtosis(Close, 20) → 4th central moment / variance^2
+kurtosis(float src, int len) =>
+    m = ta.sma(src, len)
+    s2 = 0.0
+    s4 = 0.0
+    for i = 0 to len - 1
+        d = src[i] - m
+        s2 += d * d
+        s4 += d * d * d * d
+    v = s2 / len
+    v == 0 ? 0.0 : (s4 / len) / (v * v)
+
+// --- Skew ---
+// PL: Skew(Close, 20) → 3rd central moment / stdev^3
+skew(float src, int len) =>
+    m = ta.sma(src, len)
+    s2 = 0.0
+    s3 = 0.0
+    for i = 0 to len - 1
+        d = src[i] - m
+        s2 += d * d
+        s3 += d * d * d
+    sd = math.sqrt(s2 / len)
+    sd == 0 ? 0.0 : (s3 / len) / (sd * sd * sd)
+
+// --- Covariance ---
+// PL: Covariance(Close, Volume, 20) → sample covariance
+covariance(float x, float y, int len) =>
+    mx = ta.sma(x, len)
+    my = ta.sma(y, len)
+    s = 0.0
+    for i = 0 to len - 1
+        s += (x[i] - mx) * (y[i] - my)
+    s / len
+
+// --- Trimmed Mean ---
+// PL: TrimMean(Close, 20, 10) → mean after removing top/bottom 10%
+trimMean(float src, int len, float pct) =>
+    a = array.new_float(len)
+    for i = 0 to len - 1
+        array.set(a, i, src[i])
+    array.sort(a, order.ascending)
+    trim = math.round(len * pct / 100.0)
+    sum = 0.0
+    cnt = 0
+    for i = trim to len - 1 - trim
+        sum += array.get(a, i)
+        cnt += 1
+    cnt == 0 ? ta.sma(src, len) : sum / cnt
+
+// --- Mode (approximate) ---
+// PL: Mode(Close, 20, 1) → most frequent value (binned for continuous data)
+modeApprox(float src, int len) =>
+    // For continuous data, return the value closest to the median as approximation
+    ta.percentile_nearest_rank(src, len, 50)
+
+// --- Harmonic Mean ---
+// PL: HarmonicMean(Close, 20) → N / sum(1/xi)
+harmonicMean(float src, int len) =>
+    s = 0.0
+    for i = 0 to len - 1
+        s += src[i] == 0 ? 0.0 : 1.0 / src[i]
+    s == 0 ? 0.0 : len / s
+
+// --- Ulcer Index ---
+// PL: UlcerIndex(Close, 14) → sqrt(mean of squared pct drawdown)
+ulcerIndex(float src, int len) =>
+    hh = ta.highest(src, len)
+    s = 0.0
+    for i = 0 to len - 1
+        pctDD = hh == 0 ? 0.0 : 100.0 * (src[i] - hh) / hh
+        s += pctDD * pctDD
+    math.sqrt(s / len)
+
+// --- Mass Index ---
+// PL: MassIndex(9, 25) → sum of EMA(range) / EMA(EMA(range)) over 25 bars
+massIndex(int emaLen, int sumLen) =>
+    rng     = high - low
+    ema1    = ta.ema(rng, emaLen)
+    ema2    = ta.ema(ema1, emaLen)
+    ratio   = ema2 == 0 ? 1.0 : ema1 / ema2
+    math.sum(ratio, sumLen)
+
+// --- LRO (Last Rising Occurrence) ---
+// PL: LRO(cond, lookback, nth) → bar offset of nth true condition in lookback
+lro(bool cond, int lookback, int nth) =>
+    count = 0
+    result = -1
+    for i = 0 to lookback - 1
+        if cond[i]
+            count += 1
+            if count == nth
+                result := i
+                break
+    result
+
+// --- SummationIf ---
+// PL: SummationIf(cond, value, length) → sum of value where cond is true
+summationIf(bool cond, float val, int len) =>
+    s = 0.0
+    for i = 0 to len - 1
+        if cond[i]
+            s += val[i]
+    s
+
+
+// =============================================================================
+// Section 1: Moving Averages
+// =============================================================================
+
+// PL: TriAverage(Close, 14) → ta.sma(ta.sma(ta.sma(close, 14), 14), 14)
+triAvg = ta.sma(ta.sma(ta.sma(close, 14), 14), 14)
+
+// PL: SmoothedAverage(Close, 14) → ta.rma(close, 14)
+smoothAvg = ta.rma(close, 14)
+
+
+// =============================================================================
+// Section 2: Stochastic Helpers
+// =============================================================================
+
+// PL: FastK(14) → ta.stoch(close, high, low, 14)
+// Raw %K — unsmoothed stochastic
+fk = ta.stoch(close, high, low, 14)
+
+// PL: FastD(14) → ta.sma(ta.stoch(close, high, low, 14), 3)
+// 3-period SMA of FastK
+fd = ta.sma(ta.stoch(close, high, low, 14), 3)
+
+// PL: SlowK(14) → ta.sma(ta.stoch(close, high, low, 14), 3)
+// SlowK is the smoothed FastK (same as FastD)
+sk = ta.sma(ta.stoch(close, high, low, 14), 3)
+
+// PL: SlowD(14) → ta.sma(ta.sma(ta.stoch(close, high, low, 14), 3), 3)
+// 3-period SMA of SlowK
+sd = ta.sma(ta.sma(ta.stoch(close, high, low, 14), 3), 3)
+
+// PL: FastKCustom(H, L, C, 14) → ta.stoch(C, H, L, 14)
+// Custom OHLC inputs version of FastK
+fkc = ta.stoch(close, high, low, 14)
+
+// PL: FastDCustom(H, L, C, 14) → ta.sma(ta.stoch(C, H, L, 14), 3)
+fdc = ta.sma(ta.stoch(close, high, low, 14), 3)
+
+// PL: SlowKCustom(H, L, C, 14) → ta.sma(ta.stoch(C, H, L, 14), 3)
+skc = ta.sma(ta.stoch(close, high, low, 14), 3)
+
+// PL: SlowDCustom(H, L, C, 14) → ta.sma(ta.sma(ta.stoch(C, H, L, 14), 3), 3)
+sdc = ta.sma(ta.sma(ta.stoch(close, high, low, 14), 3), 3)
+
+// PL: StochasticExp(H, L, C, 14, 3, 3, oFastD, oSlowD) → ta.ema(ta.stoch(C, H, L, 14), 3)
+// Exponential stochastic — uses EMA smoothing instead of SMA
+stochExpFastD = ta.ema(ta.stoch(close, high, low, 14), 3)
+stochExpSlowD = ta.ema(stochExpFastD, 3)
+
+
+// =============================================================================
+// Section 3: DM/ADX Variants
+// =============================================================================
+
+// PL: ADXR(14) → (ta.adx(high, low, close, 14) + ta.adx(high, low, close, 14)[14]) / 2
+// ADXR is the average of current ADX and ADX 14 bars ago
+// Note: Pine ta.adx is not a built-in; use ta.dmi which returns [diplus, diminus, adx]
+[_dp1, _dm1, adxCurrent] = ta.dmi(14, 14)
+adxr = (adxCurrent + nz(adxCurrent[14])) / 2.0
+
+// PL: ADXCustom(H, L, C, 14) → ta.adx(H, L, C, 14)
+// Pine ta.dmi uses chart OHLC; for custom inputs, manual DI+/DI-/ADX needed.
+// Approximate: ta.dmi(14, 14) covers the standard case
+[_dp2, _dm2, adxCustom] = ta.dmi(14, 14)
+
+// PL: DMI(14) → ta.adx(high, low, close, 14) (alias for ADX value)
+[_dp3, _dm3, dmiVal] = ta.dmi(14, 14)
+
+// PL: DMIPlusCustom(H, L, C, 14) → manual with ta.change() and ta.rma()
+// Manual DI+ calculation for custom inputs
+upMove   = ta.change(high)
+downMove = -ta.change(low)
+plusDM   = upMove > downMove and upMove > 0 ? upMove : 0.0
+trSmooth = ta.rma(ta.tr, 14)
+diPlusCustom = 100.0 * ta.rma(plusDM, 14) / trSmooth
+
+// PL: DMIMinusCustom(H, L, C, 14) → manual with ta.change() and ta.rma()
+minusDM = downMove > upMove and downMove > 0 ? downMove : 0.0
+diMinusCustom = 100.0 * ta.rma(minusDM, 14) / trSmooth
+
+// PL: ParabolicCustom(0.02, 0.2) → ta.sar(0.02, 0.02, 0.2)
+// PL step default is same as start; Pine sar(start, inc, max)
+parCustom = ta.sar(0.02, 0.02, 0.2)
+
+
+// =============================================================================
+// Section 4: Additional Oscillators
+// =============================================================================
+
+// PL: TRIX(Close, 15) → 100 * ta.change(ta.ema(ta.ema(ta.ema(close, 15), 15), 15))
+// Triple-smoothed EMA rate of change
+ema1_15 = ta.ema(close, 15)
+ema2_15 = ta.ema(ema1_15, 15)
+ema3_15 = ta.ema(ema2_15, 15)
+trixVal = 100.0 * ta.change(ema3_15)
+
+// PL: MassIndex(9, 25) → manual: summation of EMA ratio
+massIdx = massIndex(9, 25)
+
+// PL: EaseOfMovement → ((H+L)/2 - (H[1]+L[1])/2) / (volume/(H-L))
+// Distance moved / box ratio
+emvDist  = (high + low) / 2.0 - (high[1] + low[1]) / 2.0
+emvBoxR  = high == low ? 1.0 : volume / (high - low)
+easeMove = emvDist / emvBoxR
+
+// PL: SwingIndex → manual: Wilder's swing index formula
+// Using limit move T = 1.0 as default (adjust per instrument)
+swIdx = swingIndex(open[1], high[1], low[1], close[1], open, high, low, close, 1.0)
+
+// PL: AccumSwingIndex → manual: cumulative sum of SwingIndex
+accumSwIdx = ta.cum(swIdx)
+
+// PL: Detrend(Close, 14) → close - ta.sma(close, 14)
+// Price minus its moving average
+detrendVal = close - ta.sma(close, 14)
+
+// PL: PercentChange(Close, 14) → 100 * (close - close[14]) / close[14]
+pctChange = close[14] == 0 ? 0.0 : 100.0 * (close - close[14]) / close[14]
+
+// PL: UlcerIndex(Close, 14) → manual: sqrt of mean squared drawdown
+ulcerIdx = ulcerIndex(close, 14)
+
+
+// =============================================================================
+// Section 5: Multi-Output Functions
+// =============================================================================
+
+// PL: ParabolicSAR(0.02, 0.2, oParCl, oParOp, oPosition, oTransition)
+//   → ta.sar(0.02, 0.02, 0.2)
+// Pine ta.sar returns the SAR value; the extra PL output variables (position,
+// transition) must be derived manually from SAR vs price relationship.
+parSAR = ta.sar(0.02, 0.02, 0.2)
+parPosition   = close > parSAR ? 1 : -1            // oPosition equivalent
+parTransition = parPosition != parPosition[1] ? 1 : 0  // oTransition equivalent
+
+// PL: LinearReg(Close, 20, 0, oSlope, oAngle, oIntercept, oValueRaw)
+//   → ta.linreg(close, 20, 0)
+// Pine ta.linreg returns the regression value; slope/angle/intercept are derived.
+linRegValue = ta.linreg(close, 20, 0)
+linRegSlope = ta.linreg(close, 20, 0) - ta.linreg(close, 20, 1)
+linRegAngle = math.todegrees(math.atan(linRegSlope))
+// Intercept: value at offset = length-1 (beginning of window)
+linRegIntercept = ta.linreg(close, 20, 19)
+
+
+// =============================================================================
+// Section 6: Volatility Extended
+// =============================================================================
+
+// PL: TrueRangeCustom(H, L, C) → max(H-L, abs(H-C[1]), abs(L-C[1]))
+// Manual true range for custom OHLC inputs
+trCustom = math.max(high - low, math.max(math.abs(high - close[1]), math.abs(low - close[1])))
+
+// PL: VolatilityStdDev(20) → ta.stdev(math.log(close/close[1]), 20) * math.sqrt(252)
+// Annualized volatility from log returns
+logRet = close[1] == 0 ? 0.0 : math.log(close / close[1])
+volStdDev = ta.stdev(logRet, 20) * math.sqrt(252)
+
+// PL: StandardDevAnnual(Close, 20, 1) → ta.stdev(close, 20) * math.sqrt(252)
+// Annualized standard deviation of raw prices
+stdDevAnnual = ta.stdev(close, 20) * math.sqrt(252)
+
+
+// =============================================================================
+// Section 7: Price Extremes Fast-Calc
+// =============================================================================
+
+// PL: HighestFC(High, 20) → ta.highest(high, 20)
+// "FC" = fast calculation; Pine ta.highest is already optimized
+highFC = ta.highest(high, 20)
+
+// PL: LowestFC(Low, 20) → ta.lowest(low, 20)
+lowFC = ta.lowest(low, 20)
+
+
+// =============================================================================
+// Section 8: Pivot with Variable Strength
+// =============================================================================
+
+// PL: PivotHighVS(1, High, 3, 3, 20) → ta.pivothigh(high, 3, 3)
+// PL instance (1) and occurrences (20) params have no Pine equivalent; ignored.
+pvtHi = ta.pivothigh(high, 3, 3)
+
+// PL: PivotLowVS(1, Low, 3, 3, 20) → ta.pivotlow(low, 3, 3)
+pvtLo = ta.pivotlow(low, 3, 3)
+
+// PL: PivotHighVSBar(1, High, 3, 3, 20) → manual: bars since ta.pivothigh
+// Track the bar_index of the last pivot high
+var int lastPvtHiBar = na
+if not na(pvtHi)
+    lastPvtHiBar := bar_index - 3  // offset by right strength
+pvtHiBarAge = na(lastPvtHiBar) ? na : bar_index - lastPvtHiBar
+
+// PL: PivotLowVSBar(1, Low, 3, 3, 20) → manual: bars since ta.pivotlow
+var int lastPvtLoBar = na
+if not na(pvtLo)
+    lastPvtLoBar := bar_index - 3
+pvtLoBarAge = na(lastPvtLoBar) ? na : bar_index - lastPvtLoBar
+
+
+// =============================================================================
+// Section 9: Divergence
+// =============================================================================
+
+// PL: Divergence(Close, RSI(Close,14), 3, 20, -1)
+//   → manual: compare pivot highs/lows of price vs indicator
+// -1 = bearish divergence (price makes higher high, indicator makes lower high)
+rsiForDiv = ta.rsi(close, 14)
+prcPvtHi  = ta.pivothigh(close, 3, 3)
+rsiPvtHi  = ta.pivothigh(rsiForDiv, 3, 3)
+// Bearish divergence: price pivot high rises while RSI pivot high falls
+var float prevPrcHi = na
+var float prevRsiHi = na
+bearishDiv = false
+if not na(prcPvtHi) and not na(rsiPvtHi)
+    if not na(prevPrcHi) and not na(prevRsiHi)
+        if prcPvtHi > prevPrcHi and rsiPvtHi < prevRsiHi
+            bearishDiv := true
+    prevPrcHi := prcPvtHi
+    prevRsiHi := rsiPvtHi
+
+
+// =============================================================================
+// Section 10: Aggregation Extended
+// =============================================================================
+
+// PL: TimeSeriesForecast(Close, 20) → ta.linreg(close, 20, 0)
+// TSF is the linear regression value at offset 0 (end of window)
+tsfVal = ta.linreg(close, 20, 0)
+
+// PL: SummationFC(Close, 14) → math.sum(close, 14)
+// "FC" = fast calculation; math.sum is Pine's rolling sum
+sumFC = math.sum(close, 14)
+
+
+// =============================================================================
+// Section 11: Multi-Period OHLC
+// =============================================================================
+
+// PL: OpenD(0) → request.security(syminfo.tickerid, "D", open)
+openD0 = request.security(syminfo.tickerid, "D", open)
+
+// PL: HighD(0) → request.security(syminfo.tickerid, "D", high)
+highD0 = request.security(syminfo.tickerid, "D", high)
+
+// PL: LowD(0) → request.security(syminfo.tickerid, "D", low)
+lowD0 = request.security(syminfo.tickerid, "D", low)
+
+// PL: CloseD(1) → request.security(syminfo.tickerid, "D", close[1])
+// Offset 1 = previous session's close
+closeD1 = request.security(syminfo.tickerid, "D", close[1])
+
+// PL: OpenW(0) → request.security(syminfo.tickerid, "W", open)
+openW0 = request.security(syminfo.tickerid, "W", open)
+
+// PL: HighW(0) → request.security(syminfo.tickerid, "W", high)
+highW0 = request.security(syminfo.tickerid, "W", high)
+
+// PL: LowW(0) → request.security(syminfo.tickerid, "W", low)
+lowW0 = request.security(syminfo.tickerid, "W", low)
+
+// PL: CloseW(0) → request.security(syminfo.tickerid, "W", close)
+closeW0 = request.security(syminfo.tickerid, "W", close)
+
+// PL: OpenM(0) → request.security(syminfo.tickerid, "M", open)
+openM0 = request.security(syminfo.tickerid, "M", open)
+
+// PL: HighM(0) → request.security(syminfo.tickerid, "M", high)
+highM0 = request.security(syminfo.tickerid, "M", high)
+
+// PL: LowM(0) → request.security(syminfo.tickerid, "M", low)
+lowM0 = request.security(syminfo.tickerid, "M", low)
+
+// PL: CloseM(0) → request.security(syminfo.tickerid, "M", close)
+closeM0 = request.security(syminfo.tickerid, "M", close)
+
+// PL: OpenY(0) → request.security(syminfo.tickerid, "12M", open)
+openY0 = request.security(syminfo.tickerid, "12M", open)
+
+// PL: HighY(0) → request.security(syminfo.tickerid, "12M", high)
+highY0 = request.security(syminfo.tickerid, "12M", high)
+
+// PL: LowY(0) → request.security(syminfo.tickerid, "12M", low)
+lowY0 = request.security(syminfo.tickerid, "12M", low)
+
+// PL: CloseY(0) → request.security(syminfo.tickerid, "12M", close)
+closeY0 = request.security(syminfo.tickerid, "12M", close)
+
+
+// =============================================================================
+// Section 12: Counting Extended
+// =============================================================================
+
+// PL: LRO(Close > Close[1], 14, 1) → manual: loop backwards
+// Last Rising Occurrence — bar offset of the 1st true condition in last 14 bars
+lroVal = lro(close > close[1], 14, 1)
+
+// PL: SummationIf(Close > Close[1], Volume, 14) → manual: conditional rolling sum
+// Sum volume only on bars where close > prior close
+sumIfVal = summationIf(close > close[1], volume, 14)
+
+// PL: IFFString(Close > Open, "up", "down") → close > open ? "up" : "down"
+// Ternary string selection
+iffStr = close > open ? "up" : "down"
+
+
+// =============================================================================
+// Section 13: Volume Indicators
+// =============================================================================
+
+// PL: OBV → ta.obv
+// On Balance Volume — built-in
+obvVal = ta.obv
+
+// PL: VolumeROC(14) → 100 * (volume - volume[14]) / volume[14]
+// Rate of change of volume
+volROC = volume[14] == 0 ? 0.0 : 100.0 * (volume - volume[14]) / volume[14]
+
+// PL: VolumeOsc(5, 20) → ta.sma(volume, 5) - ta.sma(volume, 20)
+// Difference between short and long volume SMAs
+volOsc = ta.sma(volume, 5) - ta.sma(volume, 20)
+
+// PL: PriceVolTrend → manual: cumulative (close change % * volume)
+// Price-Volume Trend — running sum of (pct change * volume)
+pvtChg = close[1] == 0 ? 0.0 : ((close - close[1]) / close[1]) * volume
+priceVolTrend = ta.cum(pvtChg)
+
+// PL: LWAccDis → manual: Larry Williams Accumulation/Distribution
+// LW A/D = cumulative sum of (close - open) / (high - low) * volume
+lwRatio = high == low ? 0.0 : (close - open) / (high - low) * volume
+lwAccDis = ta.cum(lwRatio)
+
+
+// =============================================================================
+// Section 14: Statistical
+// =============================================================================
+
+// PL: Fisher(Close) → manual: 0.5 * math.log((1+x)/(1-x))
+fisherVal = fisherTransform(close, 10)
+
+// PL: FisherINV(Close) → manual: (math.exp(2*x)-1)/(math.exp(2*x)+1)
+fisherInvVal = fisherInverse(fisherVal)
+
+// PL: AvgDeviation(Close, 20) → manual
+avgDev = avgDeviation(close, 20)
+
+// PL: Variance(Close, 20) → ta.variance(close, 20)
+varVal = ta.variance(close, 20)
+
+// PL: Kurtosis(Close, 20) → manual
+kurtVal = kurtosis(close, 20)
+
+// PL: Skew(Close, 20) → manual
+skewVal = skew(close, 20)
+
+// PL: PercentRank(Close, Close, 20) → ta.percentrank(close, 20)
+pctRank = ta.percentrank(close, 20)
+
+// PL: Covariance(Close, Volume, 20) → manual
+covVal = covariance(close, volume, 20)
+
+// PL: Quartile(Close, 20, 2) → ta.percentile_nearest_rank(close, 20, 50)
+// Quartile 2 = median = 50th percentile
+quartile2 = ta.percentile_nearest_rank(close, 20, 50)
+
+// PL: TrimMean(Close, 20, 10) → manual
+trimMeanVal = trimMean(close, 20, 10)
+
+// PL: Mode(Close, 20, 1) → manual (approximate for continuous data)
+modeVal = modeApprox(close, 20)
+
+// PL: HarmonicMean(Close, 20) → manual: N / sum(1/xi)
+harmMean = harmonicMean(close, 20)
+
+
+// =============================================================================
+// Section 15: Candlestick Patterns
+// =============================================================================
+
+// PL: C_Doji(5) → manual: abs(close-open) <= (high-low)*0.05
+// Tolerance of 5% means body is <= 5% of total range
+cDoji = math.abs(close - open) <= (high - low) * 0.05
+
+// PL: C_Hammer_HangingMan(10, 33, oH, oHM) → manual: body/shadow ratios
+// Hammer/Hanging Man: small body at top, long lower shadow
+bodySize    = math.abs(close - open)
+upperShadow = high - math.max(close, open)
+lowerShadow = math.min(close, open) - low
+totalRange  = high - low
+cHammer     = totalRange > 0 and bodySize <= totalRange * 0.33 and lowerShadow >= totalRange * 0.60
+cHangingMan = cHammer  // same shape; context (uptrend vs downtrend) determines name
+
+// PL: C_BullEng_BearEng(10, oB, oBr) → manual: engulfing pattern
+// Bullish: prior red candle, current green candle engulfs prior body
+cBullEng = close[1] < open[1] and close > open and open <= close[1] and close >= open[1]
+// Bearish: prior green candle, current red candle engulfs prior body
+cBearEng = close[1] > open[1] and close < open and open >= close[1] and close <= open[1]
+
+// PL: C_BullHar_BearHar(10, oB, oBr) → manual: harami pattern
+// Bullish harami: large red candle followed by small green candle inside
+cBullHar = close[1] < open[1] and close > open and open >= close[1] and close <= open[1]
+// Bearish harami: large green candle followed by small red candle inside
+cBearHar = close[1] > open[1] and close < open and open <= close[1] and close >= open[1]
+
+// PL: C_MornDoji_EveDoji(10, 5, oM, oE) → manual: 3-bar doji star
+// Morning doji star: red, doji gap-down, green gap-up
+body1Red    = close[2] < open[2]
+dojiMiddle  = math.abs(close[1] - open[1]) <= (high[1] - low[1]) * 0.05
+body3Green  = close > open
+cMornDoji   = body1Red and dojiMiddle and body3Green and close > (open[2] + close[2]) / 2.0
+// Evening doji star: green, doji gap-up, red gap-down
+body1Green  = close[2] > open[2]
+body3Red    = close < open
+cEveDoji    = body1Green and dojiMiddle and body3Red and close < (open[2] + close[2]) / 2.0
+
+// PL: C_MornStar_EveStar(10, oM, oE) → manual: 3-bar star
+// Morning star: red, small body gap-down, green gap-up
+smallMiddle = math.abs(close[1] - open[1]) <= (high[1] - low[1]) * 0.33
+cMornStar   = body1Red and smallMiddle and body3Green and close > (open[2] + close[2]) / 2.0
+// Evening star: green, small body gap-up, red gap-down
+cEveStar    = body1Green and smallMiddle and body3Red and close < (open[2] + close[2]) / 2.0
+
+// PL: C_PierceLine_DkCloud(10, oP, oD) → manual: piercing/dark cloud
+// Piercing line: red candle, green candle opens below prior low, closes above midpoint
+cPierce = close[1] < open[1] and close > open and open < low[1] and close > (open[1] + close[1]) / 2.0
+// Dark cloud cover: green candle, red candle opens above prior high, closes below midpoint
+cDkCloud = close[1] > open[1] and close < open and open > high[1] and close < (open[1] + close[1]) / 2.0
+
+// PL: C_ShootingStar(10, 33) → manual: shooting star
+// Small body at bottom, long upper shadow
+cShootStar = totalRange > 0 and bodySize <= totalRange * 0.33 and upperShadow >= totalRange * 0.60
+
+// PL: C_3WhSolds_3BlkCrows(10, 33, oW, oC) → manual: 3 soldiers/crows
+// Three white soldiers: 3 consecutive green candles with higher closes
+c3WhSolds = close[2] > open[2] and close[1] > open[1] and close > open and close > close[1] and close[1] > close[2]
+// Three black crows: 3 consecutive red candles with lower closes
+c3BlkCrows = close[2] < open[2] and close[1] < open[1] and close < open and close < close[1] and close[1] < close[2]
+
+
+// =============================================================================
+// Section 16: Miscellaneous
+// =============================================================================
+
+// PL: BarAnnualization → manual: compute from timeframe
+// Estimate number of bars per year based on timeframe
+barAnnual = timeframe.isminutes ? 252 * 390 / timeframe.multiplier :
+             timeframe.isdaily  ? 252 :
+             timeframe.isweekly ? 52 :
+             timeframe.ismonthly ? 12 : 252
+
+// PL: LastBarOnChart → barstate.islast
+lastBar = barstate.islast
+
+
+// =============================================================================
+// Plots — representative subset to verify the conversions compile
+// =============================================================================
+
+plot(triAvg,       color=color.blue,   title="TriAverage(14)")
+plot(smoothAvg,    color=color.orange,  title="SmoothedAverage(14)")
+plot(fk,           color=color.aqua,   title="FastK(14)")
+plot(sk,           color=color.lime,   title="SlowK(14)")
+plot(sd,           color=color.yellow,  title="SlowD(14)")
+plot(adxr,         color=color.red,    title="ADXR(14)")
+plot(trixVal,      color=color.purple,  title="TRIX(15)")
+plot(detrendVal,   color=color.maroon,  title="Detrend(14)")
+plot(obvVal,       color=color.teal,   title="OBV")
+plot(fisherVal,    color=color.olive,   title="Fisher(10)")
+plot(pctRank,      color=color.navy,   title="PercentRank(20)")
+plot(linRegValue,  color=color.fuchsia, title="LinearReg(20)")
+
+// Candlestick pattern signals as background highlights
+bgcolor(cBullEng ? color.new(color.green, 85) : na, title="Bullish Engulfing")
+bgcolor(cBearEng ? color.new(color.red, 85)   : na, title="Bearish Engulfing")
+bgcolor(bearishDiv ? color.new(color.orange, 80) : na, title="Bearish Divergence")
+
+// Debug label for IFFString on last bar
+if barstate.islast
+    label.new(bar_index, close, iffStr, style=label.style_label_down, color=color.gray)
+
+// =============================================================================
+// END — New Functions Conversion Test
+// =============================================================================

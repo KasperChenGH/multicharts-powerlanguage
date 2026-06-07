@@ -249,7 +249,7 @@ TA-Lib RT is a community fork that adds streaming APIs: `TA_SMA_StateInit()`, `T
 | `FastKCustom(H, L, C, StochLen)` | `TA_STOCHF(0, endIdx, H, L, C, StochLen, 1, TA_MAType_SMA, &outBeg, &outNB, outFastK, outFastD)` | Custom price arrays |
 | `FastDCustom(H, L, C, StochLen)` | `TA_STOCHF(0, endIdx, H, L, C, StochLen, 3, TA_MAType_SMA, &outBeg, &outNB, outFastK, outFastD)` | Custom prices; use `outFastD` |
 | `SlowKCustom(H, L, C, StochLen)` | `TA_STOCH(0, endIdx, H, L, C, StochLen, 3, TA_MAType_SMA, 3, TA_MAType_SMA, &outBeg, &outNB, outSlowK, outSlowD)` | Custom prices |
-| `SlowDCustom(H, L, C, StochLen, S1, S2)` | `TA_STOCH(0, endIdx, H, L, C, StochLen, S1, TA_MAType_SMA, S2, TA_MAType_SMA, &outBeg, &outNB, outSlowK, outSlowD)` | Custom smoothing periods |
+| `SlowDCustom(H, L, C, StochLen)` | `TA_STOCH(0, endIdx, H, L, C, StochLen, 3, TA_MAType_SMA, 3, TA_MAType_SMA, &outBeg, &outNB, outSlowK, outSlowD)` | Slow %D with custom prices |
 | `StochasticExp(H, L, C, StochLen, S1, S2, ...)` | `TA_STOCH(0, endIdx, H, L, C, StochLen, S1, TA_MAType_EMA, S2, TA_MAType_EMA, &outBeg, &outNB, outSlowK, outSlowD)` | Use `TA_MAType_EMA` for exponential smoothing |
 | `ADXR(Length)` | `TA_ADXR(0, endIdx, inHigh, inLow, inClose, length, &outBeg, &outNB, outAdxr)` | Direct equivalent; ADX Rating |
 | `ADXCustom(H, L, C, Length)` | `TA_ADX(0, endIdx, H, L, C, length, &outBeg, &outNB, outAdx)` | Custom price arrays |
@@ -277,8 +277,8 @@ TA-Lib RT is a community fork that adds streaming APIs: `TA_SMA_StateInit()`, `T
 | `PivotHighVSBar(Inst, Price, LStr, RStr, Len)` | Manual: return offset of detected pivot high | bars-ago index |
 | `PivotLowVSBar(Inst, Price, LStr, RStr, Len)` | Manual: return offset of detected pivot low | bars-ago index |
 | `Divergence(P1, P2, Str, Len, HiLo)` | Manual: compare pivot highs/lows of two series | No TA-Lib function |
-| `TimeSeriesForecast(Close, Length, TgtBar)` | `TA_TSF(0, endIdx, inClose, length, &outBeg, &outNB, outTsf)` | Direct equivalent |
-| `LinearRegLine(Close, Length)` | `TA_LINEARREG(0, endIdx, inClose, length, &outBeg, &outNB, outLinReg)` | Value on regression line |
+| `TimeSeriesForecast(Close, Length)` | `TA_TSF(0, endIdx, inClose, length, &outBeg, &outNB, outTsf)` | Direct equivalent |
+
 | `SummationFC(Close, Length)` | `TA_SUM(0, endIdx, inClose, length, &outBeg, &outNB, outSum)` | Same as `Summation` |
 | `OpenD(N)` | Manual: aggregate intraday bars into daily `struct DailyBar`, index `daily_bars[size-1-N].open` | Requires daily bar aggregation |
 | `HighD(N)` | Manual: `daily_bars[size-1-N].high` | Daily high from aggregation |
@@ -307,14 +307,30 @@ TA-Lib RT is a community fork that adds streaming APIs: `TA_SMA_StateInit()`, `T
 | `Fisher(Price)` | Manual: normalize, then `0.5 * log((1 + norm) / (1 - norm))` | Fisher transformation |
 | `FisherINV(Price)` | Manual: `(exp(2 * price) - 1) / (exp(2 * price) + 1)` | Inverse Fisher |
 | `C_Doji(Pct)` | `TA_CDLDOJI(0, endIdx, inOpen, inHigh, inLow, inClose, &outBeg, &outNB, outInt)` | TA-Lib CDL* functions return ±100 |
-| `C_Hammer_HangingMan(Pct, ...)` | `TA_CDLHAMMER(...)` / `TA_CDLHANGINGMAN(...)` | Separate TA-Lib functions for each pattern |
-| `C_BullEng_BearEng(...)` | `TA_CDLENGULFING(0, endIdx, inOpen, inHigh, inLow, inClose, &outBeg, &outNB, outInt)` | +100=bullish, −100=bearish |
-| `C_BullHar_BearHar(...)` | `TA_CDLHARAMI(0, endIdx, inOpen, inHigh, inLow, inClose, &outBeg, &outNB, outInt)` | +100=bullish, −100=bearish |
-| `C_MornDoji_EveDoji(Pct, ...)` | `TA_CDLMORNINGDOJISTAR(...)` / `TA_CDLEVENINGDOJISTAR(...)` | Separate functions |
-| `C_MornStar_EveStar(...)` | `TA_CDLMORNINGSTAR(...)` / `TA_CDLEVENINGSTAR(...)` | Separate functions |
-| `C_PierceLine_DkCloud(...)` | `TA_CDLPIERCING(...)` / `TA_CDLDARKCLOUDCOVER(...)` | Separate functions |
-| `C_ShootingStar(Pct)` | `TA_CDLSHOOTINGSTAR(0, endIdx, inOpen, inHigh, inLow, inClose, &outBeg, &outNB, outInt)` | Direct equivalent |
-| `C_3WhSolds_3BlkCrows(...)` | `TA_CDL3WHITESOLDIERS(...)` / `TA_CDL3BLACKCROWS(...)` | Separate functions |
+| `C_Hammer_HangingMan(Len, Factor, ...)` | `TA_CDLHAMMER(...)` / `TA_CDLHANGINGMAN(...)` | Separate TA-Lib functions for each pattern |
+| `C_BullEng_BearEng(Len, ...)` | `TA_CDLENGULFING(0, endIdx, inOpen, inHigh, inLow, inClose, &outBeg, &outNB, outInt)` | +100=bullish, −100=bearish |
+| `C_BullHar_BearHar(Len, ...)` | `TA_CDLHARAMI(0, endIdx, inOpen, inHigh, inLow, inClose, &outBeg, &outNB, outInt)` | +100=bullish, −100=bearish |
+| `C_MornDoji_EveDoji(Len, Pct, ...)` | `TA_CDLMORNINGDOJISTAR(...)` / `TA_CDLEVENINGDOJISTAR(...)` | Separate functions |
+| `C_MornStar_EveStar(Len, ...)` | `TA_CDLMORNINGSTAR(...)` / `TA_CDLEVENINGSTAR(...)` | Separate functions |
+| `C_PierceLine_DkCloud(Len, ...)` | `TA_CDLPIERCING(...)` / `TA_CDLDARKCLOUDCOVER(...)` | Separate functions |
+| `C_ShootingStar(Len, Factor)` | `TA_CDLSHOOTINGSTAR(0, endIdx, inOpen, inHigh, inLow, inClose, &outBeg, &outNB, outInt)` | Direct equivalent |
+| `C_3WhSolds_3BlkCrows(Len, Factor, ...)` | `TA_CDL3WHITESOLDIERS(...)` / `TA_CDL3BLACKCROWS(...)` | Separate functions |
+| **Statistical extended** | | |
+| `AvgDeviation(Close, N)` | Manual: mean absolute deviation | No TA-Lib equivalent |
+| `Variance(Close, N)` | `TA_VAR(0, endIdx, inClose, N, &outBeg, &outNB, outVar)` | Population variance |
+| `Kurtosis(Close, N)` | Manual: 4th moment calculation | No TA-Lib equivalent |
+| `Skew(Close, N)` | Manual: 3rd moment calculation | No TA-Lib equivalent |
+| `PercentRank(ValToRank, Price, N)` | Manual: count values ≤ target / N | No TA-Lib equivalent |
+| `Covariance(P1, P2, N)` | Manual: `sum((P1-mean1)*(P2-mean2)) / N` | No TA-Lib equivalent |
+| `Quartile(Close, N, Q)` | Manual: sort window, pick percentile | No TA-Lib equivalent |
+| `TrimMean(Close, N, Pct)` | Manual: sort, trim edges, average | No TA-Lib equivalent |
+| `Mode(Close, N, Type)` | Manual: frequency count over window | No TA-Lib equivalent |
+| `HarmonicMean(Close, N)` | Manual: `N / sum(1/x)` | No TA-Lib equivalent |
+| **Moving averages extended** | | |
+| `SmoothedAverage(Close, N)` | Manual: Wilder smoothing `prev*(N-1)/N + val/N` | Same formula as TA-Lib's internal Wilder smoothing |
+| **Miscellaneous** | | |
+| `BarAnnualization` | Manual: compute from bar frequency | Bars-per-year factor |
+| `LastBarOnChart` | `bar_index == data_size - 1` | True on last bar |
 
 ---
 

@@ -1,0 +1,1366 @@
+// =============================================================================
+// test_rust_new_functions.txt
+// Rust conversions of new PowerLanguage built-in functions not covered in
+// test_rust_from_pl.txt.
+//
+// A single struct `NewFunctionsTest` implementing the Strategy trait exercises
+// all function conversions. Functions are grouped by category with section
+// comments showing the PL → Rust mapping.
+//
+// Dependencies: ta = "0.5"  (ta-rs crate)
+//
+// NOTE: This cannot be compiled as-is — it is a reference showing how each PL
+// function maps to Rust. Most functions require manual implementation since
+// ta-rs has limited built-in coverage.
+//
+// The Order enum includes Entry, Exit, StopLoss, and ProfitTarget variants
+// to distinguish PL's order semantics in Rust:
+//
+//   #[derive(Debug, Clone)]
+//   pub enum Action { Entry, Exit, StopLoss, ProfitTarget, BreakEven }
+//   pub struct Order { label: String, action: Action, side: Side,
+//                      order_type: OrderType, qty: f64 }
+// =============================================================================
+
+
+// =============================================================================
+// NEW FUNCTIONS TEST — All New PL Function Conversions
+//
+// This single strategy struct exercises every new function conversion.
+// In production, each function would live in its own helper; here they are
+// inlined to show the mapping clearly.
+// =============================================================================
+
+use ta::indicators::{
+    SimpleMovingAverage, ExponentialMovingAverage,
+    Maximum, Minimum, RateOfChange,
+};
+use ta::Next;
+
+pub struct NewFunctionsTest {
+    position: i32,
+    entry_price: f64,
+    bar_count: usize,
+
+    // --- 1. Moving averages ---
+    // TriAverage(Close, 14) → SMA of SMA of SMA
+    tri_sma1: SimpleMovingAverage,
+    tri_sma2: SimpleMovingAverage,
+    tri_sma3: SimpleMovingAverage,
+    // SmoothedAverage(Close, 14) → Wilder smoothing
+    smoothed_avg: f64,
+
+    // --- 2. Stochastic helpers ---
+    // FastK/FastD/SlowK/SlowD and Custom variants
+    stoch_hi14: Maximum,
+    stoch_lo14: Minimum,
+    fast_k_sma: SimpleMovingAverage,   // SMA(3) of FastK → FastD / SlowK
+    slow_k_sma: SimpleMovingAverage,   // SMA(3) of SlowK → SlowD
+    // StochasticExp: EMA smoothing instead of SMA
+    stoch_exp_ema_k: ExponentialMovingAverage,
+    stoch_exp_ema_d: ExponentialMovingAverage,
+
+    // --- 3. DM/ADX variants ---
+    smoothed_pdm: f64,
+    smoothed_mdm: f64,
+    smoothed_tr: f64,
+    adx_val: f64,
+    dx_count: usize,
+    dx_sum: f64,
+    // Parabolic SAR state
+    sar: f64,
+    sar_ep: f64,
+    sar_af: f64,
+    sar_rising: bool,
+
+    // --- 4. Additional oscillators ---
+    // TRIX: ROC of triple EMA
+    trix_ema1: ExponentialMovingAverage,
+    trix_ema2: ExponentialMovingAverage,
+    trix_ema3: ExponentialMovingAverage,
+    prev_trix_triple: f64,
+    // MassIndex: sum of EMA(H-L)/EMA(EMA(H-L))
+    mass_ema1: ExponentialMovingAverage,
+    mass_ema2: ExponentialMovingAverage,
+    // SwingIndex / AccumSwingIndex
+    accum_swing_index: f64,
+    // OBV (volume section but state needed early)
+    obv: f64,
+    prev_close: f64,
+    // PriceVolTrend
+    pvt: f64,
+
+    // --- 7. Price extremes ---
+    highest_fc: Maximum,
+    lowest_fc: Minimum,
+
+    // --- 10. Aggregation ---
+    // SummationFC rolling sum state
+    sum_fc_buf: Vec<f64>,
+
+    // --- 11. Multi-period OHLC ---
+    day_open: f64,
+    day_high: f64,
+    day_low: f64,
+    day_close: f64,
+    week_open: f64,
+    week_high: f64,
+    week_low: f64,
+    week_close: f64,
+
+    // --- 16. Miscellaneous ---
+    total_bars: usize,
+}
+
+impl NewFunctionsTest {
+    pub fn new() -> Self {
+        Self {
+            position: 0,
+            entry_price: 0.0,
+            bar_count: 0,
+
+            // 1. Moving averages
+            tri_sma1: SimpleMovingAverage::new(14).unwrap(),
+            tri_sma2: SimpleMovingAverage::new(14).unwrap(),
+            tri_sma3: SimpleMovingAverage::new(14).unwrap(),
+            smoothed_avg: 0.0,
+
+            // 2. Stochastic helpers
+            stoch_hi14: Maximum::new(14).unwrap(),
+            stoch_lo14: Minimum::new(14).unwrap(),
+            fast_k_sma: SimpleMovingAverage::new(3).unwrap(),
+            slow_k_sma: SimpleMovingAverage::new(3).unwrap(),
+            stoch_exp_ema_k: ExponentialMovingAverage::new(3).unwrap(),
+            stoch_exp_ema_d: ExponentialMovingAverage::new(3).unwrap(),
+
+            // 3. DM/ADX
+            smoothed_pdm: 0.0,
+            smoothed_mdm: 0.0,
+            smoothed_tr: 0.0,
+            adx_val: 0.0,
+            dx_count: 0,
+            dx_sum: 0.0,
+            sar: 0.0,
+            sar_ep: 0.0,
+            sar_af: 0.02,
+            sar_rising: true,
+
+            // 4. Oscillators
+            trix_ema1: ExponentialMovingAverage::new(15).unwrap(),
+            trix_ema2: ExponentialMovingAverage::new(15).unwrap(),
+            trix_ema3: ExponentialMovingAverage::new(15).unwrap(),
+            prev_trix_triple: 0.0,
+            mass_ema1: ExponentialMovingAverage::new(9).unwrap(),
+            mass_ema2: ExponentialMovingAverage::new(9).unwrap(),
+            accum_swing_index: 0.0,
+            obv: 0.0,
+            prev_close: 0.0,
+            pvt: 0.0,
+
+            // 7. Price extremes
+            highest_fc: Maximum::new(20).unwrap(),
+            lowest_fc: Minimum::new(20).unwrap(),
+
+            // 10. Aggregation
+            sum_fc_buf: Vec::new(),
+
+            // 11. Multi-period OHLC
+            day_open: 0.0,
+            day_high: f64::NEG_INFINITY,
+            day_low: f64::INFINITY,
+            day_close: 0.0,
+            week_open: 0.0,
+            week_high: f64::NEG_INFINITY,
+            week_low: f64::INFINITY,
+            week_close: 0.0,
+
+            // 16. Misc
+            total_bars: 0,
+        }
+    }
+}
+
+impl Strategy for NewFunctionsTest {
+    fn on_bar(&mut self, bars: &[Bar], orders: &mut Vec<Order>) {
+        let n = bars.len();
+        if n < 2 { return; }
+        let bar = &bars[n - 1];
+        let prev = &bars[n - 2];
+        let close = bar.close;
+        let high = bar.high;
+        let low = bar.low;
+        let open = bar.open;
+        let volume = bar.volume;
+
+
+        // =================================================================
+        // SECTION 1 — Moving Averages
+        // =================================================================
+
+        // PL: TriAverage(Close, 14)
+        //   → manual: SMA of SMA of SMA (triple-smoothed moving average)
+        //   First SMA(close,14), then SMA of that, then SMA of that.
+        let sma1 = self.tri_sma1.next(close);
+        let sma2 = self.tri_sma2.next(sma1);
+        let tri_avg = self.tri_sma3.next(sma2);
+
+        // PL: SmoothedAverage(Close, 14)
+        //   → manual: Wilder smoothing: prev*(N-1)/N + val/N
+        //   Equivalent to Wilder's EMA with period N.
+        let sm_n = 14.0_f64;
+        if self.bar_count == 0 {
+            self.smoothed_avg = close;
+        } else {
+            self.smoothed_avg = self.smoothed_avg * (sm_n - 1.0) / sm_n + close / sm_n;
+        }
+        let smoothed_avg = self.smoothed_avg;
+
+
+        // =================================================================
+        // SECTION 2 — Stochastic Helpers (9 functions)
+        // =================================================================
+
+        // PL: FastK(14)
+        //   → manual: 100 * (close - lowest_low_14) / (highest_high_14 - lowest_low_14)
+        let hh = self.stoch_hi14.next(high);
+        let ll = self.stoch_lo14.next(low);
+        let fast_k = if hh > ll {
+            100.0 * (close - ll) / (hh - ll)
+        } else {
+            0.0
+        };
+
+        // PL: FastD(14)
+        //   → manual: SMA(3) of FastK
+        let fast_d = self.fast_k_sma.next(fast_k);
+
+        // PL: SlowK(14)
+        //   → manual: SMA(3) of FastK (same as FastD)
+        let slow_k = fast_d;
+
+        // PL: SlowD(14)
+        //   → manual: SMA(3) of SlowK
+        let slow_d = self.slow_k_sma.next(slow_k);
+
+        // PL: FastKCustom(H, L, C, 14)
+        //   → same FastK formula but with custom high/low/close series.
+        //   When using the primary bar's H/L/C, identical to FastK.
+        //   For a secondary data feed, pass bars2.high / bars2.low / bars2.close.
+        let fast_k_custom = fast_k; // same formula, custom inputs would differ
+
+        // PL: FastDCustom(H, L, C, 14)
+        //   → SMA(3) of FastKCustom
+        let fast_d_custom = fast_d; // SMA(3) of custom FastK
+
+        // PL: SlowKCustom(H, L, C, 14)
+        //   → SMA(3) of FastKCustom (same as FastDCustom)
+        let slow_k_custom = fast_d_custom;
+
+        // PL: SlowDCustom(H, L, C, 14)
+        //   → SMA(3) of SlowKCustom
+        let slow_d_custom = slow_d; // SMA(3) of above
+
+        // PL: StochasticExp(H, L, C, 14, 3, 3, ...)
+        //   → manual: EMA smoothing of FastKCustom instead of SMA
+        //   ExpSlowK = EMA(3) of FastK; ExpSlowD = EMA(3) of ExpSlowK
+        let stoch_exp_k = self.stoch_exp_ema_k.next(fast_k);
+        let stoch_exp_d = self.stoch_exp_ema_d.next(stoch_exp_k);
+
+
+        // =================================================================
+        // SECTION 3 — DM/ADX Variants (6 functions)
+        // =================================================================
+
+        let dm_n = 14.0_f64;
+
+        // --- Shared DI+/DI- computation (Wilder smoothing) ---
+        let up_move = high - prev.high;
+        let dn_move = prev.low - low;
+        let pdm = if up_move > dn_move && up_move > 0.0 { up_move } else { 0.0 };
+        let mdm = if dn_move > up_move && dn_move > 0.0 { dn_move } else { 0.0 };
+        let tr = (high - low)
+            .max((high - prev.close).abs())
+            .max((low - prev.close).abs());
+
+        if self.bar_count < 14 {
+            self.smoothed_pdm += pdm;
+            self.smoothed_mdm += mdm;
+            self.smoothed_tr += tr;
+        } else {
+            self.smoothed_pdm = self.smoothed_pdm - self.smoothed_pdm / dm_n + pdm;
+            self.smoothed_mdm = self.smoothed_mdm - self.smoothed_mdm / dm_n + mdm;
+            self.smoothed_tr = self.smoothed_tr - self.smoothed_tr / dm_n + tr;
+        }
+
+        let di_plus = if self.smoothed_tr > 0.0 {
+            100.0 * self.smoothed_pdm / self.smoothed_tr
+        } else { 0.0 };
+        let di_minus = if self.smoothed_tr > 0.0 {
+            100.0 * self.smoothed_mdm / self.smoothed_tr
+        } else { 0.0 };
+
+        let di_sum = di_plus + di_minus;
+        let dx = if di_sum > 0.0 {
+            100.0 * (di_plus - di_minus).abs() / di_sum
+        } else { 0.0 };
+
+        // PL: DMI(14)
+        //   → manual: directional movement index = DX value before ADX smoothing
+        let dmi_val = dx;
+
+        // PL: DMIPlusCustom(H, L, C, 14)
+        //   → manual: +DI with custom price inputs (same formula, custom feeds)
+        let dmi_plus_custom = di_plus;
+
+        // PL: DMIMinusCustom(H, L, C, 14)
+        //   → manual: -DI with custom price inputs
+        let dmi_minus_custom = di_minus;
+
+        // PL: ADX(14) — Wilder-smoothed DX (base computation)
+        if self.bar_count >= 14 {
+            if self.dx_count < 14 {
+                self.dx_sum += dx;
+                self.dx_count += 1;
+                if self.dx_count == 14 {
+                    self.adx_val = self.dx_sum / dm_n;
+                }
+            } else {
+                self.adx_val = (self.adx_val * (dm_n - 1.0) + dx) / dm_n;
+            }
+        }
+
+        // PL: ADXR(14)
+        //   → manual: (ADX + ADX[14]) / 2
+        //   Requires storing ADX history; simplified here using lookback on bars.
+        let adxr = if n > 14 {
+            // In production, store adx_history[14] ring buffer
+            // adxr = (self.adx_val + self.adx_history[14_bars_ago]) / 2.0
+            self.adx_val // placeholder — full impl needs ADX history ring buffer
+        } else {
+            self.adx_val
+        };
+
+        // PL: ADXCustom(H, L, C, 14)
+        //   → manual: same ADX computation but with custom price inputs
+        //   When using bars2 high/low/close, substitute those values into the
+        //   DI+/DI-/DX/ADX pipeline above.
+        let adx_custom = self.adx_val; // same pipeline, different price feed
+
+        // PL: ParabolicCustom(0.02, 0.2)
+        //   → manual: SAR state machine with configurable af_step and af_limit
+        //   ParabolicCustom lets you set af_step (default 0.02) and af_limit (default 0.2)
+        //   separately from the standard Parabolic(af_step) which uses 0.2 as max.
+        if self.bar_count == 0 {
+            self.sar = low;
+            self.sar_ep = high;
+        } else {
+            self.sar += self.sar_af * (self.sar_ep - self.sar);
+            if self.sar_rising {
+                if high > self.sar_ep {
+                    self.sar_ep = high;
+                    self.sar_af = (self.sar_af + 0.02).min(0.2);
+                }
+                if low < self.sar {
+                    self.sar_rising = false;
+                    self.sar = self.sar_ep;
+                    self.sar_ep = low;
+                    self.sar_af = 0.02;
+                }
+            } else {
+                if low < self.sar_ep {
+                    self.sar_ep = low;
+                    self.sar_af = (self.sar_af + 0.02).min(0.2);
+                }
+                if high > self.sar {
+                    self.sar_rising = true;
+                    self.sar = self.sar_ep;
+                    self.sar_ep = high;
+                    self.sar_af = 0.02;
+                }
+            }
+        }
+        let parabolic_custom = self.sar;
+
+
+        // =================================================================
+        // SECTION 4 — Additional Oscillators (8 functions)
+        // =================================================================
+
+        // PL: TRIX(Close, 15)
+        //   → manual: 1-period ROC of triple EMA
+        //   trix = 100 * (tripleEMA - prevTripleEMA) / prevTripleEMA
+        let e1 = self.trix_ema1.next(close);
+        let e2 = self.trix_ema2.next(e1);
+        let e3 = self.trix_ema3.next(e2);
+        let trix_val = if self.prev_trix_triple != 0.0 {
+            100.0 * (e3 - self.prev_trix_triple) / self.prev_trix_triple
+        } else {
+            0.0
+        };
+        self.prev_trix_triple = e3;
+
+        // PL: MassIndex(9, 25)
+        //   → manual: sum over 25 bars of EMA(H-L, 9) / EMA(EMA(H-L, 9), 9)
+        let hl_range = high - low;
+        let mass_ema1_val = self.mass_ema1.next(hl_range);
+        let mass_ema2_val = self.mass_ema2.next(mass_ema1_val);
+        let mass_ratio = if mass_ema2_val != 0.0 {
+            mass_ema1_val / mass_ema2_val
+        } else {
+            1.0
+        };
+        // Full MassIndex sums mass_ratio over 25 bars (needs ring buffer in production)
+        let _mass_index = mass_ratio * 25.0; // simplified single-bar approximation
+
+        // PL: EaseOfMovement
+        //   → manual: ((H+L)/2 - (prevH+prevL)/2) / ((Volume/1e6) / (H-L))
+        let midpoint_move = (high + low) / 2.0 - (prev.high + prev.low) / 2.0;
+        let box_ratio = if hl_range > 0.0 {
+            (volume / 1_000_000.0) / hl_range
+        } else {
+            1.0
+        };
+        let ease_of_movement = if box_ratio != 0.0 {
+            midpoint_move / box_ratio
+        } else {
+            0.0
+        };
+
+        // PL: SwingIndex
+        //   → manual: Wilder's Swing Index formula
+        //   SI = 50 * (close - prev_close + 0.5*(close - open)
+        //         + 0.25*(prev_close - prev_open)) / R * (K / limit_move)
+        //   Simplified version (limit_move assumed large):
+        let r_val = (high - prev.close).abs()
+            .max((low - prev.close).abs())
+            .max(high - low);
+        let swing_index = if r_val > 0.0 {
+            50.0 * ((close - prev.close)
+                + 0.5 * (close - open)
+                + 0.25 * (prev.close - prev.open))
+                / r_val
+        } else {
+            0.0
+        };
+
+        // PL: AccumSwingIndex
+        //   → manual: cumulative sum of SwingIndex
+        self.accum_swing_index += swing_index;
+        let accum_swing = self.accum_swing_index;
+
+        // PL: Detrend(Close, 14)
+        //   → close - SMA(close, 14)
+        //   Reuses tri_sma1 output as the SMA(14) value (same period)
+        let detrend = close - sma1;
+
+        // PL: PercentChange(Close, 14)
+        //   → 100.0 * (close - close_14_ago) / close_14_ago
+        let pct_change = if n > 14 && bars[n - 1 - 14].close != 0.0 {
+            100.0 * (close - bars[n - 1 - 14].close) / bars[n - 1 - 14].close
+        } else {
+            0.0
+        };
+
+        // PL: UlcerIndex(Close, 14)
+        //   → manual: sqrt of mean squared percent drawdown from rolling max
+        let ulcer = {
+            let lookback = n.min(14);
+            let start = n - lookback;
+            let mut max_close = f64::NEG_INFINITY;
+            let mut sq_dd_sum = 0.0;
+            for i in start..n {
+                if bars[i].close > max_close { max_close = bars[i].close; }
+                let pct_dd = if max_close > 0.0 {
+                    100.0 * (bars[i].close - max_close) / max_close
+                } else { 0.0 };
+                sq_dd_sum += pct_dd * pct_dd;
+            }
+            (sq_dd_sum / lookback as f64).sqrt()
+        };
+
+
+        // =================================================================
+        // SECTION 5 — Multi-Output Functions (2 functions)
+        // =================================================================
+
+        // PL: ParabolicSAR(0.02, 0.2, ...)
+        //   → manual: full SAR with reference outputs for direction, af, ep
+        //   Uses the same SAR state machine from Section 3 above.
+        //   PL returns SAR value and populates ref vars (oSARDir, oAF, oEP).
+        let parabolic_sar_val = self.sar;
+        let parabolic_sar_dir = if self.sar_rising { 1.0 } else { -1.0 };
+        let parabolic_sar_af = self.sar_af;
+        let parabolic_sar_ep = self.sar_ep;
+
+        // PL: LinearReg(Close, 20, 0, ...)
+        //   → manual: least squares regression returning value, slope, r-squared
+        //   PL populates ref vars (oLRValue, oLRSlope, oLRAngle, oRSquared).
+        let lr_n = n.min(20);
+        let lr_start = n - lr_n;
+        let lr_len = lr_n as f64;
+        let sum_x: f64 = (0..lr_n).map(|i| i as f64).sum();
+        let sum_y: f64 = bars[lr_start..].iter().map(|b| b.close).sum();
+        let sum_xy: f64 = bars[lr_start..].iter().enumerate()
+            .map(|(i, b)| i as f64 * b.close).sum();
+        let sum_xx: f64 = (0..lr_n).map(|i| (i as f64).powi(2)).sum();
+        let sum_yy: f64 = bars[lr_start..].iter()
+            .map(|b| b.close * b.close).sum();
+        let denom = lr_len * sum_xx - sum_x * sum_x;
+        let lr_slope = if denom != 0.0 {
+            (lr_len * sum_xy - sum_x * sum_y) / denom
+        } else { 0.0 };
+        let lr_intercept = (sum_y - lr_slope * sum_x) / lr_len;
+        let lr_value = lr_intercept + lr_slope * (lr_len - 1.0);
+        let ss_tot = sum_yy - sum_y * sum_y / lr_len;
+        let ss_res = sum_yy - lr_slope * sum_xy - lr_intercept * sum_y
+            + lr_intercept * lr_slope * sum_x; // simplified
+        let lr_r_squared = if ss_tot > 0.0 {
+            1.0 - (ss_res / ss_tot).max(0.0)
+        } else { 0.0 };
+
+
+        // =================================================================
+        // SECTION 6 — Volatility (3 functions)
+        // =================================================================
+
+        // PL: TrueRangeCustom(H, L, C)
+        //   → manual: max(H-L, abs(H-C_prev), abs(L-C_prev))
+        //   Same as TrueRange but accepts custom H/L/C inputs.
+        let tr_custom = (high - low)
+            .max((high - prev.close).abs())
+            .max((low - prev.close).abs());
+
+        // PL: VolatilityStdDev(20)
+        //   → manual: stdev of log returns * sqrt(252)
+        //   Annualized historical volatility.
+        let vol_std_dev = {
+            let lookback = n.min(20);
+            if lookback >= 2 {
+                let start = n - lookback;
+                let log_returns: Vec<f64> = (start + 1..n)
+                    .map(|i| (bars[i].close / bars[i - 1].close).ln())
+                    .collect();
+                let mean_lr: f64 = log_returns.iter().sum::<f64>()
+                    / log_returns.len() as f64;
+                let var: f64 = log_returns.iter()
+                    .map(|r| (r - mean_lr).powi(2))
+                    .sum::<f64>() / log_returns.len() as f64;
+                var.sqrt() * (252.0_f64).sqrt()
+            } else {
+                0.0
+            }
+        };
+
+        // PL: StandardDevAnnual(Close, 20, 1)
+        //   → manual: stdev of close prices * sqrt(252)
+        //   The "1" parameter selects population stdev (N divisor).
+        let std_dev_annual = {
+            let lookback = n.min(20);
+            let start = n - lookback;
+            let mean: f64 = bars[start..].iter().map(|b| b.close).sum::<f64>()
+                / lookback as f64;
+            let var: f64 = bars[start..].iter()
+                .map(|b| (b.close - mean).powi(2))
+                .sum::<f64>() / lookback as f64;
+            var.sqrt() * (252.0_f64).sqrt()
+        };
+
+
+        // =================================================================
+        // SECTION 7 — Price Extremes (2 functions)
+        // =================================================================
+
+        // PL: HighestFC(High, 20)
+        //   → ta::indicators::Maximum::new(20)  *** ta-rs built-in ***
+        let highest_fc = self.highest_fc.next(high);
+
+        // PL: LowestFC(Low, 20)
+        //   → ta::indicators::Minimum::new(20)  *** ta-rs built-in ***
+        let lowest_fc = self.lowest_fc.next(low);
+
+
+        // =================================================================
+        // SECTION 8 — Pivot Detection (4 functions)
+        // =================================================================
+
+        // PL: PivotHighVS(1, High, 3, 3, 20)
+        //   → manual: compare center bar's high with L left and R right neighbors
+        //   Returns the pivot high value, or 0 if no pivot found in lookback.
+        //   Params: (instance=1, price=High, left_strength=3, right_strength=3, lookback=20)
+        let pivot_high_vs = {
+            let left = 3_usize;
+            let right = 3_usize;
+            let scan_len = n.min(20);
+            let mut result = 0.0_f64;
+            if n > left + right {
+                let start = if n > scan_len { n - scan_len } else { 0 };
+                for i in ((start + left)..(n - right)).rev() {
+                    let pivot = bars[i].high;
+                    let is_pivot = (1..=left).all(|s| bars[i - s].high < pivot)
+                        && (1..=right).all(|s| bars[i + s].high < pivot);
+                    if is_pivot { result = pivot; break; }
+                }
+            }
+            result
+        };
+
+        // PL: PivotLowVS(1, Low, 3, 3, 20)
+        //   → manual: compare center bar's low with L left and R right neighbors
+        let pivot_low_vs = {
+            let left = 3_usize;
+            let right = 3_usize;
+            let scan_len = n.min(20);
+            let mut result = 0.0_f64;
+            if n > left + right {
+                let start = if n > scan_len { n - scan_len } else { 0 };
+                for i in ((start + left)..(n - right)).rev() {
+                    let pivot = bars[i].low;
+                    let is_pivot = (1..=left).all(|s| bars[i - s].low > pivot)
+                        && (1..=right).all(|s| bars[i + s].low > pivot);
+                    if is_pivot { result = pivot; break; }
+                }
+            }
+            result
+        };
+
+        // PL: PivotHighVSBar(1, High, 3, 3, 20)
+        //   → manual: bars since the pivot high (bars_ago from current bar)
+        let pivot_high_vs_bar = {
+            let left = 3_usize;
+            let right = 3_usize;
+            let scan_len = n.min(20);
+            let mut result = -1_i32; // -1 = no pivot found
+            if n > left + right {
+                let start = if n > scan_len { n - scan_len } else { 0 };
+                for i in ((start + left)..(n - right)).rev() {
+                    let pivot = bars[i].high;
+                    let is_pivot = (1..=left).all(|s| bars[i - s].high < pivot)
+                        && (1..=right).all(|s| bars[i + s].high < pivot);
+                    if is_pivot {
+                        result = (n - 1 - i) as i32;
+                        break;
+                    }
+                }
+            }
+            result
+        };
+
+        // PL: PivotLowVSBar(1, Low, 3, 3, 20)
+        //   → manual: bars since the pivot low
+        let pivot_low_vs_bar = {
+            let left = 3_usize;
+            let right = 3_usize;
+            let scan_len = n.min(20);
+            let mut result = -1_i32;
+            if n > left + right {
+                let start = if n > scan_len { n - scan_len } else { 0 };
+                for i in ((start + left)..(n - right)).rev() {
+                    let pivot = bars[i].low;
+                    let is_pivot = (1..=left).all(|s| bars[i - s].low > pivot)
+                        && (1..=right).all(|s| bars[i + s].low > pivot);
+                    if is_pivot {
+                        result = (n - 1 - i) as i32;
+                        break;
+                    }
+                }
+            }
+            result
+        };
+
+
+        // =================================================================
+        // SECTION 9 — Divergence (1 function)
+        // =================================================================
+
+        // PL: Divergence(Close, RSI, 3, 20, -1)
+        //   → manual: compare pivot highs/lows of price vs indicator
+        //   Returns +1 for bullish divergence (price lower low, indicator higher low),
+        //   -1 for bearish divergence (price higher high, indicator lower high),
+        //   0 for no divergence.
+        //   Params: (price, indicator, strength, lookback, mode)
+        //   mode = -1 → bearish; mode = 1 → bullish; mode = 0 → both
+        let _divergence_val = {
+            // Compute RSI for divergence comparison (simplified inline)
+            // In production, maintain a separate RSI indicator instance.
+            let mut _div_result = 0_i32;
+            // Compare recent pivot lows of price and indicator:
+            // If price makes a lower low but indicator makes a higher low → bullish (+1)
+            // If price makes a higher high but indicator makes a lower high → bearish (-1)
+            // Full implementation scans pivot_high_vs / pivot_low_vs on both series.
+            _div_result
+        };
+
+
+        // =================================================================
+        // SECTION 10 — Aggregation (2 functions)
+        // =================================================================
+
+        // PL: TimeSeriesForecast(Close, 20)
+        //   → manual: linear_reg_value + slope
+        //   The forecast extends the regression line one bar forward.
+        let tsf = lr_value + lr_slope;
+
+        // PL: SummationFC(Close, 14)
+        //   → manual: rolling sum of Close over 14 bars
+        self.sum_fc_buf.push(close);
+        let sum_fc_len = 14_usize;
+        let summation_fc: f64 = if self.sum_fc_buf.len() >= sum_fc_len {
+            self.sum_fc_buf[self.sum_fc_buf.len() - sum_fc_len..].iter().sum()
+        } else {
+            self.sum_fc_buf.iter().sum()
+        };
+
+
+        // =================================================================
+        // SECTION 11 — Multi-Period OHLC (16 functions)
+        // =================================================================
+
+        // PL: OpenD(0) / HighD(0) / LowD(0) / CloseD(0)
+        //   → manual: aggregate bars by calendar day
+        //   Track session boundaries; reset on new day.
+        let dt = chrono::DateTime::from_timestamp(bar.time, 0)
+            .unwrap().naive_utc();
+        let prev_dt = chrono::DateTime::from_timestamp(prev.time, 0)
+            .unwrap().naive_utc();
+
+        // Daily OHLC
+        if dt.date() != prev_dt.date() {
+            self.day_open = open;
+            self.day_high = high;
+            self.day_low = low;
+        } else {
+            if high > self.day_high { self.day_high = high; }
+            if low < self.day_low { self.day_low = low; }
+        }
+        self.day_close = close;
+        let open_d = self.day_open;
+        let high_d = self.day_high;
+        let low_d = self.day_low;
+        let close_d = self.day_close;
+
+        // PL: OpenW(0) / HighW(0) / LowW(0) / CloseW(0)
+        //   → manual: aggregate bars by week
+        let curr_week = dt.date().iso_week().week();
+        let prev_week = prev_dt.date().iso_week().week();
+        if curr_week != prev_week {
+            self.week_open = open;
+            self.week_high = high;
+            self.week_low = low;
+        } else {
+            if high > self.week_high { self.week_high = high; }
+            if low < self.week_low { self.week_low = low; }
+        }
+        self.week_close = close;
+        let open_w = self.week_open;
+        let high_w = self.week_high;
+        let low_w = self.week_low;
+        let close_w = self.week_close;
+
+        // PL: OpenM(0) / HighM(0) / LowM(0) / CloseM(0)
+        //   → manual: aggregate by month
+        //   Same pattern as daily/weekly; reset on month change.
+        //   In production, maintain separate month_open/high/low/close fields.
+        //   let open_m = ...; let high_m = ...; etc.
+
+        // PL: OpenY(0) / HighY(0) / LowY(0) / CloseY(0)
+        //   → manual: aggregate by year
+        //   Same pattern; reset on year change.
+        //   let open_y = ...; let high_y = ...; etc.
+
+
+        // =================================================================
+        // SECTION 12 — Counting (3 functions)
+        // =================================================================
+
+        // PL: LRO(cond, 14, 1)
+        //   → manual: loop backwards counting consecutive true bars (instance 1)
+        //   LRO = "Last Rising Occurrence" — bars since condition was last true.
+        let lro_val = {
+            let lookback = n.min(14);
+            let mut count = 0_usize;
+            for i in (0..lookback).rev() {
+                let idx = n - 1 - i;
+                if idx > 0 && bars[idx].close > bars[idx - 1].close {
+                    count = i;
+                    break;
+                }
+            }
+            count
+        };
+
+        // PL: SummationIf(cond, Volume, 14)
+        //   → manual: conditional sum — sum Volume where cond is true over 14 bars
+        let sum_if_val: f64 = {
+            let lookback = n.min(14);
+            let start = n - lookback;
+            bars[start..].iter().enumerate()
+                .filter(|&(i, _)| {
+                    let idx = start + i;
+                    idx > 0 && bars[idx].close > bars[idx - 1].close
+                })
+                .map(|(_, b)| b.volume)
+                .sum()
+        };
+
+        // PL: IFFString(cond, "up", "down")
+        //   → if cond { "up" } else { "down" }
+        let iff_string = if close > prev.close { "up" } else { "down" };
+
+
+        // =================================================================
+        // SECTION 13 — Volume (5 functions)
+        // =================================================================
+
+        // PL: OBV
+        //   → manual: cumulative sign(close_change) * volume
+        if self.prev_close > 0.0 {
+            if close > self.prev_close {
+                self.obv += volume;
+            } else if close < self.prev_close {
+                self.obv -= volume;
+            }
+            // equal close → OBV unchanged
+        }
+        let obv_val = self.obv;
+
+        // PL: VolumeROC(14)
+        //   → RateOfChange on volume series
+        //   Can use ta::indicators::RateOfChange::new(14) feeding volume instead of close.
+        let vol_roc = if n > 14 && bars[n - 1 - 14].volume != 0.0 {
+            100.0 * (volume - bars[n - 1 - 14].volume) / bars[n - 1 - 14].volume
+        } else {
+            0.0
+        };
+
+        // PL: VolumeOsc(5, 20)
+        //   → SMA(volume, 5) - SMA(volume, 20)
+        //   In production, maintain two SimpleMovingAverage instances for volume.
+        let vol_sma5: f64 = {
+            let len = n.min(5);
+            bars[n - len..].iter().map(|b| b.volume).sum::<f64>() / len as f64
+        };
+        let vol_sma20: f64 = {
+            let len = n.min(20);
+            bars[n - len..].iter().map(|b| b.volume).sum::<f64>() / len as f64
+        };
+        let volume_osc = vol_sma5 - vol_sma20;
+
+        // PL: PriceVolTrend
+        //   → manual: cumulative (pct_change * volume)
+        if self.prev_close > 0.0 {
+            self.pvt += ((close - self.prev_close) / self.prev_close) * volume;
+        }
+        let price_vol_trend = self.pvt;
+
+        // PL: LWAccDis
+        //   → manual: Larry Williams Accumulation/Distribution
+        //   LW_AD = (close - open) / (high - low) * volume (single-bar component)
+        let lw_acc_dis = if hl_range > 0.0 {
+            (close - open) / hl_range * volume
+        } else {
+            0.0
+        };
+
+
+        // =================================================================
+        // SECTION 14 — Statistical (2 + 10 functions)
+        // =================================================================
+
+        // PL: Fisher(Close)
+        //   → manual: 0.5 * ln((1 + x) / (1 - x))
+        //   x is normalized price in [-1, 1] range (using rolling max/min)
+        let fisher_val = {
+            let lookback = n.min(10);
+            let start = n - lookback;
+            let hi = bars[start..].iter().map(|b| b.close)
+                .fold(f64::NEG_INFINITY, f64::max);
+            let lo = bars[start..].iter().map(|b| b.close)
+                .fold(f64::INFINITY, f64::min);
+            let x = if hi > lo {
+                ((close - lo) / (hi - lo) - 0.5).clamp(-0.999, 0.999) * 2.0
+            } else { 0.0 };
+            0.5 * ((1.0 + x) / (1.0 - x)).ln()
+        };
+
+        // PL: FisherINV(Close)
+        //   → manual: (e^(2x) - 1) / (e^(2x) + 1)  (inverse Fisher transform)
+        let fisher_inv = {
+            let e2x = (2.0 * close).exp();
+            (e2x - 1.0) / (e2x + 1.0)
+        };
+
+        // PL: AvgDeviation(Close, 20)
+        //   → manual: mean absolute deviation
+        let avg_deviation = {
+            let lookback = n.min(20);
+            let start = n - lookback;
+            let mean: f64 = bars[start..].iter().map(|b| b.close).sum::<f64>()
+                / lookback as f64;
+            bars[start..].iter()
+                .map(|b| (b.close - mean).abs())
+                .sum::<f64>() / lookback as f64
+        };
+
+        // PL: Variance(Close, 20)
+        //   → manual: sum((x - mean)^2) / N
+        let variance = {
+            let lookback = n.min(20);
+            let start = n - lookback;
+            let mean: f64 = bars[start..].iter().map(|b| b.close).sum::<f64>()
+                / lookback as f64;
+            bars[start..].iter()
+                .map(|b| (b.close - mean).powi(2))
+                .sum::<f64>() / lookback as f64
+        };
+
+        // PL: Kurtosis(Close, 20)
+        //   → manual: 4th standardized moment
+        let kurtosis = {
+            let lookback = n.min(20);
+            let start = n - lookback;
+            let mean: f64 = bars[start..].iter().map(|b| b.close).sum::<f64>()
+                / lookback as f64;
+            let m2: f64 = bars[start..].iter()
+                .map(|b| (b.close - mean).powi(2)).sum::<f64>() / lookback as f64;
+            let m4: f64 = bars[start..].iter()
+                .map(|b| (b.close - mean).powi(4)).sum::<f64>() / lookback as f64;
+            if m2 > 0.0 { m4 / (m2 * m2) } else { 0.0 }
+        };
+
+        // PL: Skew(Close, 20)
+        //   → manual: 3rd standardized moment
+        let skew = {
+            let lookback = n.min(20);
+            let start = n - lookback;
+            let mean: f64 = bars[start..].iter().map(|b| b.close).sum::<f64>()
+                / lookback as f64;
+            let m2: f64 = bars[start..].iter()
+                .map(|b| (b.close - mean).powi(2)).sum::<f64>() / lookback as f64;
+            let m3: f64 = bars[start..].iter()
+                .map(|b| (b.close - mean).powi(3)).sum::<f64>() / lookback as f64;
+            let std = m2.sqrt();
+            if std > 0.0 { m3 / (std * std * std) } else { 0.0 }
+        };
+
+        // PL: PercentRank(Close, Close, 20)
+        //   → manual: count values <= target / N * 100
+        let pct_rank = {
+            let lookback = n.min(20);
+            let start = n - lookback;
+            let count = bars[start..].iter()
+                .filter(|b| b.close <= close)
+                .count();
+            100.0 * count as f64 / lookback as f64
+        };
+
+        // PL: Covariance(Close, Volume, 20)
+        //   → manual: sum((x - mean_x) * (y - mean_y)) / N
+        let covariance = {
+            let lookback = n.min(20);
+            let start = n - lookback;
+            let mean_x: f64 = bars[start..].iter().map(|b| b.close).sum::<f64>()
+                / lookback as f64;
+            let mean_y: f64 = bars[start..].iter().map(|b| b.volume).sum::<f64>()
+                / lookback as f64;
+            bars[start..].iter()
+                .map(|b| (b.close - mean_x) * (b.volume - mean_y))
+                .sum::<f64>() / lookback as f64
+        };
+
+        // PL: Quartile(Close, 20, 2)
+        //   → manual: sort values, pick percentile (quartile 2 = median)
+        let quartile = {
+            let lookback = n.min(20);
+            let start = n - lookback;
+            let mut sorted: Vec<f64> = bars[start..].iter()
+                .map(|b| b.close).collect();
+            sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
+            let q = 2_usize; // quartile number (1=25%, 2=50%, 3=75%)
+            let idx = (sorted.len() * q) / 4;
+            sorted[idx.min(sorted.len() - 1)]
+        };
+
+        // PL: TrimMean(Close, 20, 10)
+        //   → manual: sort, trim top/bottom 10%, average remaining
+        let trim_mean = {
+            let lookback = n.min(20);
+            let start = n - lookback;
+            let mut sorted: Vec<f64> = bars[start..].iter()
+                .map(|b| b.close).collect();
+            sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
+            let trim_pct = 10_usize; // percent to trim from each end
+            let trim_count = sorted.len() * trim_pct / 100;
+            let trimmed = &sorted[trim_count..sorted.len() - trim_count];
+            if !trimmed.is_empty() {
+                trimmed.iter().sum::<f64>() / trimmed.len() as f64
+            } else {
+                sorted.iter().sum::<f64>() / sorted.len() as f64
+            }
+        };
+
+        // PL: Mode(Close, 20, 1)
+        //   → manual: frequency count (bin close prices, find most common)
+        //   For continuous data, round to tick size before counting.
+        let mode_val = {
+            let lookback = n.min(20);
+            let start = n - lookback;
+            // Round to 2 decimal places for binning
+            let mut counts: std::collections::HashMap<i64, usize> =
+                std::collections::HashMap::new();
+            for b in &bars[start..n] {
+                let key = (b.close * 100.0).round() as i64;
+                *counts.entry(key).or_insert(0) += 1;
+            }
+            let best_key = counts.iter()
+                .max_by_key(|&(_, &count)| count)
+                .map(|(&k, _)| k)
+                .unwrap_or(0);
+            best_key as f64 / 100.0
+        };
+
+        // PL: HarmonicMean(Close, 20)
+        //   → manual: N / sum(1/x)
+        let harmonic_mean = {
+            let lookback = n.min(20);
+            let start = n - lookback;
+            let recip_sum: f64 = bars[start..].iter()
+                .map(|b| if b.close != 0.0 { 1.0 / b.close } else { 0.0 })
+                .sum();
+            if recip_sum > 0.0 {
+                lookback as f64 / recip_sum
+            } else { 0.0 }
+        };
+
+
+        // =================================================================
+        // SECTION 15 — Candlestick Patterns (9 functions)
+        // =================================================================
+        //
+        // All candlestick functions are manual implementations that check
+        // body size, shadow ratios, and multi-bar relationships.
+        // Return values: +1 = bullish pattern, -1 = bearish pattern, 0 = none.
+
+        let body = (close - open).abs();
+        let upper_shadow = high - close.max(open);
+        let lower_shadow = close.min(open) - low;
+        let full_range = high - low;
+
+        // PL: C_Doji
+        //   → manual: body is very small relative to range
+        let c_doji = if full_range > 0.0 && body / full_range < 0.05 {
+            1
+        } else { 0 };
+
+        // PL: C_Hammer_HangingMan
+        //   → manual: small body at top, long lower shadow (>= 2x body)
+        //   +1 = Hammer (bullish, in downtrend), -1 = Hanging Man (bearish, in uptrend)
+        let c_hammer_hanging = if body > 0.0
+            && lower_shadow >= 2.0 * body
+            && upper_shadow < body * 0.3
+        {
+            // Check trend context from prior bars
+            if n >= 5 && bars[n - 5].close > close { 1 } else { -1 }
+        } else { 0 };
+
+        // PL: C_BullEng_BearEng
+        //   → manual: current body engulfs previous body
+        //   +1 = bullish engulfing, -1 = bearish engulfing
+        let prev_body = (prev.close - prev.open).abs();
+        let c_engulfing = if close > open && prev.close < prev.open
+            && body > prev_body
+            && open <= prev.close && close >= prev.open
+        {
+            1 // bullish engulfing
+        } else if close < open && prev.close > prev.open
+            && body > prev_body
+            && open >= prev.close && close <= prev.open
+        {
+            -1 // bearish engulfing
+        } else { 0 };
+
+        // PL: C_BullHar_BearHar
+        //   → manual: harami — current body inside previous body
+        //   +1 = bullish harami, -1 = bearish harami
+        let c_harami = if prev.close < prev.open
+            && close > open
+            && open > prev.close && close < prev.open
+            && body < prev_body
+        {
+            1 // bullish harami
+        } else if prev.close > prev.open
+            && close < open
+            && open < prev.close && close > prev.open
+            && body < prev_body
+        {
+            -1 // bearish harami
+        } else { 0 };
+
+        // PL: C_MornDoji_EveDoji
+        //   → manual: 3-bar pattern with doji in the middle
+        //   +1 = morning doji star, -1 = evening doji star
+        let c_morn_eve_doji = if n >= 3 {
+            let bar2 = &bars[n - 2];
+            let bar3 = &bars[n - 3];
+            let mid_body = (bar2.close - bar2.open).abs();
+            let mid_range = bar2.high - bar2.low;
+            let is_mid_doji = mid_range > 0.0 && mid_body / mid_range < 0.05;
+            if is_mid_doji && bar3.close < bar3.open && close > open
+                && bar2.close < bar3.close.min(bar3.open)
+            {
+                1 // morning doji star
+            } else if is_mid_doji && bar3.close > bar3.open && close < open
+                && bar2.close > bar3.close.max(bar3.open)
+            {
+                -1 // evening doji star
+            } else { 0 }
+        } else { 0 };
+
+        // PL: C_MornStar_EveStar
+        //   → manual: 3-bar reversal (small middle body, not necessarily doji)
+        //   +1 = morning star, -1 = evening star
+        let c_morn_eve_star = if n >= 3 {
+            let bar2 = &bars[n - 2];
+            let bar3 = &bars[n - 3];
+            let mid_body = (bar2.close - bar2.open).abs();
+            let bar3_body = (bar3.close - bar3.open).abs();
+            if bar3.close < bar3.open && close > open
+                && mid_body < bar3_body * 0.3
+                && bar2.close < bar3.close
+            {
+                1 // morning star
+            } else if bar3.close > bar3.open && close < open
+                && mid_body < bar3_body * 0.3
+                && bar2.close > bar3.close
+            {
+                -1 // evening star
+            } else { 0 }
+        } else { 0 };
+
+        // PL: C_PierceLine_DkCloud
+        //   → manual: piercing line (+1) or dark cloud cover (-1)
+        let c_pierce_dk_cloud = if prev.close < prev.open && close > open
+            && open < prev.close
+            && close > (prev.open + prev.close) / 2.0
+            && close < prev.open
+        {
+            1 // piercing line
+        } else if prev.close > prev.open && close < open
+            && open > prev.close
+            && close < (prev.open + prev.close) / 2.0
+            && close > prev.open
+        {
+            -1 // dark cloud cover
+        } else { 0 };
+
+        // PL: C_ShootingStar
+        //   → manual: small body at bottom, long upper shadow (>= 2x body)
+        let c_shooting_star = if body > 0.0
+            && upper_shadow >= 2.0 * body
+            && lower_shadow < body * 0.3
+        {
+            -1 // bearish
+        } else { 0 };
+
+        // PL: C_3WhSolds_3BlkCrows
+        //   → manual: three consecutive bullish or bearish bars with conviction
+        //   +1 = three white soldiers, -1 = three black crows
+        let c_3ws_3bc = if n >= 3 {
+            let b1 = &bars[n - 3];
+            let b2 = &bars[n - 2];
+            let b3 = bar;
+            let all_bull = b1.close > b1.open && b2.close > b2.open && b3.close > b3.open
+                && b2.open > b1.open && b3.open > b2.open
+                && b2.close > b1.close && b3.close > b2.close;
+            let all_bear = b1.close < b1.open && b2.close < b2.open && b3.close < b3.open
+                && b2.open < b1.open && b3.open < b2.open
+                && b2.close < b1.close && b3.close < b2.close;
+            if all_bull { 1 }
+            else if all_bear { -1 }
+            else { 0 }
+        } else { 0 };
+
+
+        // =================================================================
+        // SECTION 16 — Miscellaneous (2 functions)
+        // =================================================================
+
+        // PL: BarAnnualization
+        //   → manual: compute annualization factor from bar frequency
+        //   Daily bars → 252; Weekly → 52; Monthly → 12; Hourly → 252*6.5
+        //   In production, derive from actual bar timestamps.
+        let bar_annualization = if n >= 2 {
+            let dt_diff = bar.time - prev.time; // seconds between bars
+            if dt_diff <= 0 { 252.0 }
+            else if dt_diff < 3600 { 252.0 * 6.5 * (3600.0 / dt_diff as f64) }
+            else if dt_diff < 86400 { 252.0 * (86400.0 / dt_diff as f64) / 6.5 }
+            else if dt_diff < 604800 { 252.0 }
+            else if dt_diff < 2592000 { 52.0 }
+            else { 12.0 }
+        } else { 252.0 };
+
+        // PL: LastBarOnChart
+        //   → bar_index == data.len() - 1
+        //   self.total_bars must be set by the execution engine before the run.
+        let last_bar_on_chart = if self.total_bars > 0 {
+            self.bar_count == self.total_bars - 1
+        } else {
+            false
+        };
+
+
+        // =================================================================
+        // STRATEGY LOGIC — demonstration using the computed values
+        // =================================================================
+
+        // Entry: combine several new indicators for a trend + momentum filter
+        if self.position == 0 {
+            // Trend: TriAverage rising, TRIX positive, ADX strong
+            if tri_avg > smoothed_avg
+                && trix_val > 0.0
+                && self.adx_val > 20.0
+                && slow_k < 30.0
+                && slow_d < 30.0
+            {
+                orders.push(Order {
+                    label: "NF_LE".into(),
+                    action: Action::Entry,
+                    side: Side::Long,
+                    order_type: OrderType::Market,
+                    qty: 1.0,
+                });
+            }
+
+            // Short entry: bearish candlestick + divergence context
+            if (c_engulfing == -1 || c_shooting_star == -1)
+                && self.adx_val > 25.0
+                && slow_k > 70.0
+            {
+                orders.push(Order {
+                    label: "NF_SE".into(),
+                    action: Action::Entry,
+                    side: Side::Short,
+                    order_type: OrderType::Market,
+                    qty: 1.0,
+                });
+            }
+        }
+
+        // Exit long: Parabolic SAR stop + overbought stochastic
+        if self.position == 1 {
+            // PL: Sell at SAR Stop
+            orders.push(Order {
+                label: "NF_SAR".into(),
+                action: Action::Exit,
+                side: Side::Long,
+                order_type: OrderType::Stop(parabolic_sar_val),
+                qty: 1.0,
+            });
+
+            // Stochastic overbought exit
+            if slow_k > 80.0 && slow_d > 80.0 && trix_val < 0.0 {
+                orders.push(Order {
+                    label: "NF_LX".into(),
+                    action: Action::Exit,
+                    side: Side::Long,
+                    order_type: OrderType::Market,
+                    qty: 1.0,
+                });
+            }
+        }
+
+        // Exit short: SAR stop + oversold stochastic
+        if self.position == -1 {
+            orders.push(Order {
+                label: "NF_SC".into(),
+                action: Action::Exit,
+                side: Side::Short,
+                order_type: OrderType::Stop(parabolic_sar_val),
+                qty: 1.0,
+            });
+
+            if slow_k < 20.0 && slow_d < 20.0 && trix_val > 0.0 {
+                orders.push(Order {
+                    label: "NF_SX".into(),
+                    action: Action::Exit,
+                    side: Side::Short,
+                    order_type: OrderType::Market,
+                    qty: 1.0,
+                });
+            }
+        }
+
+        // Print diagnostic values on last bar
+        if last_bar_on_chart {
+            println!(
+                "TriAvg={:.2} SmthAvg={:.2} TRIX={:.4} ADX={:.2} ADXR={:.2}",
+                tri_avg, smoothed_avg, trix_val, self.adx_val, adxr
+            );
+            println!(
+                "FastK={:.2} FastD={:.2} SlowK={:.2} SlowD={:.2} StochExpK={:.2} StochExpD={:.2}",
+                fast_k, fast_d, slow_k, slow_d, stoch_exp_k, stoch_exp_d
+            );
+            println!(
+                "SAR={:.2} SARdir={:.0} EoM={:.4} SI={:.2} ASI={:.2}",
+                parabolic_sar_val, parabolic_sar_dir, ease_of_movement,
+                swing_index, accum_swing
+            );
+            println!(
+                "Detrend={:.2} PctChg={:.2} Ulcer={:.4} TSF={:.2} SumFC={:.2}",
+                detrend, pct_change, ulcer, tsf, summation_fc
+            );
+            println!(
+                "TRcustom={:.2} VolStdDev={:.4} StdDevAnn={:.2}",
+                tr_custom, vol_std_dev, std_dev_annual
+            );
+            println!(
+                "HighestFC={:.2} LowestFC={:.2} PivotHi={:.2} PivotLo={:.2}",
+                highest_fc, lowest_fc, pivot_high_vs, pivot_low_vs
+            );
+            println!(
+                "PivotHiBar={} PivotLoBar={} LRvalue={:.2} LRslope={:.4} R2={:.4}",
+                pivot_high_vs_bar, pivot_low_vs_bar, lr_value, lr_slope, lr_r_squared
+            );
+            println!(
+                "OBV={:.0} VolROC={:.2} VolOsc={:.0} PVT={:.0} LWAD={:.0}",
+                obv_val, vol_roc, volume_osc, price_vol_trend, lw_acc_dis
+            );
+            println!(
+                "Fisher={:.4} FisherInv={:.4} AvgDev={:.4} Var={:.4}",
+                fisher_val, fisher_inv, avg_deviation, variance
+            );
+            println!(
+                "Kurt={:.4} Skew={:.4} PctRank={:.2} Covar={:.2}",
+                kurtosis, skew, pct_rank, covariance
+            );
+            println!(
+                "Quartile={:.2} TrimMean={:.2} Mode={:.2} HarmMean={:.2}",
+                quartile, trim_mean, mode_val, harmonic_mean
+            );
+            println!(
+                "LRO={} SumIf={:.0} IffStr={} BarAnn={:.1} LastBar={}",
+                lro_val, sum_if_val, iff_string, bar_annualization, last_bar_on_chart
+            );
+            println!(
+                "Doji={} Hammer={} Engulf={} Harami={} MornEveDoji={} \
+                 MornEveStar={} Pierce={} ShootStar={} 3WS3BC={}",
+                c_doji, c_hammer_hanging, c_engulfing, c_harami,
+                c_morn_eve_doji, c_morn_eve_star, c_pierce_dk_cloud,
+                c_shooting_star, c_3ws_3bc
+            );
+            println!(
+                "OpenD={:.2} HighD={:.2} LowD={:.2} CloseD={:.2}",
+                open_d, high_d, low_d, close_d
+            );
+            println!(
+                "OpenW={:.2} HighW={:.2} LowW={:.2} CloseW={:.2}",
+                open_w, high_w, low_w, close_w
+            );
+        }
+
+        // Update state for next bar
+        self.prev_close = close;
+        self.bar_count += 1;
+    }
+}
+// END NEW FUNCTIONS TEST
+// =============================================================================

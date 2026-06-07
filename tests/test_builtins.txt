@@ -128,8 +128,8 @@ If False Then Begin
     Value1 = FastDCustom(High, Low, Close, 14);
     { SlowKCustom(PriceH, PriceL, PriceC, StochLength) }
     Value1 = SlowKCustom(High, Low, Close, 14);
-    { SlowDCustom(PriceH, PriceL, PriceC, StochLength, SmoothLen1, SmoothLen2) }
-    Value1 = SlowDCustom(High, Low, Close, 14, 3, 3);
+    { SlowDCustom(PriceH, PriceL, PriceC, StochLength) }
+    Value1 = SlowDCustom(High, Low, Close, 14);
     { StochasticExp(PriceH, PriceL, PriceC, StochLength, SmoothLen1, SmoothLen2, oFastD, oSlowD) }
     Value1 = StochasticExp(High, Low, Close, 14, 3, 3, oFastD, oSlowD);
 
@@ -248,10 +248,9 @@ If False Then Begin
     Value1 = StdError(Close, 20);
     { Median(Price, Length) }
     Value1 = Median(Close, 20);
-    { TimeSeriesForecast(Price, Length, TgtBar) }
-    Value1 = TimeSeriesForecast(Close, 20, 0);
-    { LinearRegLine(Price, Length) }
-    Value1 = LinearRegLine(Close, 20);
+    { TimeSeriesForecast(Price, Length) }
+    Value1 = TimeSeriesForecast(Close, 20);
+
     { SummationFC(Price, Length) }
     Value1 = SummationFC(Close, 14);
 
@@ -350,22 +349,54 @@ If False Then Begin
     { ================================================================ }
     { C_Doji(Percent) }
     Value1 = C_Doji(5);
-    { C_Hammer_HangingMan(BodyPercent, oHammer, oHangingMan) }
-    Value1 = C_Hammer_HangingMan(33, oHammer, oHangingMan);
-    { C_BullEng_BearEng(oBullEng, oBearEng) }
-    Value1 = C_BullEng_BearEng(oBullEng, oBearEng);
-    { C_BullHar_BearHar(oBullHar, oBearHar) }
-    Value1 = C_BullHar_BearHar(oBullHar, oBearHar);
-    { C_MornDoji_EveDoji(Percent, oMornDoji, oEveDoji) }
-    Value1 = C_MornDoji_EveDoji(5, oMornDoji, oEveDoji);
-    { C_MornStar_EveStar(oMornStar, oEveStar) }
-    Value1 = C_MornStar_EveStar(oMornStar, oEveStar);
-    { C_PierceLine_DkCloud(oPierce, oDkCloud) }
-    Value1 = C_PierceLine_DkCloud(oPierce, oDkCloud);
-    { C_ShootingStar(BodyPercent) }
-    Value1 = C_ShootingStar(33);
-    { C_3WhSolds_3BlkCrows(o3WhSolds, o3BlkCrows) }
-    Value1 = C_3WhSolds_3BlkCrows(o3WhSolds, o3BlkCrows);
+    { C_Hammer_HangingMan(Length, Factor, oHammer, oHangingMan) }
+    Value1 = C_Hammer_HangingMan(10, 33, oHammer, oHangingMan);
+    { C_BullEng_BearEng(Length, oBullEng, oBearEng) }
+    Value1 = C_BullEng_BearEng(10, oBullEng, oBearEng);
+    { C_BullHar_BearHar(Length, oBullHar, oBearHar) }
+    Value1 = C_BullHar_BearHar(10, oBullHar, oBearHar);
+    { C_MornDoji_EveDoji(Length, Percent, oMornDoji, oEveDoji) }
+    Value1 = C_MornDoji_EveDoji(10, 5, oMornDoji, oEveDoji);
+    { C_MornStar_EveStar(Length, oMornStar, oEveStar) }
+    Value1 = C_MornStar_EveStar(10, oMornStar, oEveStar);
+    { C_PierceLine_DkCloud(Length, oPierce, oDkCloud) }
+    Value1 = C_PierceLine_DkCloud(10, oPierce, oDkCloud);
+    { C_ShootingStar(Length, Factor) }
+    Value1 = C_ShootingStar(10, 33);
+    { C_3WhSolds_3BlkCrows(Length, Factor, o3WhSolds, o3BlkCrows) }
+    Value1 = C_3WhSolds_3BlkCrows(10, 33, o3WhSolds, o3BlkCrows);
+
+    { === Statistical extended === }
+    { AvgDeviation(Price, Length) }
+    Value1 = AvgDeviation(Close, 20);
+    { Variance(Price, Length) }
+    Value1 = Variance(Close, 20);
+    { Kurtosis(Price, Length) }
+    Value1 = Kurtosis(Close, 20);
+    { Skew(Price, Length) }
+    Value1 = Skew(Close, 20);
+    { PercentRank(PriceValueToRank, PriceValue, Length) }
+    Value1 = PercentRank(Close, Close, 20);
+    { Covariance(Price1, Price2, Length) }
+    Value1 = Covariance(Close, Volume, 20);
+    { Quartile(Price, Length, Q) }
+    Value1 = Quartile(Close, 20, 2);
+    { TrimMean(Price, Length, TrimPct) }
+    Value1 = TrimMean(Close, 20, 10);
+    { Mode(PriceValue, Length, Type) }
+    Value1 = Mode(Close, 20, 1);
+    { HarmonicMean(Price, Length) }
+    Value1 = HarmonicMean(Close, 20);
+
+    { === Moving averages extended === }
+    { SmoothedAverage(Price, Length) }
+    Value1 = SmoothedAverage(Close, 14);
+
+    { === Miscellaneous === }
+    { BarAnnualization -- no arguments }
+    Value1 = BarAnnualization;
+    { LastBarOnChart -- no arguments }
+    Condition1 = LastBarOnChart;
 
     { === Loop counter gotcha: use idx not i (I = OpenInterest) === }
     For idx = 1 To 10 Begin
