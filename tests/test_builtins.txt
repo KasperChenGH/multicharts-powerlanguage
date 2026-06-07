@@ -3,6 +3,7 @@
 { Expected: 0 errors, 0 warnings. }
 
 Variables:
+    sResult(""),
     fk(0), fd(0), sk(0), sd(0), idx(0),
     oHigh(0), oLow(0), oClose(0),
     oDMIp(0), oDMIm(0), oADXval(0), oDIp(0), oDIm(0), oADXr(0),
@@ -311,6 +312,8 @@ If False Then Begin
     Value1 = LRO(Close > Close[1], 14, 1);
     { SummationIf(Condition, Price, Length) }
     Value1 = SummationIf(Close > Close[1], Volume, 14);
+    { IFFString(Condition, TrueVal, FalseVal) -- returns string }
+    sResult = IFFString(Close > Open, "up", "down");
 
     { ================================================================ }
     { === Volume-based === }
