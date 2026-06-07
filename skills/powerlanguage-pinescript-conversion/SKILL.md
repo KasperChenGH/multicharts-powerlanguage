@@ -115,6 +115,80 @@ This skill covers the structural and semantic differences between MultiCharts Po
 | `MRO(Cond, Length, N)` | manual: loop back through `Length` bars | No Pine built-in; most recent occurrence of condition |
 | `AccumDist` | manual: `ta.cum(((close − low) − (high − close)) / (high − low) * volume)` | No Pine built-in; cumulative A/D line formula |
 | `IFF(Cond, TrueVal, FalseVal)` | `Cond ? TrueVal : FalseVal` | Pine ternary operator is the direct equivalent |
+| `TriAverage(Close, Length)` | `ta.sma(ta.sma(close, length), length)` | Triangular MA; double-apply SMA |
+| `FastK(StochLength)` | `ta.stoch(close, high, low, StochLength)` | Raw %K; Pine `ta.stoch` returns raw %K |
+| `FastD(StochLength)` | `ta.sma(ta.stoch(close, high, low, StochLength), 3)` | Smoothed %K; apply SMA(3) to FastK |
+| `SlowK(StochLength)` | `ta.sma(ta.stoch(close, high, low, StochLength), 3)` | Same as FastD |
+| `SlowD(StochLength)` | `ta.sma(ta.sma(ta.stoch(close, high, low, StochLength), 3), 3)` | Double-smoothed; SMA of SlowK |
+| `FastKCustom(H, L, C, Length)` | `ta.stoch(C, H, L, Length)` | Custom prices; Pine signature is `(close, high, low, length)` |
+| `FastDCustom(H, L, C, Length)` | `ta.sma(ta.stoch(C, H, L, Length), 3)` | Smooth FastKCustom with SMA(3) |
+| `SlowKCustom(H, L, C, Length)` | `ta.sma(ta.stoch(C, H, L, Length), 3)` | Same as FastDCustom |
+| `SlowDCustom(H, L, C, Length, S1, S2)` | `ta.sma(ta.sma(ta.stoch(C, H, L, Length), S1), S2)` | Double-smoothed with custom periods |
+| `StochasticExp(H, L, C, Length, S1, S2, ...)` | `ta.ema(ta.stoch(C, H, L, Length), S1)` | Uses EMA smoothing instead of SMA; compute %D from %K manually |
+| `ADXR(Length)` | `(ta.dmi(Length, Length)[2] + ta.dmi(Length, Length)[2][Length]) / 2` | Average of current ADX and ADX N bars ago; no Pine built-in |
+| `ADXCustom(H, L, C, Length)` | Manual: replicate ADX using custom H/L/C | No Pine built-in; implement Wilder smoothing with custom prices |
+| `DMI(Length)` | `ta.dmi(Length, Length)` | Same as `ADX`; wrapper that returns DMI value |
+| `DMIPlusCustom(H, L, C, Length)` | Manual: `+DI` with custom prices | No Pine built-in; compute +DM from custom highs |
+| `DMIMinusCustom(H, L, C, Length)` | Manual: `−DI` with custom prices | No Pine built-in; compute −DM from custom lows |
+| `ParabolicCustom(AfStep, AfLimit)` | Manual Parabolic SAR with limit | No Pine built-in; implement SAR loop with `AfLimit` cap |
+| `TRIX(Close, Length)` | Manual: `ta.change(ta.ema(ta.ema(ta.ema(close, Length), Length), Length))` | Triple EMA ROC; no Pine built-in |
+| `MassIndex(SmoothLen, SumLen)` | Manual: `math.sum(ta.ema(high - low, SmoothLen) / ta.ema(ta.ema(high - low, SmoothLen), SmoothLen), SumLen)` | No Pine built-in; ratio of single/double EMA of range |
+| `EaseOfMovement` | Manual: `((high + low) / 2 - (high[1] + low[1]) / 2) / (volume / (high - low))` | No Pine built-in; distance moved / box ratio |
+| `SwingIndex` | Manual: Wilder swing index formula | No Pine built-in; complex formula using O/H/L/C of current and previous bars |
+| `AccumSwingIndex` | Manual: cumulative sum of SwingIndex | No Pine built-in; `ta.cum(swingIndex)` |
+| `Detrend(Close, Length)` | `close - ta.sma(close, Length)[int(Length / 2 + 1)]` | No Pine built-in; offset SMA detrending |
+| `PercentChange(Close, Length)` | `ta.change(close, Length) / close[Length] * 100` | Manual computation; or `ta.roc(close, Length)` if ROC matches |
+| `UlcerIndex(Close, Length)` | Manual: `math.sqrt(ta.sma(math.pow((close - ta.highest(close, Length)) / ta.highest(close, Length) * 100, 2), Length))` | No Pine built-in; RMS of drawdown percentage |
+| `ParabolicSAR(AfStep, AfLimit, ...)` | Manual SAR with position/transition outputs | Multi-output version; implement SAR loop tracking direction changes |
+| `LinearReg(Close, Length, TgtBar, ...)` | `ta.linreg(close, Length, TgtBar)` + manual slope/angle/intercept | Multi-output; Pine `ta.linreg` returns value only |
+| `TrueRangeCustom(H, L, C)` | `math.max(H - L, math.abs(H - C[1]), math.abs(L - C[1]))` | Custom prices; same formula as `ta.tr` |
+| `VolatilityStdDev(NumDays)` | `ta.stdev(math.log(close / close[1]), NumDays) * math.sqrt(252)` | Historical vol; annualized stdev of log returns |
+| `StandardDevAnnual(Close, Length, DataType)` | `ta.stdev(close, Length) * math.sqrt(252)` | Annualized standard deviation |
+| `HighestFC(Close, Length)` | `ta.highest(close, Length)` | Fast calc variant; same as `Highest` in Pine |
+| `LowestFC(Close, Length)` | `ta.lowest(close, Length)` | Fast calc variant; same as `Lowest` in Pine |
+| `PivotHighVS(Inst, Price, LStr, RStr, Length)` | `ta.pivothigh(Price, LStr, RStr)` | Pine `ta.pivothigh` supports asymmetric left/right; returns `na` when no pivot |
+| `PivotLowVS(Inst, Price, LStr, RStr, Length)` | `ta.pivotlow(Price, LStr, RStr)` | Same as above for lows |
+| `PivotHighVSBar(Inst, Price, LStr, RStr, Length)` | Manual: track `bar_index` when `ta.pivothigh` fires | Record bar offset when pivot appears |
+| `PivotLowVSBar(Inst, Price, LStr, RStr, Length)` | Manual: track `bar_index` when `ta.pivotlow` fires | Record bar offset when pivot appears |
+| `Divergence(Price1, Price2, Str, Len, HiLo)` | Manual: compare pivots of two series | No Pine built-in; detect when price makes new high/low but indicator doesn't |
+| `TimeSeriesForecast(Close, Length, TgtBar)` | `ta.linreg(close, Length, -TgtBar)` | Negative offset for forward projection |
+| `LinearRegLine(Close, Length)` | `ta.linreg(close, Length, 0)` | Value on regression line at current bar |
+| `SummationFC(Close, Length)` | `ta.sma(close, Length) * Length` | Fast calc Summation; same as `Summation` in Pine |
+| `OpenD(N)` | `request.security(syminfo.tickerid, "D", open[N])` | Daily open; requires `request.security` for MTF |
+| `HighD(N)` | `request.security(syminfo.tickerid, "D", high[N])` | Daily high |
+| `LowD(N)` | `request.security(syminfo.tickerid, "D", low[N])` | Daily low |
+| `CloseD(N)` | `request.security(syminfo.tickerid, "D", close[N])` | Daily close |
+| `OpenW(N)` | `request.security(syminfo.tickerid, "W", open[N])` | Weekly open |
+| `HighW(N)` | `request.security(syminfo.tickerid, "W", high[N])` | Weekly high |
+| `LowW(N)` | `request.security(syminfo.tickerid, "W", low[N])` | Weekly low |
+| `CloseW(N)` | `request.security(syminfo.tickerid, "W", close[N])` | Weekly close |
+| `OpenM(N)` | `request.security(syminfo.tickerid, "M", open[N])` | Monthly open |
+| `HighM(N)` | `request.security(syminfo.tickerid, "M", high[N])` | Monthly high |
+| `LowM(N)` | `request.security(syminfo.tickerid, "M", low[N])` | Monthly low |
+| `CloseM(N)` | `request.security(syminfo.tickerid, "M", close[N])` | Monthly close |
+| `OpenY(N)` | `request.security(syminfo.tickerid, "12M", open[N])` | Yearly open; Pine uses "12M" for yearly |
+| `HighY(N)` | `request.security(syminfo.tickerid, "12M", high[N])` | Yearly high |
+| `LowY(N)` | `request.security(syminfo.tickerid, "12M", low[N])` | Yearly low |
+| `CloseY(N)` | `request.security(syminfo.tickerid, "12M", close[N])` | Yearly close |
+| `LRO(Cond, Length, N)` | Manual: find Nth-oldest True in lookback | No Pine built-in; scan from `Length` bars ago forward |
+| `SummationIf(Cond, Price, Length)` | Manual: `ta.cum(Cond ? Price : 0) - nz(ta.cum(Cond ? Price : 0)[Length])` | Conditional rolling sum |
+| `IFFString(Cond, TrueStr, FalseStr)` | `Cond ? TrueStr : FalseStr` | Pine ternary works with strings |
+| `OBV` | `ta.obv` | Direct equivalent; Pine built-in |
+| `VolumeROC(Length)` | `ta.roc(volume, Length)` | Rate of change applied to volume |
+| `VolumeOsc(ShortLen, LongLen)` | `ta.sma(volume, ShortLen) - ta.sma(volume, LongLen)` | Difference of two volume SMAs |
+| `PriceVolTrend` | Manual: `ta.cum(ta.change(close) / close[1] * volume)` | Cumulative price-volume trend |
+| `LWAccDis` | Manual: `ta.cum((close - open) / (high - low) * volume)` | Larry Williams A/D |
+| `Fisher(Price)` | Manual: `0.5 * math.log((1 + norm) / (1 - norm))` | Normalize price to −0.999..+0.999 first |
+| `FisherINV(Price)` | Manual: `(math.exp(2 * Price) - 1) / (math.exp(2 * Price) + 1)` | Inverse Fisher transformation |
+| `C_Doji(Percent)` | Manual: `math.abs(close - open) <= (high - low) * Percent / 100` | Detect doji pattern |
+| `C_Hammer_HangingMan(BodyPct, ...)` | Manual: check body/shadow ratios | Lower shadow ≥ 2× body, small upper shadow |
+| `C_BullEng_BearEng(...)` | Manual: current body engulfs previous body | Bullish: down bar followed by larger up bar |
+| `C_BullHar_BearHar(...)` | Manual: current body inside previous body | Opposite of engulfing; small body inside large |
+| `C_MornDoji_EveDoji(Pct, ...)` | Manual: 3-bar pattern with middle doji | Morning/Evening star variant with doji middle |
+| `C_MornStar_EveStar(...)` | Manual: 3-bar reversal pattern | Down-small-up (morning) or up-small-down (evening) |
+| `C_PierceLine_DkCloud(...)` | Manual: 2-bar pattern, close pierces midpoint | Gap down then close above midpoint of prior bar |
+| `C_ShootingStar(BodyPct)` | Manual: small body at low, long upper shadow | Upper shadow ≥ 2× body, small lower shadow |
+| `C_3WhSolds_3BlkCrows(...)` | Manual: 3 consecutive bars in same direction | Three ascending closes (soldiers) or three descending (crows) |
 
 ---
 

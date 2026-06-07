@@ -209,6 +209,80 @@ The slice `&bars[..=i]` gives the strategy access to full history; `bars.last().
 | `MRO(Cond, Length, Instance)` | Manual: scan backward from current bar for `Instance`-th true | Returns bars-ago offset; iterate `(1..=length).rev()`, decrement instance counter on match |
 | `AccumDist` | Manual: `self.ad += ((close−low)−(high−close))/(high−low) * volume` | Cumulative; guard division by zero when `high == low` |
 | `IFF(Cond, TrueVal, FalseVal)` | `if cond { true_val } else { false_val }` | Direct Rust `if/else` expression; returns a value |
+| `TriAverage(Close, Length)` | Manual: `SimpleMovingAverage` applied twice | Double-SMA; create two `SimpleMovingAverage` instances, feed output of first into second |
+| `FastK(StochLength)` | Manual: `(close - min) / (max - min) * 100` using `Minimum`/`Maximum` | Raw %K from default H/L/C; no ta-rs helper |
+| `FastD(StochLength)` | Manual: `SimpleMovingAverage::new(3)` applied to FastK values | Smoothed Fast %K |
+| `SlowK(StochLength)` | `SlowStochastic::new(StochLength, 3).unwrap()` → `.next(&data_item)` | Same as SlowStochastic output |
+| `SlowD(StochLength)` | Manual: `SimpleMovingAverage::new(3)` applied to SlowK values | Double-smoothed |
+| `FastKCustom(H, L, C, StochLen)` | Manual: `(c - lowest_l) / (highest_h - lowest_l) * 100` | Custom prices; use `Maximum`/`Minimum` on custom series |
+| `FastDCustom(H, L, C, StochLen)` | Manual: SMA(3) of FastKCustom | Same pattern |
+| `SlowKCustom(H, L, C, StochLen)` | Manual: SMA(3) of FastKCustom | Same as FastDCustom |
+| `SlowDCustom(H, L, C, StochLen, S1, S2)` | Manual: SMA(S2) of SMA(S1) of FastKCustom | Double smoothing with custom periods |
+| `StochasticExp(H, L, C, StochLen, S1, S2, ...)` | Manual: EMA smoothing of FastKCustom | Use `ExponentialMovingAverage` instead of SMA for smoothing |
+| `ADXR(Length)` | Manual: `(adx + adx_n_bars_ago) / 2.0` | Store ADX history; average current with N-bar-ago value |
+| `ADXCustom(H, L, C, Length)` | Manual or `yata::indicators::ADX` with custom prices | Same as `ADX` but with custom H/L/C inputs |
+| `DMI(Length)` | Manual or `yata`; same as ADX | Wrapper; same computation |
+| `DMIPlusCustom(H, L, C, Length)` | Manual: `+DI` using custom highs/lows | Compute +DM from custom price series |
+| `DMIMinusCustom(H, L, C, Length)` | Manual: `−DI` using custom highs/lows | Compute −DM from custom price series |
+| `ParabolicCustom(AfStep, AfLimit)` | Manual SAR state machine with custom limit | Same as `Parabolic` but cap AF at `AfLimit` |
+| `TRIX(Close, Length)` | Manual: ROC of triple `ExponentialMovingAverage` | Three nested EMA, then `(ema3 - prev_ema3) / prev_ema3 * 100` |
+| `MassIndex(SmoothLen, SumLen)` | Manual: sum of `EMA(H-L) / EMA(EMA(H-L))` over `SumLen` | Two nested EMAs, compute ratio, rolling sum |
+| `EaseOfMovement` | Manual: `((h + l) / 2 - (prev_h + prev_l) / 2) / (volume / (h - l))` | No crate built-in; uses current + previous bar |
+| `SwingIndex` | Manual: Wilder swing index formula using OHLC | Complex ~20-line formula with limit move |
+| `AccumSwingIndex` | Manual: `self.accum_si += swing_index` | Running cumulative sum of SwingIndex |
+| `Detrend(Close, Length)` | Manual: `close - sma_value_offset` | SMA offset by Length/2 bars |
+| `PercentChange(Close, Length)` | Manual: `(close - bars[len-1-length].close) / bars[len-1-length].close * 100.0` | Simple percent change formula |
+| `UlcerIndex(Close, Length)` | Manual: `(sum_of_squared_drawdown_pct / length).sqrt()` | Track highest close in window, compute drawdown pct |
+| `ParabolicSAR(AfStep, AfLimit, ...)` | Manual SAR with direction/transition tracking | Extend SAR state machine to track position changes |
+| `LinearReg(Close, Length, TgtBar, ...)` | Manual: least-squares returning `(value, slope, angle, intercept)` | Full regression output as struct |
+| `TrueRangeCustom(H, L, C)` | Manual: `(h - l).max((h - prev_c).abs()).max((l - prev_c).abs())` | Same formula as `TrueRange` with custom prices |
+| `VolatilityStdDev(NumDays)` | Manual: stdev of log returns × `(252.0_f64).sqrt()` | Annualized historical volatility |
+| `StandardDevAnnual(Close, Length, DataType)` | Manual: `StandardDeviation::new(length).next(close) * (252.0_f64).sqrt()` | Annualize the ta-rs `StandardDeviation` output |
+| `HighestFC(Close, Length)` | `Maximum::new(length).unwrap()` → `.next(bar.close)` | Same as `Highest`; ta-rs `Maximum` |
+| `LowestFC(Close, Length)` | `Minimum::new(length).unwrap()` → `.next(bar.close)` | Same as `Lowest`; ta-rs `Minimum` |
+| `PivotHighVS(Inst, Price, LStr, RStr, Len)` | Manual: scan for bar higher than `LStr` bars left and `RStr` bars right | Asymmetric left/right strength; return price or -1.0 |
+| `PivotLowVS(Inst, Price, LStr, RStr, Len)` | Manual: scan for bar lower than `LStr` bars left and `RStr` bars right | Same pattern for lows |
+| `PivotHighVSBar(Inst, Price, LStr, RStr, Len)` | Manual: bars-ago offset of pivot high | Same detection, return `bars.len() - 1 - pivot_index` |
+| `PivotLowVSBar(Inst, Price, LStr, RStr, Len)` | Manual: bars-ago offset of pivot low | Same detection, return offset |
+| `Divergence(P1, P2, Str, Len, HiLo)` | Manual: compare pivot highs/lows of price vs indicator | Return 1 if divergence found between two series |
+| `TimeSeriesForecast(Close, Length, TgtBar)` | Manual: `linear_reg_value + slope * tgt_bar` | Project regression line forward; uses same slope/intercept as `LinearRegValue` |
+| `LinearRegLine(Close, Length)` | Manual: `linear_reg_value(close, length, 0)` | Value on regression line at current bar |
+| `SummationFC(Close, Length)` | Manual: `bars[len-length..len].iter().map(\|b\| b.close).sum::<f64>()` | Same as `Summation`; fast calc variant |
+| `OpenD(N)` | Manual: aggregate bars into daily periods, return `daily_bars[daily_bars.len()-1-N].open` | Requires daily bar aggregation from intraday data |
+| `HighD(N)` | Manual: `daily_bars[..].high` | Aggregate highs per day |
+| `LowD(N)` | Manual: `daily_bars[..].low` | Aggregate lows per day |
+| `CloseD(N)` | Manual: `daily_bars[..].close` | Last close per day |
+| `OpenW(N)` | Manual: aggregate to weekly | Same pattern, weekly periods |
+| `HighW(N)` | Manual: aggregate to weekly | Weekly high |
+| `LowW(N)` | Manual: aggregate to weekly | Weekly low |
+| `CloseW(N)` | Manual: aggregate to weekly | Weekly close |
+| `OpenM(N)` | Manual: aggregate to monthly | Monthly open |
+| `HighM(N)` | Manual: aggregate to monthly | Monthly high |
+| `LowM(N)` | Manual: aggregate to monthly | Monthly low |
+| `CloseM(N)` | Manual: aggregate to monthly | Monthly close |
+| `OpenY(N)` | Manual: aggregate to yearly | Yearly open |
+| `HighY(N)` | Manual: aggregate to yearly | Yearly high |
+| `LowY(N)` | Manual: aggregate to yearly | Yearly low |
+| `CloseY(N)` | Manual: aggregate to yearly | Yearly close |
+| `LRO(Cond, Length, N)` | Manual: scan from `length` bars ago forward, find Nth true | Least recent occurrence; returns bars-ago offset |
+| `SummationIf(Cond, Price, Length)` | Manual: sum price over last `length` bars where cond is true | Conditional rolling sum |
+| `IFFString(Cond, TrueStr, FalseStr)` | `if cond { true_str.to_string() } else { false_str.to_string() }` | Rust `if` expression returning `String` |
+| `OBV` | Manual: `self.obv += if close > prev_close { vol } else if close < prev_close { -vol } else { 0.0 }` | On Balance Volume; running total |
+| `VolumeROC(Length)` | `RateOfChange::new(length).unwrap()` → `.next(bar.volume)` | ta-rs `RateOfChange` on volume |
+| `VolumeOsc(ShortLen, LongLen)` | Manual: `SMA(volume, short) - SMA(volume, long)` | Two `SimpleMovingAverage` on volume, subtract |
+| `PriceVolTrend` | Manual: `self.pvt += (close - prev_close) / prev_close * volume` | Cumulative price-volume trend |
+| `LWAccDis` | Manual: `self.lwad += (close - open) / (high - low) * volume` | Larry Williams A/D; running total |
+| `Fisher(Price)` | Manual: normalize to −0.999..0.999, then `0.5 * ((1.0 + norm) / (1.0 - norm)).ln()` | Fisher transformation |
+| `FisherINV(Price)` | Manual: `((2.0 * price).exp() - 1.0) / ((2.0 * price).exp() + 1.0)` | Inverse Fisher |
+| `C_Doji(Pct)` | Manual: `(close - open).abs() <= (high - low) * pct / 100.0` | Doji detection |
+| `C_Hammer_HangingMan(Pct, ...)` | Manual: check body/shadow ratios | Lower shadow ≥ 2× body |
+| `C_BullEng_BearEng(...)` | Manual: current body engulfs previous | Compare current and previous OHLC |
+| `C_BullHar_BearHar(...)` | Manual: current body inside previous | Opposite of engulfing |
+| `C_MornDoji_EveDoji(Pct, ...)` | Manual: 3-bar pattern with middle doji | Check 3 consecutive bars |
+| `C_MornStar_EveStar(...)` | Manual: 3-bar reversal | Down-small-up or up-small-down |
+| `C_PierceLine_DkCloud(...)` | Manual: 2-bar piercing pattern | Gap + close past midpoint |
+| `C_ShootingStar(Pct)` | Manual: small body, long upper shadow | Upper shadow ≥ 2× body |
+| `C_3WhSolds_3BlkCrows(...)` | Manual: 3 consecutive trend bars | Three ascending or descending closes |
 
 ---
 

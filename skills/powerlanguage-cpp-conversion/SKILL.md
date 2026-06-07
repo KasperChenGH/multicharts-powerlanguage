@@ -241,6 +241,80 @@ TA-Lib RT is a community fork that adds streaming APIs: `TA_SMA_StateInit()`, `T
 | `MRO(Cond, Length, Instance)` | Manual: scan backwards through lookback for Nth true occurrence, return bars-ago | Most Recent Occurrence; manual loop |
 | `AccumDist` | `TA_AD(0, endIdx, inHigh, inLow, inClose, inVolume, &outBeg, &outNB, outAD)` | Cumulative A/D line; requires HLCV arrays |
 | `IFF(Cond, TrueVal, FalseVal)` | `cond ? trueVal : falseVal` | C++ ternary operator; direct equivalent |
+| `TriAverage(Close, Length)` | `TA_TRIMA(0, endIdx, inClose, length, &outBeg, &outNB, outTrima)` | Triangular MA; direct equivalent |
+| `FastK(StochLength)` | `TA_STOCHF(0, endIdx, inHigh, inLow, inClose, StochLength, 1, TA_MAType_SMA, &outBeg, &outNB, outFastK, outFastD)` | Use `TA_STOCHF` for fast stochastic; `outFastK` is raw %K |
+| `FastD(StochLength)` | `TA_STOCHF(0, endIdx, inHigh, inLow, inClose, StochLength, 3, TA_MAType_SMA, &outBeg, &outNB, outFastK, outFastD)` | `outFastD` is smoothed Fast %D |
+| `SlowK(StochLength)` | `TA_STOCH(0, endIdx, inHigh, inLow, inClose, StochLength, 3, TA_MAType_SMA, 3, TA_MAType_SMA, &outBeg, &outNB, outSlowK, outSlowD)` | `outSlowK` from full stochastic |
+| `SlowD(StochLength)` | `TA_STOCH(0, endIdx, inHigh, inLow, inClose, StochLength, 3, TA_MAType_SMA, 3, TA_MAType_SMA, &outBeg, &outNB, outSlowK, outSlowD)` | `outSlowD` from full stochastic |
+| `FastKCustom(H, L, C, StochLen)` | `TA_STOCHF(0, endIdx, H, L, C, StochLen, 1, TA_MAType_SMA, &outBeg, &outNB, outFastK, outFastD)` | Custom price arrays |
+| `FastDCustom(H, L, C, StochLen)` | `TA_STOCHF(0, endIdx, H, L, C, StochLen, 3, TA_MAType_SMA, &outBeg, &outNB, outFastK, outFastD)` | Custom prices; use `outFastD` |
+| `SlowKCustom(H, L, C, StochLen)` | `TA_STOCH(0, endIdx, H, L, C, StochLen, 3, TA_MAType_SMA, 3, TA_MAType_SMA, &outBeg, &outNB, outSlowK, outSlowD)` | Custom prices |
+| `SlowDCustom(H, L, C, StochLen, S1, S2)` | `TA_STOCH(0, endIdx, H, L, C, StochLen, S1, TA_MAType_SMA, S2, TA_MAType_SMA, &outBeg, &outNB, outSlowK, outSlowD)` | Custom smoothing periods |
+| `StochasticExp(H, L, C, StochLen, S1, S2, ...)` | `TA_STOCH(0, endIdx, H, L, C, StochLen, S1, TA_MAType_EMA, S2, TA_MAType_EMA, &outBeg, &outNB, outSlowK, outSlowD)` | Use `TA_MAType_EMA` for exponential smoothing |
+| `ADXR(Length)` | `TA_ADXR(0, endIdx, inHigh, inLow, inClose, length, &outBeg, &outNB, outAdxr)` | Direct equivalent; ADX Rating |
+| `ADXCustom(H, L, C, Length)` | `TA_ADX(0, endIdx, H, L, C, length, &outBeg, &outNB, outAdx)` | Custom price arrays |
+| `DMI(Length)` | `TA_ADX(0, endIdx, inHigh, inLow, inClose, length, &outBeg, &outNB, outAdx)` | Wrapper; same as ADX |
+| `DMIPlusCustom(H, L, C, Length)` | `TA_PLUS_DI(0, endIdx, H, L, C, length, &outBeg, &outNB, outPlusDI)` | +DI with custom prices |
+| `DMIMinusCustom(H, L, C, Length)` | `TA_MINUS_DI(0, endIdx, H, L, C, length, &outBeg, &outNB, outMinusDI)` | −DI with custom prices |
+| `ParabolicCustom(AfStep, AfLimit)` | `TA_SAR(0, endIdx, inHigh, inLow, AfStep, AfLimit, &outBeg, &outNB, outSar)` | Same as `Parabolic` with explicit limit |
+| `TRIX(Close, Length)` | `TA_TRIX(0, endIdx, inClose, length, &outBeg, &outNB, outTrix)` | Direct equivalent |
+| `MassIndex(SmoothLen, SumLen)` | Manual: `TA_EMA` of range, ratio, then sum | No single TA-Lib function; chain EMA calls |
+| `EaseOfMovement` | Manual: distance moved / box ratio | No TA-Lib function; compute from OHLCV |
+| `SwingIndex` | Manual: Wilder swing index formula | No TA-Lib function; ~20 lines of C++ |
+| `AccumSwingIndex` | Manual: running sum of SwingIndex | No TA-Lib function |
+| `Detrend(Close, Length)` | Manual: close minus offset SMA | No direct TA-Lib; use `TA_SMA` with offset |
+| `PercentChange(Close, Length)` | `TA_ROC(0, endIdx, inClose, length, &outBeg, &outNB, outRoc)` | Same as Rate of Change |
+| `UlcerIndex(Close, Length)` | Manual: RMS of drawdown percentage | No TA-Lib function; track max, compute pct drawdown |
+| `ParabolicSAR(AfStep, AfLimit, ...)` | `TA_SAR(0, endIdx, inHigh, inLow, AfStep, AfLimit, &outBeg, &outNB, outSar)` + manual position tracking | Track sign changes in SAR vs price for position/transition |
+| `LinearReg(Close, Length, TgtBar, ...)` | `TA_LINEARREG(...)` + `TA_LINEARREG_SLOPE(...)` + `TA_LINEARREG_ANGLE(...)` + `TA_LINEARREG_INTERCEPT(...)` | Combine four TA-Lib calls for multi-output |
+| `TrueRangeCustom(H, L, C)` | `TA_TRANGE(0, endIdx, H, L, C, &outBeg, &outNB, outTRange)` | Custom price arrays |
+| `VolatilityStdDev(NumDays)` | Manual: compute log returns, then `TA_STDDEV` × `sqrt(252)` | Annualized historical volatility |
+| `StandardDevAnnual(Close, Length, DataType)` | `TA_STDDEV(0, endIdx, inClose, length, 1.0, &outBeg, &outNB, outStdDev)` then multiply by `sqrt(252)` | Annualize the output |
+| `HighestFC(Close, Length)` | `TA_MAX(0, endIdx, inClose, length, &outBeg, &outNB, outMax)` | Same as `Highest` |
+| `LowestFC(Close, Length)` | `TA_MIN(0, endIdx, inClose, length, &outBeg, &outNB, outMin)` | Same as `Lowest` |
+| `PivotHighVS(Inst, Price, LStr, RStr, Len)` | Manual: scan for bar higher than L bars left and R bars right | Asymmetric pivot detection |
+| `PivotLowVS(Inst, Price, LStr, RStr, Len)` | Manual: scan for bar lower than L bars left and R bars right | Same for lows |
+| `PivotHighVSBar(Inst, Price, LStr, RStr, Len)` | Manual: return offset of detected pivot high | bars-ago index |
+| `PivotLowVSBar(Inst, Price, LStr, RStr, Len)` | Manual: return offset of detected pivot low | bars-ago index |
+| `Divergence(P1, P2, Str, Len, HiLo)` | Manual: compare pivot highs/lows of two series | No TA-Lib function |
+| `TimeSeriesForecast(Close, Length, TgtBar)` | `TA_TSF(0, endIdx, inClose, length, &outBeg, &outNB, outTsf)` | Direct equivalent |
+| `LinearRegLine(Close, Length)` | `TA_LINEARREG(0, endIdx, inClose, length, &outBeg, &outNB, outLinReg)` | Value on regression line |
+| `SummationFC(Close, Length)` | `TA_SUM(0, endIdx, inClose, length, &outBeg, &outNB, outSum)` | Same as `Summation` |
+| `OpenD(N)` | Manual: aggregate intraday bars into daily `struct DailyBar`, index `daily_bars[size-1-N].open` | Requires daily bar aggregation |
+| `HighD(N)` | Manual: `daily_bars[size-1-N].high` | Daily high from aggregation |
+| `LowD(N)` | Manual: `daily_bars[size-1-N].low` | Daily low |
+| `CloseD(N)` | Manual: `daily_bars[size-1-N].close` | Daily close |
+| `OpenW(N)` | Manual: aggregate to weekly bars | Same pattern |
+| `HighW(N)` | Manual: weekly high | Weekly aggregation |
+| `LowW(N)` | Manual: weekly low | Weekly aggregation |
+| `CloseW(N)` | Manual: weekly close | Weekly aggregation |
+| `OpenM(N)` | Manual: aggregate to monthly bars | Monthly aggregation |
+| `HighM(N)` | Manual: monthly high | Monthly aggregation |
+| `LowM(N)` | Manual: monthly low | Monthly aggregation |
+| `CloseM(N)` | Manual: monthly close | Monthly aggregation |
+| `OpenY(N)` | Manual: aggregate to yearly bars | Yearly aggregation |
+| `HighY(N)` | Manual: yearly high | Yearly aggregation |
+| `LowY(N)` | Manual: yearly low | Yearly aggregation |
+| `CloseY(N)` | Manual: yearly close | Yearly aggregation |
+| `LRO(Cond, Length, N)` | Manual: scan from `length` bars ago forward, find Nth true | Least Recent Occurrence |
+| `SummationIf(Cond, Price, Length)` | Manual: `for (int i = 0; i < length; i++) if (cond[end-i]) sum += price[end-i];` | Conditional rolling sum |
+| `IFFString(Cond, TrueStr, FalseStr)` | `cond ? trueStr : falseStr` | C++ ternary with `std::string` |
+| `OBV` | `TA_OBV(0, endIdx, inClose, inVolume, &outBeg, &outNB, outObv)` | Direct equivalent |
+| `VolumeROC(Length)` | `TA_ROC(0, endIdx, inVolume, length, &outBeg, &outNB, outRoc)` | Apply ROC to volume array |
+| `VolumeOsc(ShortLen, LongLen)` | Manual: `TA_SMA(volume, ShortLen) - TA_SMA(volume, LongLen)` | Difference of two volume SMAs |
+| `PriceVolTrend` | Manual: cumulative `(close[i] - close[i-1]) / close[i-1] * volume[i]` | Running sum |
+| `LWAccDis` | Manual: cumulative `(close - open) / (high - low) * volume` | Larry Williams A/D |
+| `Fisher(Price)` | Manual: normalize, then `0.5 * log((1 + norm) / (1 - norm))` | Fisher transformation |
+| `FisherINV(Price)` | Manual: `(exp(2 * price) - 1) / (exp(2 * price) + 1)` | Inverse Fisher |
+| `C_Doji(Pct)` | `TA_CDLDOJI(0, endIdx, inOpen, inHigh, inLow, inClose, &outBeg, &outNB, outInt)` | TA-Lib CDL* functions return ±100 |
+| `C_Hammer_HangingMan(Pct, ...)` | `TA_CDLHAMMER(...)` / `TA_CDLHANGINGMAN(...)` | Separate TA-Lib functions for each pattern |
+| `C_BullEng_BearEng(...)` | `TA_CDLENGULFING(0, endIdx, inOpen, inHigh, inLow, inClose, &outBeg, &outNB, outInt)` | +100=bullish, −100=bearish |
+| `C_BullHar_BearHar(...)` | `TA_CDLHARAMI(0, endIdx, inOpen, inHigh, inLow, inClose, &outBeg, &outNB, outInt)` | +100=bullish, −100=bearish |
+| `C_MornDoji_EveDoji(Pct, ...)` | `TA_CDLMORNINGDOJISTAR(...)` / `TA_CDLEVENINGDOJISTAR(...)` | Separate functions |
+| `C_MornStar_EveStar(...)` | `TA_CDLMORNINGSTAR(...)` / `TA_CDLEVENINGSTAR(...)` | Separate functions |
+| `C_PierceLine_DkCloud(...)` | `TA_CDLPIERCING(...)` / `TA_CDLDARKCLOUDCOVER(...)` | Separate functions |
+| `C_ShootingStar(Pct)` | `TA_CDLSHOOTINGSTAR(0, endIdx, inOpen, inHigh, inLow, inClose, &outBeg, &outNB, outInt)` | Direct equivalent |
+| `C_3WhSolds_3BlkCrows(...)` | `TA_CDL3WHITESOLDIERS(...)` / `TA_CDL3BLACKCROWS(...)` | Separate functions |
 
 ---
 

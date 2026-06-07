@@ -139,7 +139,7 @@ Quantities use `Contract` / `Contracts` (futures, FX) or `Share` / `Shares` (equ
 
 ## Common built-in functions
 
-MultiCharts ships with hundreds of pre-built Functions (`.elf` files) that are NOT in the keyword reference. These are the most commonly used ones — get the signatures right or you'll get compile errors.
+MultiCharts ships with hundreds of pre-built Functions (`.elf` and `.pla` files) that are NOT in the keyword reference. These are the most commonly used ones — get the signatures right or you'll get compile errors.
 
 ### Moving averages and smoothing
 
@@ -151,6 +151,7 @@ MultiCharts ships with hundreds of pre-built Functions (`.elf` files) that are N
 | `WAverage` | `WAverage(Price, Length)` | numeric (weighted MA) |
 | `AdaptiveMovAvg` | `AdaptiveMovAvg(Price, EffRatioLen, FastAvgLen, SlowAvgLen)` | numeric (Kaufman AMA) |
 | `MidPoint` | `MidPoint(Price, Length)` | numeric |
+| `TriAverage` | `TriAverage(Price, Length)` | numeric (triangular MA; double-smoothed SMA) |
 
 ### Oscillators and indicators
 
@@ -175,11 +176,26 @@ MultiCharts ships with hundreds of pre-built Functions (`.elf` files) that are N
 | `ChaikinOsc` | `ChaikinOsc(FastLen, SlowLen, SmoothType)` | numeric |
 | `PriceOscillator` | `PriceOscillator(Price, FastLen, SlowLen)` | numeric |
 | `TSI` | `TSI(Price, LongLength, ShortLength)` | numeric (True Strength Index; double-smoothed momentum, range roughly −100 to +100) |
+| `ADXR` | `ADXR(Length)` | numeric (ADX Rating; average of current ADX and ADX N bars ago) |
+| `ADXCustom` | `ADXCustom(PriceH, PriceL, PriceC, Length)` | numeric (ADX with custom H/L/C) |
+| `DMI` | `DMI(Length)` | numeric (Directional Movement Index) |
+| `DMIPlusCustom` | `DMIPlusCustom(PriceH, PriceL, PriceC, Length)` | numeric (+DI with custom H/L/C) |
+| `DMIMinusCustom` | `DMIMinusCustom(PriceH, PriceL, PriceC, Length)` | numeric (−DI with custom H/L/C) |
+| `ParabolicCustom` | `ParabolicCustom(AfStep, AfLimit)` | numeric (Parabolic SAR with custom acceleration limit) |
+| `TRIX` | `TRIX(Price, Length)` | numeric (triple EMA rate-of-change) |
+| `MassIndex` | `MassIndex(SmoothingLength, SummationLength)` | numeric (signals reversal when crossing 27) |
+| `EaseOfMovement` | `EaseOfMovement` | numeric (no args; volume-weighted price movement) |
+| `SwingIndex` | `SwingIndex` | numeric (no args; Wilder's swing index, −100 to +100) |
+| `AccumSwingIndex` | `AccumSwingIndex` | numeric (no args; cumulative running total of SwingIndex) |
+| `Detrend` | `Detrend(Price, Length)` | numeric (detrended price; deviation from offset average) |
+| `PercentChange` | `PercentChange(Price, Length)` | numeric (percent change vs N bars ago) |
+| `UlcerIndex` | `UlcerIndex(Price, Length)` | numeric (downside volatility / drawdown stress) |
 
 **"No Price parameter" gotcha:** These functions take **no Price parameter** — passing `Close` as the first arg is a compile error:
-- **Length-only:** `CCI`, `ADX`, `DMIPlus`, `DMIMinus`, `AvgTrueRange`, `PercentR`, `MoneyFlow`, `Volatility`, `RSquared`, `AccumDist` — call as `ADX(14)`, not `ADX(Close, 14)`.
-- **Multi-length (no Price):** `UltimateOscillator(Len1, Len2, Len3)`, `ChaikinOsc(FastLen, SlowLen, SmoothType)` — all parameters are lengths/types, not prices.
+- **Length-only:** `CCI`, `ADX`, `ADXR`, `DMI`, `DMIPlus`, `DMIMinus`, `AvgTrueRange`, `PercentR`, `MoneyFlow`, `Volatility`, `RSquared`, `AccumDist` — call as `ADX(14)`, not `ADX(Close, 14)`.
+- **Multi-length (no Price):** `UltimateOscillator(Len1, Len2, Len3)`, `ChaikinOsc(FastLen, SlowLen, SmoothType)`, `MassIndex(SmoothLen, SumLen)` — all parameters are lengths/types, not prices.
 - **Single non-length:** `Parabolic(AfStep)` — takes only an acceleration factor step, e.g. `Parabolic(0.02)`.
+- **No arguments:** `EaseOfMovement`, `SwingIndex`, `AccumSwingIndex`, `OBV`, `PriceVolTrend`, `LWAccDis` — use current bar OHLCV internally.
 
 **`Stochastic` gotcha:** It takes **11 parameters**, not 3. The last 4 are output ref variables — you must declare Variables for them. The return value is just a status code (1 or -1), not the stochastic value itself. Typical usage:
 
@@ -189,6 +205,22 @@ Value1 = Stochastic(High, Low, Close, 14, 3, 3, 1, fastK, fastD, slowK, slowD);
 // Use slowK and slowD for signals
 ```
 
+### Stochastic helper functions
+
+These are convenience wrappers around the full `Stochastic` function. The default variants use the current bar's `High`, `Low`, `Close`; the `Custom` variants accept explicit price inputs.
+
+| Function | Signature | Returns |
+|---|---|---|
+| `FastK` | `FastK(StochLength)` | numeric (raw Fast %K using default H/L/C) |
+| `FastD` | `FastD(StochLength)` | numeric (smoothed Fast %D using default H/L/C) |
+| `SlowK` | `SlowK(StochLength)` | numeric (Slow %K using default H/L/C) |
+| `SlowD` | `SlowD(StochLength)` | numeric (Slow %D using default H/L/C) |
+| `FastKCustom` | `FastKCustom(PriceH, PriceL, PriceC, StochLength)` | numeric (raw Fast %K with custom prices) |
+| `FastDCustom` | `FastDCustom(PriceH, PriceL, PriceC, StochLength)` | numeric (smoothed Fast %D with custom prices) |
+| `SlowKCustom` | `SlowKCustom(PriceH, PriceL, PriceC, StochLength)` | numeric (Slow %K with custom prices) |
+| `SlowDCustom` | `SlowDCustom(PriceH, PriceL, PriceC, StochLength, SmoothLen1, SmoothLen2)` | numeric (Slow %D with smoothing control) |
+| `StochasticExp` | `StochasticExp(PriceH, PriceL, PriceC, StochLength, SmoothLen1, SmoothLen2, oFastD, oSlowD)` | numeric (returns Fast %K); uses EMA smoothing, populates 2 ref vars |
+
 ### Multi-output functions
 
 These functions populate output ref variables — you must declare Variables for each output parameter.
@@ -197,6 +229,8 @@ These functions populate output ref variables — you must declare Variables for
 |---|---|---|
 | `DirMovement` | `DirMovement(H, L, C, Length, oDMIp, oDMIm, oADX, oDIp, oDIm, oADXr)` | numeric; populates 6 ref vars |
 | `Extremes` | `Extremes(Price, Length, ExtrType, oExtUp, oExtDn)` | numeric; populates 2 ref vars |
+| `ParabolicSAR` | `ParabolicSAR(AfStep, AfLimit, oParCl, oParOp, oPosition, oTransition)` | numeric; populates 4 ref vars (close/open SAR, position direction, transition flag) |
+| `LinearReg` | `LinearReg(Price, Length, TgtBar, oSlope, oAngle, oIntercept, oValueRaw)` | numeric; populates 4 ref vars |
 
 ### Volatility and range
 
@@ -208,6 +242,9 @@ These functions populate output ref variables — you must declare Variables for
 | `TrueHigh` | `TrueHigh` | numeric (no args) |
 | `TrueLow` | `TrueLow` | numeric (no args) |
 | `Range` | `Range` | numeric (no args; High - Low) |
+| `TrueRangeCustom` | `TrueRangeCustom(HPrice, LPrice, CPrice)` | numeric (true range with custom H/L/C) |
+| `VolatilityStdDev` | `VolatilityStdDev(NumDays)` | numeric (historical volatility based on stdev of closes) |
+| `StandardDevAnnual` | `StandardDevAnnual(Price, Length, DataType)` | numeric (annualized standard deviation) |
 
 ### Price extremes and Nth
 
@@ -221,6 +258,8 @@ These functions populate output ref variables — you must declare Variables for
 | `NthLowest` | `NthLowest(Nth, Price, Length)` | numeric |
 | `NthHighestBar` | `NthHighestBar(Nth, Price, Length)` | numeric (bars ago) |
 | `NthLowestBar` | `NthLowestBar(Nth, Price, Length)` | numeric (bars ago) |
+| `HighestFC` | `HighestFC(Price, Length)` | numeric (fast calculation Highest) |
+| `LowestFC` | `LowestFC(Price, Length)` | numeric (fast calculation Lowest) |
 
 ### Swing detection
 
@@ -230,6 +269,23 @@ These functions populate output ref variables — you must declare Variables for
 | `SwingLow` | `SwingLow(Occurrence, Price, Strength, Length)` | numeric (price at swing, or -1 if none) |
 | `SwingHighBar` | `SwingHighBar(Occurrence, Price, Strength, Length)` | numeric (bars ago) |
 | `SwingLowBar` | `SwingLowBar(Occurrence, Price, Strength, Length)` | numeric (bars ago) |
+
+### Pivot with variable strength
+
+Like SwingHigh/Low but with independent left and right strength parameters.
+
+| Function | Signature | Returns |
+|---|---|---|
+| `PivotHighVS` | `PivotHighVS(Instance, Price, LeftStrength, RightStrength, Length)` | numeric (price at pivot, or -1 if none) |
+| `PivotLowVS` | `PivotLowVS(Instance, Price, LeftStrength, RightStrength, Length)` | numeric (price at pivot, or -1 if none) |
+| `PivotHighVSBar` | `PivotHighVSBar(Instance, Price, LeftStrength, RightStrength, Length)` | numeric (bars ago) |
+| `PivotLowVSBar` | `PivotLowVSBar(Instance, Price, LeftStrength, RightStrength, Length)` | numeric (bars ago) |
+
+### Divergence detection
+
+| Function | Signature | Returns |
+|---|---|---|
+| `Divergence` | `Divergence(Price1, Price2, Strength, Length, HiLo)` | numeric (1 if divergence found; HiLo: -1=bullish, 1=bearish) |
 
 ### Aggregation and linear regression
 
@@ -244,6 +300,9 @@ These functions populate output ref variables — you must declare Variables for
 | `RSquared` | `RSquared(Length)` | numeric |
 | `StdError` | `StdError(Price, Length)` | numeric |
 | `Median` | `Median(Price, Length)` | numeric |
+| `TimeSeriesForecast` | `TimeSeriesForecast(Price, Length, TgtBar)` | numeric (projected regression value at target bar) |
+| `LinearRegLine` | `LinearRegLine(Price, Length)` | numeric (current value on the regression line) |
+| `SummationFC` | `SummationFC(Price, Length)` | numeric (fast calculation Summation) |
 
 ### Date/Time conversion
 
@@ -252,6 +311,29 @@ These functions populate output ref variables — you must declare Variables for
 | `ELDate` | `ELDate(Month, Day, Year)` | numeric (EL date format) |
 | `MinutesToTime` | `MinutesToTime(Minutes)` | numeric (HHMM) |
 | `TimeToMinutes` | `TimeToMinutes(Time)` | numeric (total minutes) |
+
+### Multi-period OHLC reference
+
+Access daily, weekly, monthly, or yearly OHLC from any intraday chart. `PeriodsAgo` = 0 is the current period.
+
+| Function | Signature | Returns |
+|---|---|---|
+| `OpenD` | `OpenD(PeriodsAgo)` | numeric (daily open) |
+| `HighD` | `HighD(PeriodsAgo)` | numeric (daily high) |
+| `LowD` | `LowD(PeriodsAgo)` | numeric (daily low) |
+| `CloseD` | `CloseD(PeriodsAgo)` | numeric (daily close) |
+| `OpenW` | `OpenW(PeriodsAgo)` | numeric (weekly open) |
+| `HighW` | `HighW(PeriodsAgo)` | numeric (weekly high) |
+| `LowW` | `LowW(PeriodsAgo)` | numeric (weekly low) |
+| `CloseW` | `CloseW(PeriodsAgo)` | numeric (weekly close) |
+| `OpenM` | `OpenM(PeriodsAgo)` | numeric (monthly open) |
+| `HighM` | `HighM(PeriodsAgo)` | numeric (monthly high) |
+| `LowM` | `LowM(PeriodsAgo)` | numeric (monthly low) |
+| `CloseM` | `CloseM(PeriodsAgo)` | numeric (monthly close) |
+| `OpenY` | `OpenY(PeriodsAgo)` | numeric (yearly open) |
+| `HighY` | `HighY(PeriodsAgo)` | numeric (yearly high) |
+| `LowY` | `LowY(PeriodsAgo)` | numeric (yearly low) |
+| `CloseY` | `CloseY(PeriodsAgo)` | numeric (yearly close) |
 
 ### Price calculation shortcuts
 
@@ -270,18 +352,44 @@ These take no arguments — they use the current bar's OHLC automatically.
 |---|---|---|
 | `CountIF` | `CountIF(Condition, Length)` | numeric |
 | `MRO` | `MRO(Condition, Length, Occurrence)` | numeric (bars ago of Nth occurrence) |
+| `LRO` | `LRO(Condition, Length, Occurrence)` | numeric (bars ago of Nth-oldest occurrence) |
+| `SummationIf` | `SummationIf(Condition, Price, Length)` | numeric (conditional sum; only adds Price when Condition is true) |
+| `IFFString` | `IFFString(Condition, TrueVal, FalseVal)` | string (inline ternary returning a string) |
 
 ### Volume-based
 
 | Function | Signature | Returns |
 |---|---|---|
 | `AccumDist` | `AccumDist(Length)` | numeric |
+| `OBV` | `OBV` | numeric (no args; On Balance Volume) |
+| `VolumeROC` | `VolumeROC(Length)` | numeric (volume rate of change) |
+| `VolumeOsc` | `VolumeOsc(ShortLen, LongLen)` | numeric (volume oscillator; short MA − long MA of volume) |
+| `PriceVolTrend` | `PriceVolTrend` | numeric (no args; cumulative price-volume trend) |
+| `LWAccDis` | `LWAccDis` | numeric (no args; Larry Williams Accumulation/Distribution) |
 
-### Utility
+### Statistical
 
 | Function | Signature | Returns |
 |---|---|---|
 | `IFF` | `IFF(Condition, TrueVal, FalseVal)` | numeric (inline ternary) |
+| `Fisher` | `Fisher(Price)` | numeric (Fisher transformation; input should be normalized −1 to +1) |
+| `FisherINV` | `FisherINV(Price)` | numeric (inverse Fisher transformation) |
+
+### Candlestick patterns
+
+These return 1 if the pattern is detected, 0 otherwise. Multi-output variants populate ref variables.
+
+| Function | Signature | Returns |
+|---|---|---|
+| `C_Doji` | `C_Doji(Percent)` | numeric (1 if doji; body within Percent of range) |
+| `C_Hammer_HangingMan` | `C_Hammer_HangingMan(BodyPercent, oHammer, oHangingMan)` | numeric; populates 2 ref vars |
+| `C_BullEng_BearEng` | `C_BullEng_BearEng(oBullEng, oBearEng)` | numeric; populates 2 ref vars |
+| `C_BullHar_BearHar` | `C_BullHar_BearHar(oBullHar, oBearHar)` | numeric; populates 2 ref vars |
+| `C_MornDoji_EveDoji` | `C_MornDoji_EveDoji(Percent, oMornDoji, oEveDoji)` | numeric; populates 2 ref vars |
+| `C_MornStar_EveStar` | `C_MornStar_EveStar(oMornStar, oEveStar)` | numeric; populates 2 ref vars |
+| `C_PierceLine_DkCloud` | `C_PierceLine_DkCloud(oPierce, oDkCloud)` | numeric; populates 2 ref vars |
+| `C_ShootingStar` | `C_ShootingStar(BodyPercent)` | numeric (1 if shooting star) |
+| `C_3WhSolds_3BlkCrows` | `C_3WhSolds_3BlkCrows(o3WhSolds, o3BlkCrows)` | numeric; populates 2 ref vars |
 
 ## Gotchas
 

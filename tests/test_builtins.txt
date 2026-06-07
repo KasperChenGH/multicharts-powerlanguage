@@ -6,7 +6,17 @@ Variables:
     fk(0), fd(0), sk(0), sd(0), idx(0),
     oHigh(0), oLow(0), oClose(0),
     oDMIp(0), oDMIm(0), oADXval(0), oDIp(0), oDIm(0), oADXr(0),
-    oExtUp(0), oExtDn(0);
+    oExtUp(0), oExtDn(0),
+    oParCl(0), oParOp(0), oPosition(0), oTransition(0),
+    oSlope(0), oAngle(0), oIntercept(0), oValueRaw(0),
+    oFastD(0), oSlowD(0),
+    oHammer(0), oHangingMan(0),
+    oBullEng(0), oBearEng(0),
+    oBullHar(0), oBearHar(0),
+    oMornDoji(0), oEveDoji(0),
+    oMornStar(0), oEveStar(0),
+    oPierce(0), oDkCloud(0),
+    o3WhSolds(0), o3BlkCrows(0);
 
 If False Then Begin
 
@@ -25,6 +35,8 @@ If False Then Begin
     Value1 = AdaptiveMovAvg(Close, 10, 2, 30);
     { MidPoint(Price, Length) }
     Value1 = MidPoint(Close, 14);
+    { TriAverage(Price, Length) }
+    Value1 = TriAverage(Close, 14);
 
     { ================================================================ }
     { === Oscillators and indicators === }
@@ -69,6 +81,56 @@ If False Then Begin
     Value1 = PriceOscillator(Close, 12, 26);
     { TSI(Price, LongLength, ShortLength) }
     Value1 = TSI(Close, 25, 13);
+    { ADXR(Length) }
+    Value1 = ADXR(14);
+    { ADXCustom(PriceH, PriceL, PriceC, Length) }
+    Value1 = ADXCustom(High, Low, Close, 14);
+    { DMI(Length) }
+    Value1 = DMI(14);
+    { DMIPlusCustom(PriceH, PriceL, PriceC, Length) }
+    Value1 = DMIPlusCustom(High, Low, Close, 14);
+    { DMIMinusCustom(PriceH, PriceL, PriceC, Length) }
+    Value1 = DMIMinusCustom(High, Low, Close, 14);
+    { ParabolicCustom(AfStep, AfLimit) }
+    Value1 = ParabolicCustom(0.02, 0.2);
+    { TRIX(Price, Length) }
+    Value1 = TRIX(Close, 15);
+    { MassIndex(SmoothingLength, SummationLength) }
+    Value1 = MassIndex(9, 25);
+    { EaseOfMovement -- no arguments }
+    Value1 = EaseOfMovement;
+    { SwingIndex -- no arguments }
+    Value1 = SwingIndex;
+    { AccumSwingIndex -- no arguments }
+    Value1 = AccumSwingIndex;
+    { Detrend(Price, Length) }
+    Value1 = Detrend(Close, 14);
+    { PercentChange(Price, Length) }
+    Value1 = PercentChange(Close, 14);
+    { UlcerIndex(Price, Length) }
+    Value1 = UlcerIndex(Close, 14);
+
+    { ================================================================ }
+    { === Stochastic helper functions === }
+    { ================================================================ }
+    { FastK(StochLength) }
+    Value1 = FastK(14);
+    { FastD(StochLength) }
+    Value1 = FastD(14);
+    { SlowK(StochLength) }
+    Value1 = SlowK(14);
+    { SlowD(StochLength) }
+    Value1 = SlowD(14);
+    { FastKCustom(PriceH, PriceL, PriceC, StochLength) }
+    Value1 = FastKCustom(High, Low, Close, 14);
+    { FastDCustom(PriceH, PriceL, PriceC, StochLength) }
+    Value1 = FastDCustom(High, Low, Close, 14);
+    { SlowKCustom(PriceH, PriceL, PriceC, StochLength) }
+    Value1 = SlowKCustom(High, Low, Close, 14);
+    { SlowDCustom(PriceH, PriceL, PriceC, StochLength, SmoothLen1, SmoothLen2) }
+    Value1 = SlowDCustom(High, Low, Close, 14, 3, 3);
+    { StochasticExp(PriceH, PriceL, PriceC, StochLength, SmoothLen1, SmoothLen2, oFastD, oSlowD) }
+    Value1 = StochasticExp(High, Low, Close, 14, 3, 3, oFastD, oSlowD);
 
     { ================================================================ }
     { === Directional Movement (multi-output) === }
@@ -94,6 +156,20 @@ If False Then Begin
     Value1 = Range;
     { Extremes(Price, Length, ExtrType, oExtUp, oExtDn) -- 5 params }
     Value1 = Extremes(Close, 20, 1, oExtUp, oExtDn);
+    { ParabolicSAR(AfStep, AfLimit, oParCl, oParOp, oPosition, oTransition) }
+    Value1 = ParabolicSAR(0.02, 0.2, oParCl, oParOp, oPosition, oTransition);
+    { LinearReg(Price, Length, TgtBar, oSlope, oAngle, oIntercept, oValueRaw) }
+    Value1 = LinearReg(Close, 20, 0, oSlope, oAngle, oIntercept, oValueRaw);
+
+    { ================================================================ }
+    { === Volatility and range (extended) === }
+    { ================================================================ }
+    { TrueRangeCustom(HPrice, LPrice, CPrice) }
+    Value1 = TrueRangeCustom(High, Low, Close);
+    { VolatilityStdDev(NumDays) }
+    Value1 = VolatilityStdDev(20);
+    { StandardDevAnnual(Price, Length, DataType) }
+    Value1 = StandardDevAnnual(Close, 20, 1);
 
     { ================================================================ }
     { === Price extremes and Nth === }
@@ -114,6 +190,10 @@ If False Then Begin
     Value1 = NthHighestBar(2, High, 20);
     { NthLowestBar(Nth, Price, Length) }
     Value1 = NthLowestBar(2, Low, 20);
+    { HighestFC(Price, Length) }
+    Value1 = HighestFC(High, 20);
+    { LowestFC(Price, Length) }
+    Value1 = LowestFC(Low, 20);
 
     { ================================================================ }
     { === Swing detection === }
@@ -126,6 +206,24 @@ If False Then Begin
     Value1 = SwingHighBar(1, High, 3, 10);
     { SwingLowBar(Occurrence, Price, Strength, Length) }
     Value1 = SwingLowBar(1, Low, 3, 10);
+
+    { ================================================================ }
+    { === Pivot with variable strength === }
+    { ================================================================ }
+    { PivotHighVS(Instance, Price, LeftStrength, RightStrength, Length) }
+    Value1 = PivotHighVS(1, High, 3, 3, 20);
+    { PivotLowVS(Instance, Price, LeftStrength, RightStrength, Length) }
+    Value1 = PivotLowVS(1, Low, 3, 3, 20);
+    { PivotHighVSBar(Instance, Price, LeftStrength, RightStrength, Length) }
+    Value1 = PivotHighVSBar(1, High, 3, 3, 20);
+    { PivotLowVSBar(Instance, Price, LeftStrength, RightStrength, Length) }
+    Value1 = PivotLowVSBar(1, Low, 3, 3, 20);
+
+    { ================================================================ }
+    { === Divergence detection === }
+    { ================================================================ }
+    { Divergence(Price1, Price2, Strength, Length, HiLo) }
+    Value1 = Divergence(Close, RSI(Close, 14), 3, 20, -1);
 
     { ================================================================ }
     { === Aggregation and linear regression === }
@@ -149,6 +247,12 @@ If False Then Begin
     Value1 = StdError(Close, 20);
     { Median(Price, Length) }
     Value1 = Median(Close, 20);
+    { TimeSeriesForecast(Price, Length, TgtBar) }
+    Value1 = TimeSeriesForecast(Close, 20, 0);
+    { LinearRegLine(Price, Length) }
+    Value1 = LinearRegLine(Close, 20);
+    { SummationFC(Price, Length) }
+    Value1 = SummationFC(Close, 14);
 
     { ================================================================ }
     { === Date/Time conversion === }
@@ -159,6 +263,30 @@ If False Then Begin
     Value1 = MinutesToTime(870);
     { TimeToMinutes(Time) }
     Value1 = TimeToMinutes(1430);
+
+    { ================================================================ }
+    { === Multi-period OHLC reference === }
+    { ================================================================ }
+    { Daily }
+    Value1 = OpenD(0);
+    Value1 = HighD(0);
+    Value1 = LowD(0);
+    Value1 = CloseD(1);
+    { Weekly }
+    Value1 = OpenW(0);
+    Value1 = HighW(0);
+    Value1 = LowW(0);
+    Value1 = CloseW(1);
+    { Monthly }
+    Value1 = OpenM(0);
+    Value1 = HighM(0);
+    Value1 = LowM(0);
+    Value1 = CloseM(1);
+    { Yearly }
+    Value1 = OpenY(0);
+    Value1 = HighY(0);
+    Value1 = LowY(0);
+    Value1 = CloseY(1);
 
     { ================================================================ }
     { === Price calculation shortcuts === }
@@ -179,18 +307,62 @@ If False Then Begin
     Value1 = CountIF(Close > Close[1], 14);
     { MRO(Condition, Length, Occurrence) -- Most Recent Occurrence }
     Value1 = MRO(Close > Close[1], 14, 1);
+    { LRO(Condition, Length, Occurrence) -- Least Recent Occurrence }
+    Value1 = LRO(Close > Close[1], 14, 1);
+    { SummationIf(Condition, Price, Length) }
+    Value1 = SummationIf(Close > Close[1], Volume, 14);
 
     { ================================================================ }
     { === Volume-based === }
     { ================================================================ }
     { AccumDist(Length) -- 1 param }
     Value1 = AccumDist(14);
+    { OBV -- no arguments }
+    Value1 = OBV;
+    { VolumeROC(Length) }
+    Value1 = VolumeROC(14);
+    { VolumeOsc(ShortLen, LongLen) }
+    Value1 = VolumeOsc(5, 20);
+    { PriceVolTrend -- no arguments }
+    Value1 = PriceVolTrend;
+    { LWAccDis -- no arguments }
+    Value1 = LWAccDis;
+
+    { ================================================================ }
+    { === Statistical === }
+    { ================================================================ }
+    { Fisher(Price) }
+    Value1 = Fisher(Close);
+    { FisherINV(Price) }
+    Value1 = FisherINV(Close);
 
     { ================================================================ }
     { === Utility === }
     { ================================================================ }
     { IFF(Condition, TrueVal, FalseVal) -- inline ternary }
     Value1 = IFF(Close > Open, 1, -1);
+
+    { ================================================================ }
+    { === Candlestick patterns === }
+    { ================================================================ }
+    { C_Doji(Percent) }
+    Value1 = C_Doji(5);
+    { C_Hammer_HangingMan(BodyPercent, oHammer, oHangingMan) }
+    Value1 = C_Hammer_HangingMan(33, oHammer, oHangingMan);
+    { C_BullEng_BearEng(oBullEng, oBearEng) }
+    Value1 = C_BullEng_BearEng(oBullEng, oBearEng);
+    { C_BullHar_BearHar(oBullHar, oBearHar) }
+    Value1 = C_BullHar_BearHar(oBullHar, oBearHar);
+    { C_MornDoji_EveDoji(Percent, oMornDoji, oEveDoji) }
+    Value1 = C_MornDoji_EveDoji(5, oMornDoji, oEveDoji);
+    { C_MornStar_EveStar(oMornStar, oEveStar) }
+    Value1 = C_MornStar_EveStar(oMornStar, oEveStar);
+    { C_PierceLine_DkCloud(oPierce, oDkCloud) }
+    Value1 = C_PierceLine_DkCloud(oPierce, oDkCloud);
+    { C_ShootingStar(BodyPercent) }
+    Value1 = C_ShootingStar(33);
+    { C_3WhSolds_3BlkCrows(o3WhSolds, o3BlkCrows) }
+    Value1 = C_3WhSolds_3BlkCrows(o3WhSolds, o3BlkCrows);
 
     { === Loop counter gotcha: use idx not i (I = OpenInterest) === }
     For idx = 1 To 10 Begin
