@@ -398,6 +398,28 @@ If False Then Begin
     { LastBarOnChart -- no arguments }
     Condition1 = LastBarOnChart;
 
+    { === Custom functions (commonly available f_* studies) === }
+    { StochRSI(Price, RSILen, Length) }
+    Value1 = StochRSI(Close, 14, 14);
+    { supertrend(ATRLen, Mult) }
+    Value1 = supertrend(10, 3);
+    { NVI(StartValue) }
+    Value1 = NVI(1000);
+    { PVI(StartValue) }
+    Value1 = PVI(1000);
+    { Coppo(N1, N2, N3) }
+    Value1 = Coppo(14, 11, 10);
+    { LWTI(Price, Period, Length) }
+    Value1 = LWTI(Close, 10, 14);
+    { TVI(Price, Vol, MinTickValue) }
+    Value1 = TVI(Close, Volume, MinMove);
+    { SharpeRatio(Period, IntRate, CalculateRatio, InitCapital) }
+    Value1 = SharpeRatio(1, 5, False, 100000);
+    { WRSI(Length, Price) }
+    Value1 = WRSI(14, Close);
+    { NewMA(Price, Length) }
+    Value1 = NewMA(Close, 14);
+
     { === Loop counter gotcha: use idx not i (I = OpenInterest) === }
     For idx = 1 To 10 Begin
         Value1 = Value1 + Close[idx];

@@ -4,9 +4,9 @@
 [![Version](https://img.shields.io/badge/version-0.4.0-blue.svg)](https://github.com/KasperChenGH/multicharts-powerlanguage)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude_Code-plugin-blueviolet.svg)](https://github.com/KasperChenGH/multicharts-powerlanguage)
 
-A Claude Code plugin for [MultiCharts](https://www.multicharts.com/) PowerLanguage — gives Claude expert knowledge of PowerLanguage syntax, 947 keywords, 150 built-in functions, and bidirectional code conversion to [TradingView Pine Script](https://www.tradingview.com/), Python, Rust, and C++.
+A Claude Code plugin for [MultiCharts](https://www.multicharts.com/) PowerLanguage — gives Claude expert knowledge of PowerLanguage syntax, 947 keywords, 160 functions (150 built-in + 10 custom), and bidirectional code conversion to [TradingView Pine Script](https://www.tradingview.com/), Python, Rust, and C++.
 
-**947 keywords · 150 compile-verified functions · 8 auto-activating skills · 4 conversion targets**
+**947 keywords · 160 functions · 8 auto-activating skills · 4 conversion targets**
 
 ---
 
@@ -72,7 +72,7 @@ Buy ("Entry") 1 Contract Next Bar at Market;
 | Skill | Description |
 |---|---|
 | `multicharts-fundamentals` | Script types (Indicator / Signal / Function), execution model, multi-data series, order keywords |
-| `powerlanguage-syntax` | Declarations, `begin/end` semicolon rule, control flow, bar references, 150 built-in function signatures, code-generation gotchas |
+| `powerlanguage-syntax` | Declarations, `begin/end` semicolon rule, control flow, bar references, 160 function signatures (150 built-in + 10 custom), code-generation gotchas |
 | `powerlanguage-keywords-reference` | 947 keywords across 40 categories — signature, parameters, description, and wiki link for each |
 
 ### Target language reference
@@ -98,6 +98,25 @@ All four converters follow the same structure:
 | `powerlanguage-python-conversion` | Python | `Strategy(ABC)` + `on_bar` | pandas-ta (primary), TA-Lib (alt) |
 | `powerlanguage-rust-conversion` | Rust | `Strategy` trait + `on_bar` | ta-rs (streaming) |
 | `powerlanguage-cpp-conversion` | C++ | `Strategy` base class + `on_bar` | TA-Lib (batch) |
+
+---
+
+### Custom functions
+
+10 commonly available `f_*` function studies that ship with many MultiCharts installations. These are **not** built-in keywords — they require the corresponding function study in your PowerLanguage Editor. If missing, create the function study and paste the implementation (source available in the MultiCharts `StudyServer` directory).
+
+| Function | Signature | Description |
+|---|---|---|
+| `StochRSI` | `StochRSI(Price, RSILen, Length)` | Stochastic of RSI (0–1) |
+| `supertrend` | `supertrend(ATRLen, Mult)` | ATR-based trend line |
+| `NVI` | `NVI(StartValue)` | Negative Volume Index |
+| `PVI` | `PVI(StartValue)` | Positive Volume Index |
+| `Coppo` | `Coppo(N1, N2, N3)` | Coppock Curve (WMA of two ROCs) |
+| `LWTI` | `LWTI(Price, Period, Length)` | Larry Williams Trading Index |
+| `TVI` | `TVI(Price, Vol, MinTickValue)` | Trade Volume Index |
+| `SharpeRatio` | `SharpeRatio(Period, IntRate, CalculateRatio, InitCapital)` | Portfolio-level Sharpe Ratio |
+| `WRSI` | `WRSI(Length, Price)` | Wilder RSI (session-reset variant) |
+| `NewMA` | `NewMA(Price, Length)` | Heikin-Ashi TEMA hybrid MA |
 
 ---
 
@@ -128,7 +147,7 @@ multicharts-powerlanguage/
 ├── tests/                                 # 19 compile-test files
 ├── scripts/
 │   ├── lib/                               # 8 PowerShell build modules
-│   └── tests/                             # 10 Pester test files (67 tests)
+│   └── tests/                             # 11 Pester test files (189 tests)
 ├── package.json
 ├── NOTICE
 └── LICENSE
@@ -145,7 +164,7 @@ multicharts-powerlanguage/
 Invoke-Pester scripts/tests/ -Output Detailed
 ```
 
-10 test files, 67 tests — frontmatter validation, metadata consistency, keyword parsing, paraphrase quality, build pipeline.
+11 test files, 189 tests — frontmatter validation, metadata consistency, keyword parsing, paraphrase quality, build pipeline, custom function consistency.
 
 ### Manual compile tests
 
@@ -158,7 +177,7 @@ Invoke-Pester scripts/tests/ -Output Detailed
 | `test_indicator.txt` | Indicator | 947 CHM keywords |
 | `test_signal.txt` | Signal | 947 CHM keywords |
 | `test_function.txt` | Function | 947 CHM keywords |
-| `test_builtins.txt` | Signal | 150 built-in function signatures |
+| `test_builtins.txt` | Signal | 160 function signatures (150 built-in + 10 custom) |
 | `test_syntax.txt` | Signal | Control flow, operators, crosses |
 | `test_orders.txt` | Signal | All order combinations + stops |
 | `test_declarations.txt` | Signal | Inputs, Variables, Arrays, multi-data |
@@ -176,7 +195,7 @@ Invoke-Pester scripts/tests/ -Output Detailed
 
 The 14 strategies cover 39+ indicators: MA crossover, RSI+ATR stop, Bollinger breakout, ADX/CCI multi-indicator, regime filter, EMA momentum, Donchian channel, MACD trailing stop, Stochastic, time filter, DMI/Keltner/SAR, Williams %R/ROC/volatility, money flow/linear regression, and swing detection.
 
-**New function conversions (5 files, 84 functions each):**
+**New function conversions (5 files, 93 built-in + 10 custom functions each):**
 
 | File | Target | Library |
 |---|---|---|

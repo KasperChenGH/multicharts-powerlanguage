@@ -398,6 +398,23 @@ These take no arguments — they use the current bar's OHLC automatically.
 | `BarAnnualization` | `BarAnnualization` | numeric (no args; bars-per-year factor) |
 | `LastBarOnChart` | `LastBarOnChart` | truefalse (no args; true on last bar) |
 
+### Custom functions (commonly available)
+
+These ship as `f_*` function files with many MultiCharts installations. They are **not** built-in keywords — you must have the corresponding function study (e.g. `f_StochRSI`) in your PowerLanguage Editor for the call to compile. If missing, create a new function study and paste the implementation from the source below.
+
+| Function | Signature | Returns |
+|---|---|---|
+| `StochRSI` | `StochRSI(Price, RSILen, Length)` | numeric (0–1; Stochastic of RSI) |
+| `supertrend` | `supertrend(ATRLen, Mult)` | numeric (trend line value; positive = uptrend support, negative = downtrend resistance) |
+| `NVI` | `NVI(StartValue)` | numeric (Negative Volume Index; updates only when volume decreases) |
+| `PVI` | `PVI(StartValue)` | numeric (Positive Volume Index; updates only when volume increases) |
+| `Coppo` | `Coppo(N1, N2, N3)` | numeric (Coppock Curve; WMA of two ROC periods — uses `Close of Data2`) |
+| `LWTI` | `LWTI(Price, Period, Length)` | numeric (Larry Williams Trading Index; 0–100 oscillator) |
+| `TVI` | `TVI(Price, Vol, MinTickValue)` | numeric (Trade Volume Index; cumulative directional volume) |
+| `SharpeRatio` | `SharpeRatio(Period, IntRate, CalculateRatio, InitCapital)` | numeric (portfolio-level; Period: 0=monthly, 1=daily; requires position history) |
+| `WRSI` | `WRSI(Length, Price)` | numeric (0–100; Wilder RSI with session reset — original Wilder smoothing) |
+| `NewMA` | `NewMA(Price, Length)` | numeric (Heikin-Ashi TEMA hybrid moving average) |
+
 ### Candlestick patterns
 
 These return 1 if the pattern is detected, 0 otherwise. Multi-output variants populate ref variables.

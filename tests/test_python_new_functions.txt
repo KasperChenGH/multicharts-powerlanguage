@@ -138,6 +138,13 @@ class NewFunctionsTest(Strategy):
         super().__init__()
         self.position: int = 0
         self.entry_price: float = 0.0
+        # Custom Functions state
+        self._nvi: float = 1000.0
+        self._pvi: float = 1000.0
+        self._tvi: float = 0.0
+        self._tvi_dir: float = 0.0
+        self._tvi_prev: float = 0.0
+        self._ha_open: float = 0.0
 
     def on_bar(self, bars: list[Bar], orders: list[Order]) -> None:
         if len(bars) < 30:
@@ -581,6 +588,51 @@ class NewFunctionsTest(Strategy):
         # PL: IFFString(cond, "up", "down") — inline conditional string
         iff_result = "up" if bar.close > bar.open else "down"
 
+        # PL: CountIF(Close > Close[1], 14) — count true occurrences in lookback
+        count_if_val = sum(
+            1 for i in range(1, min(15, len(bars)))
+            if bars[-i].close > bars[-i - 1].close
+        )
+
+        # PL: MRO(Close > Close[1], 14, 1) — most recent occurrence (bars ago)
+        mro_val = -1
+        for i in range(1, min(15, len(bars))):
+            if bars[-i].close > bars[-i - 1].close:
+                mro_val = i - 1
+                break
+
+        # PL: IFF(cond, trueVal, falseVal) — numeric inline ternary
+        iff_val = 1.0 if bar.close > bar.open else -1.0
+
+        # =================================================================
+        # 12B. Date/Time Conversion
+        # =================================================================
+
+        # PL: ELDate(Month, Day, Year) — YYYMMDD format (YYY = year - 1900)
+        from datetime import datetime
+        dt = datetime.fromtimestamp(bar.time)
+        el_date_val = (dt.year - 1900) * 10000 + dt.month * 100 + dt.day
+
+        # PL: MinutesToTime(Minutes) — total minutes to HHMM integer
+        def minutes_to_time(mins: int) -> int:
+            return (mins // 60) * 100 + mins % 60
+        hhmm_val = minutes_to_time(870)  # → 1430
+
+        # PL: TimeToMinutes(HHMM) — HHMM integer to total minutes
+        def time_to_minutes(hhmm: int) -> int:
+            return (hhmm // 100) * 60 + hhmm % 100
+        mins_val = time_to_minutes(1430)  # → 870
+
+        # =================================================================
+        # 12C. Price Calculation Shortcuts
+        # =================================================================
+
+        # PL: MedianPrice — (H+L)/2
+        median_price = (bar.high + bar.low) / 2.0
+
+        # PL: WeightedClose — (H+L+2C)/4
+        weighted_close = (bar.high + bar.low + bar.close * 2) / 4.0
+
         # =================================================================
         # 13. Volume
         # =================================================================
@@ -795,6 +847,75 @@ class NewFunctionsTest(Strategy):
 
         # PL: LastBarOnChart — True if this is the final bar in the dataset
         last_bar_on_chart = (idx == len(bars) - 1)
+
+        # =================================================================
+        # 17. Custom Functions
+        # =================================================================
+
+        # PL: StochRSI(Close, 14, 14) -> pandas_ta.stochrsi()
+        stochrsi_df = ta.stochrsi(df["close"], length=14, rsi_length=14, k=14, d=3)
+        stoch_rsi = stochrsi_df.iloc[:, 0].iloc[-1] if stochrsi_df is not None else 0.0
+
+        # PL: supertrend(10, 3) -> pandas_ta.supertrend()
+        st_df = ta.supertrend(df["high"], df["low"], df["close"], length=10, multiplier=3.0)
+        st_value = st_df.iloc[:, 0].iloc[-1] if st_df is not None else 0.0
+        st_dir = st_df.iloc[:, 1].iloc[-1] if st_df is not None else 1
+
+        # PL: NVI(1000) -> manual: accumulate on volume-down bars
+        bar_index = idx
+        if bar_index > 0 and bar.volume < bars[bar_index - 1].volume and bars[bar_index - 1].close != 0:
+            self._nvi *= 1.0 + (bar.close - bars[bar_index - 1].close) / bars[bar_index - 1].close
+        nvi_val = self._nvi
+
+        # PL: PVI(1000) -> manual: accumulate on volume-up bars
+        if bar_index > 0 and bar.volume > bars[bar_index - 1].volume and bars[bar_index - 1].close != 0:
+            self._pvi *= 1.0 + (bar.close - bars[bar_index - 1].close) / bars[bar_index - 1].close
+        pvi_val = self._pvi
+
+        # PL: Coppo(14, 11, 10) -> pandas_ta.coppock()
+        coppo_series = ta.coppock(df["close"], length=10, fast=11, slow=14)
+        coppo_val = coppo_series.iloc[-1] if coppo_series is not None else 0.0
+
+        # PL: LWTI(Close, 10, 14) -> manual
+        price_diff = df["close"] - df["close"].shift(10)
+        avg_diff = price_diff.rolling(14).mean().iloc[-1]
+        avg_range = (df["high"] - df["low"]).rolling(14).mean().iloc[-1]
+        lwti_val = (avg_diff / avg_range) * 50.0 + 50.0 if avg_range != 0 else 50.0
+
+        # PL: TVI(Close, Volume, MinMove) -> manual
+        if self._tvi_prev == 0.0:
+            self._tvi_prev = bar.close
+        tick = 0.01  # min tick
+        if bar.close >= self._tvi_prev + tick:
+            self._tvi_dir = 1.0
+        elif bar.close <= self._tvi_prev - tick:
+            self._tvi_dir = -1.0
+        self._tvi += self._tvi_dir * bar.volume
+        self._tvi_prev = bar.close
+        tvi_val = self._tvi
+
+        # PL: SharpeRatio(1, 5, False, 100000) -> manual: (avgReturn - rf) / stdReturn
+        if len(df) >= 21:
+            returns = df["close"].pct_change().dropna().tail(20)
+            rf_daily = 5.0 / 365 / 100
+            sharpe_val = (returns.mean() - rf_daily) / returns.std() if returns.std() != 0 else 0.0
+        else:
+            sharpe_val = 0.0
+
+        # PL: WRSI(14, Close) -> pandas_ta.rsi() (Wilder smoothing by default)
+        wrsi_series = ta.rsi(df["close"], length=14)
+        wrsi_val = wrsi_series.iloc[-1] if wrsi_series is not None else 0.0
+
+        # PL: NewMA(Close, 14) -> manual: HA + TEMA hybrid
+        if self._ha_open == 0.0:
+            self._ha_open = bar.close
+        ha_close_raw = (bar.close + bar.close + bar.high + bar.low) / 4.0
+        self._ha_open = (self._ha_open + ha_close_raw) / 2.0
+        ha_max = max(bar.high, self._ha_open)
+        ha_min = min(bar.low, self._ha_open)
+        ha_c = (ha_close_raw + self._ha_open + ha_max + ha_min) / 4.0
+        # Full TEMA would require EMA state; simplified for test
+        newma_val = ha_c
 
         # =================================================================
         # Sample entry/exit logic using computed values

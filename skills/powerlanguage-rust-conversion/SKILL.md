@@ -299,6 +299,17 @@ The slice `&bars[..=i]` gives the strategy access to full history; `bars.last().
 | **Miscellaneous** | | |
 | `BarAnnualization` | Manual: compute from bar frequency | Bars-per-year factor |
 | `LastBarOnChart` | `bar_index == data.len() - 1` | True on last bar |
+| **Custom functions** | | |
+| `StochRSI(Close, N, M)` | Manual: compute RSI, then `(rsi - lowest(rsi, M)) / (highest(rsi, M) - lowest(rsi, M))` | Stochastic RSI |
+| `supertrend(N, Mult)` | Manual: ATR bands + direction flip logic | Supertrend |
+| `NVI(Start)` | Manual: accumulate on volume-down bars | Negative Volume Index |
+| `PVI(Start)` | Manual: accumulate on volume-up bars | Positive Volume Index |
+| `Coppo(N1, N2, N3)` | Manual: WMA of two ROC periods | Coppock Curve |
+| `LWTI(Close, P, N)` | Manual: `(sma(diff, N) / sma(range, N)) * 50 + 50` | Larry Williams TI |
+| `TVI(Close, Vol, Tick)` | Manual: cumulative directional volume | Trade Volume Index |
+| `SharpeRatio(Period, Rate, Calc, Cap)` | Manual: `(avg_return - rf) / std_return` | Portfolio Sharpe |
+| `WRSI(N, Close)` | Manual: Wilder smoothing RSI (same formula as standard RSI) | Wilder RSI |
+| `NewMA(Close, N)` | Manual: Heikin-Ashi + triple EMA hybrid | Hybrid MA |
 
 ---
 

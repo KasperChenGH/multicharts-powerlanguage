@@ -330,6 +330,17 @@ The slice `bars[:i+1]` gives the strategy access to full history; `bars[-1]` is 
 | **Miscellaneous** | | | |
 | `BarAnnualization` | Manual: compute from bar frequency | Manual | Bars-per-year factor |
 | `LastBarOnChart` | `idx == len(df) - 1` | Manual | True on last bar |
+| **Custom functions** | | | |
+| `StochRSI(Close, N, M)` | `pandas_ta.stochrsi(df["close"], length=N, rsi_length=N, k=M)` | `pandas_ta.stochrsi()` | Stochastic RSI |
+| `supertrend(N, Mult)` | `pandas_ta.supertrend(df["high"], df["low"], df["close"], length=N, multiplier=Mult)` | `pandas_ta.supertrend()` | Supertrend |
+| `NVI(Start)` | Manual: accumulate on volume-down bars | Manual | Negative Volume Index |
+| `PVI(Start)` | Manual: accumulate on volume-up bars | Manual | Positive Volume Index |
+| `Coppo(N1, N2, N3)` | `pandas_ta.coppock(df["close"], length=N3, fast=N2, slow=N1)` | `pandas_ta.coppock()` | Coppock Curve |
+| `LWTI(Close, P, N)` | Manual: `(sma(close-close.shift(P), N) / sma(high-low, N)) * 50 + 50` | Manual | Larry Williams TI |
+| `TVI(Close, Vol, Tick)` | Manual: cumulative directional volume | Manual | Trade Volume Index |
+| `SharpeRatio(Period, Rate, Calc, Cap)` | Manual: `(returns.mean() - rf) / returns.std()` | Manual | Portfolio Sharpe |
+| `WRSI(N, Close)` | `pandas_ta.rsi(df["close"], length=N)` | `pandas_ta.rsi()` | Wilder RSI (default) |
+| `NewMA(Close, N)` | Manual: Heikin-Ashi + TEMA hybrid | Manual | Hybrid MA |
 
 ---
 

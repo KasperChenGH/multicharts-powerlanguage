@@ -1,4 +1,4 @@
-{ test_new_functions.txt -- exercises 74 NEW built-in functions added in v0.4.0 }
+{ test_new_functions.txt -- exercises all new function mappings (93 built-in + 10 custom) }
 { Paste this whole file into a new Signal study in PowerLanguage Editor and Verify (F3). }
 { Expected: 0 errors, 0 warnings. }
 
@@ -127,7 +127,7 @@ If False Then Begin
     Value1 = Divergence(Close, RSI(Close, 14), 3, 20, -1);
 
     { ================================================================ }
-    { === 10. Aggregation extended (3 new) === }
+    { === 10. Aggregation extended (2 new) === }
     { ================================================================ }
     { TimeSeriesForecast(Price, Length) }
     Value1 = TimeSeriesForecast(Close, 20);
@@ -249,5 +249,55 @@ If False Then Begin
     Value1 = BarAnnualization;
     { LastBarOnChart -- true on last bar, no arguments }
     Condition1 = LastBarOnChart;
+
+    { ================================================================ }
+    { === 19. Custom functions (commonly available f_* studies) === }
+    { ================================================================ }
+    { StochRSI(Price, RSILen, Length) -- Stochastic of RSI, 0-1 }
+    Value1 = StochRSI(Close, 14, 14);
+    { supertrend(ATRLen, Mult) -- trend line value }
+    Value1 = supertrend(10, 3);
+    { NVI(StartValue) -- Negative Volume Index }
+    Value1 = NVI(1000);
+    { PVI(StartValue) -- Positive Volume Index }
+    Value1 = PVI(1000);
+    { Coppo(N1, N2, N3) -- Coppock Curve }
+    Value1 = Coppo(14, 11, 10);
+    { LWTI(Price, Period, Length) -- Larry Williams Trading Index }
+    Value1 = LWTI(Close, 10, 14);
+    { TVI(Price, Vol, MinTickValue) -- Trade Volume Index }
+    Value1 = TVI(Close, Volume, MinMove);
+    { SharpeRatio(Period, IntRate, CalculateRatio, InitCapital) -- portfolio Sharpe }
+    Value1 = SharpeRatio(1, 5, False, 100000);
+    { WRSI(Length, Price) -- Wilder RSI with session reset }
+    Value1 = WRSI(14, Close);
+    { NewMA(Price, Length) -- Heikin-Ashi TEMA hybrid MA }
+    Value1 = NewMA(Close, 14);
+
+    { ================================================================ }
+    { === 20. Date/Time conversion (3 new) === }
+    { ================================================================ }
+    { ELDate(Month, Day, Year) -- EasyLanguage YYYMMDD format }
+    Value1 = ELDate(1, 15, 2025);
+    { MinutesToTime(Minutes) -- total minutes to HHMM integer }
+    Value1 = MinutesToTime(870);
+    { TimeToMinutes(Time) -- HHMM integer to total minutes }
+    Value1 = TimeToMinutes(1430);
+
+    { ================================================================ }
+    { === 21. Price calculation shortcuts (2 new) === }
+    { ================================================================ }
+    { MedianPrice -- (H+L)/2, no arguments }
+    Value1 = MedianPrice;
+    { WeightedClose -- (H+L+C+C)/4, no arguments }
+    Value1 = WeightedClose;
+
+    { ================================================================ }
+    { === 22. Counting/utility (2 new) === }
+    { ================================================================ }
+    { MRO(Condition, Length, Occurrence) -- Most Recent Occurrence }
+    Value1 = MRO(Close > Close[1], 14, 1);
+    { IFF(Condition, TrueVal, FalseVal) -- numeric inline ternary }
+    Value1 = IFF(Close > Open, 1, -1);
 
 End;

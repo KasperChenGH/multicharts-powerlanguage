@@ -58,7 +58,7 @@ avgDeviation(float src, int len) =>
     sum / len
 
 // --- Kurtosis ---
-// PL: Kurtosis(Close, 20) → 4th central moment / variance^2
+// PL: Kurtosis(Close, 20) → excess kurtosis (4th central moment / variance^2 - 3)
 kurtosis(float src, int len) =>
     m = ta.sma(src, len)
     s2 = 0.0
@@ -68,7 +68,7 @@ kurtosis(float src, int len) =>
         s2 += d * d
         s4 += d * d * d * d
     v = s2 / len
-    v == 0 ? 0.0 : (s4 / len) / (v * v)
+    v == 0 ? 0.0 : (s4 / len) / (v * v) - 3.0
 
 // --- Skew ---
 // PL: Skew(Close, 20) → 3rd central moment / stdev^3
@@ -141,9 +141,22 @@ massIndex(int emaLen, int sumLen) =>
     ratio   = ema2 == 0 ? 1.0 : ema1 / ema2
     math.sum(ratio, sumLen)
 
-// --- LRO (Last Rising Occurrence) ---
-// PL: LRO(cond, lookback, nth) → bar offset of nth true condition in lookback
+// --- LRO (Least Recent Occurrence) ---
+// PL: LRO(cond, lookback, nth) → bar offset of nth OLDEST true condition in lookback
 lro(bool cond, int lookback, int nth) =>
+    count = 0
+    result = -1
+    for i = lookback - 1 to 0
+        if cond[i]
+            count += 1
+            if count == nth
+                result := i
+                break
+    result
+
+// --- MRO (Most Recent Occurrence) ---
+// PL: MRO(cond, lookback, nth) → bars ago of nth most-recent true in lookback
+mro(bool cond, int lookback, int nth) =>
     count = 0
     result = -1
     for i = 0 to lookback - 1
@@ -457,8 +470,8 @@ closeY0 = request.security(syminfo.tickerid, "12M", close)
 // Section 12: Counting Extended
 // =============================================================================
 
-// PL: LRO(Close > Close[1], 14, 1) → manual: loop backwards
-// Last Rising Occurrence — bar offset of the 1st true condition in last 14 bars
+// PL: LRO(Close > Close[1], 14, 1) → manual: scan from oldest in lookback
+// Least Recent Occurrence — bars-ago of the oldest true condition in last 14 bars
 lroVal = lro(close > close[1], 14, 1)
 
 // PL: SummationIf(Close > Close[1], Volume, 14) → manual: conditional rolling sum
@@ -468,6 +481,49 @@ sumIfVal = summationIf(close > close[1], volume, 14)
 // PL: IFFString(Close > Open, "up", "down") → close > open ? "up" : "down"
 // Ternary string selection
 iffStr = close > open ? "up" : "down"
+
+// PL: CountIF(Close > Close[1], 14) → manual: rolling count of true over N bars
+countIfVal = math.sum(close > close[1] ? 1 : 0, 14)
+
+// PL: MRO(Close > Close[1], 14, 1) → manual: bars ago of 1st true occurrence
+mroVal = mro(close > close[1], 14, 1)
+
+// PL: IFF(Close > Open, 1, -1) → ternary operator
+iffVal = close > open ? 1.0 : -1.0
+
+
+// =============================================================================
+// Section 12B: Date/Time Conversion
+// =============================================================================
+
+// PL: ELDate(Month, Day, Year) → (Year-1900)*10000 + Month*100 + Day
+// EasyLanguage YYYMMDD date format (YYY = year - 1900)
+elDateVal = (year(time) - 1900) * 10000 + month(time) * 100 + dayofmonth(time)
+
+// PL: MinutesToTime(Minutes) → int(mins/60)*100 + mins%60
+// Convert total minutes since midnight to HHMM integer
+minutesToTime(int mins) =>
+    int(mins / 60) * 100 + (mins % 60)
+mtVal = minutesToTime(870)  // → 1430
+
+// PL: TimeToMinutes(HHMM) → int(hhmm/100)*60 + hhmm%100
+// Convert HHMM integer to total minutes since midnight
+timeToMinutes(int hhmm) =>
+    int(hhmm / 100) * 60 + (hhmm % 100)
+tmVal = timeToMinutes(1430)  // → 870
+
+
+// =============================================================================
+// Section 12C: Price Calculation Shortcuts
+// =============================================================================
+
+// PL: MedianPrice → hl2
+// (H+L)/2 — built-in Pine alias
+medianPriceVal = hl2
+
+// PL: WeightedClose → (high + low + close * 2) / 4
+// (H+L+2C)/4 — no built-in alias, compute manually
+weightedCloseVal = (high + low + close * 2) / 4
 
 
 // =============================================================================
@@ -619,6 +675,79 @@ lastBar = barstate.islast
 
 
 // =============================================================================
+// Section 17: Custom Functions
+// =============================================================================
+
+// PL: StochRSI(Close, 14, 14) → compute RSI first, then stochastic of that RSI
+// Stochastic of RSI — returns value in 0-1 range
+rsiForStochRSI = ta.rsi(close, 14)
+stochRSI = (rsiForStochRSI - ta.lowest(rsiForStochRSI, 14)) / (ta.highest(rsiForStochRSI, 14) - ta.lowest(rsiForStochRSI, 14))
+
+// PL: supertrend(10, 3.0) → ta.supertrend(3.0, 10)
+// Note: Pine order is (factor, atrPeriod), reversed from PL (ATRLen, Mult)
+[stValue, stDir] = ta.supertrend(3.0, 10)
+
+// PL: NVI(1000) → manual: cumulative index, updates only when volume decreases
+// Negative Volume Index — adjusts by price change only on declining-volume bars
+var float nviVal = 1000.0
+if bar_index > 0 and volume < volume[1] and close[1] != 0
+    nviVal := nviVal * (1.0 + (close - close[1]) / close[1])
+
+// PL: PVI(1000) → manual: cumulative index, updates only when volume increases
+// Positive Volume Index — adjusts by price change only on rising-volume bars
+var float pviVal = 1000.0
+if bar_index > 0 and volume > volume[1] and close[1] != 0
+    pviVal := pviVal * (1.0 + (close - close[1]) / close[1])
+
+// PL: Coppo(10, 14, 11) → ta.wma(ta.roc(close, 14) + ta.roc(close, 11), 10)
+// Coppock Curve — WMA of sum of two rates of change
+coppoVal = ta.wma(ta.roc(close, 14) + ta.roc(close, 11), 10)
+
+// PL: LWTI(Close, 10, 14) → manual: Larry Williams Trading Index (0-100)
+// Normalized average price change relative to average range
+priceDiff = close - close[10]
+avgDiff = ta.sma(priceDiff, 14)
+avgRange = ta.sma(high - low, 14)
+lwtiVal = avgRange != 0 ? (avgDiff / avgRange) * 50.0 + 50.0 : 50.0
+
+// PL: TVI(Close, Volume, MinTickValue) → manual: cumulative directional volume
+// Trade Volume Index — accumulates volume in direction of tick movement
+var float tviVal = 0.0
+var float tviDir = 0.0
+tickSize = syminfo.mintick
+if close >= close[1] + tickSize
+    tviDir := 1.0
+else if close <= close[1] - tickSize
+    tviDir := -1.0
+tviVal := tviVal + tviDir * volume
+
+// PL: SharpeRatio → manual: approximate Sharpe from rolling returns
+// Portfolio-level in PL; approximated here using bar-to-bar returns
+retN = 20
+dailyRet = close[1] != 0 ? (close - close[1]) / close[1] : 0.0
+avgRet = ta.sma(dailyRet, retN)
+retStd = ta.stdev(dailyRet, retN)
+sharpeApprox = retStd != 0 ? avgRet / retStd : 0.0
+
+// PL: WRSI(14, Close) → ta.rsi(close, 14)
+// Wilder RSI — Pine's ta.rsi already uses Wilder smoothing (RMA)
+wrsiVal = ta.rsi(close, 14)
+
+// PL: NewMA(Close, 14) → manual: Heikin-Ashi TEMA hybrid
+// Smoothed moving average using HA prices and double-TEMA
+var float haO = close
+haO := (nz(haO[1]) + (close + close + high + low) / 4.0) / 2.0
+haMax = math.max(high, haO)
+haMin = math.min(low, haO)
+haC = ((close + close + high + low) / 4.0 + haO + haMax + haMin) / 4.0
+ema1 = ta.ema(haC, 14)
+tema1 = 3.0 * ema1 - 3.0 * ta.ema(ema1, 14) + ta.ema(ta.ema(ema1, 14), 14)
+ema2 = ta.ema(tema1, 14)
+tema2 = 3.0 * ema2 - 3.0 * ta.ema(ema2, 14) + ta.ema(ta.ema(ema2, 14), 14)
+newMAVal = 2.0 * tema1 - tema2
+
+
+// =============================================================================
 // Plots — representative subset to verify the conversions compile
 // =============================================================================
 
@@ -634,6 +763,8 @@ plot(obvVal,       color=color.teal,   title="OBV")
 plot(fisherVal,    color=color.olive,   title="Fisher(10)")
 plot(pctRank,      color=color.navy,   title="PercentRank(20)")
 plot(linRegValue,  color=color.fuchsia, title="LinearReg(20)")
+plot(stochRSI,     color=color.white,   title="StochRSI(14)")
+plot(stValue,      color=color.silver,  title="Supertrend(3,10)")
 
 // Candlestick pattern signals as background highlights
 bgcolor(cBullEng ? color.new(color.green, 85) : na, title="Bullish Engulfing")
@@ -643,6 +774,13 @@ bgcolor(bearishDiv ? color.new(color.orange, 80) : na, title="Bearish Divergence
 // Debug label for IFFString on last bar
 if barstate.islast
     label.new(bar_index, close, iffStr, style=label.style_label_down, color=color.gray)
+
+// Date/time and utility plots
+plot(countIfVal, color=color.gray, title="CountIF(14)")
+plot(mroVal,     color=color.gray, title="MRO(14,1)")
+plot(iffVal,     color=color.gray, title="IFF")
+plot(medianPriceVal,   color=color.gray, title="MedianPrice")
+plot(weightedCloseVal, color=color.gray, title="WeightedClose")
 
 // =============================================================================
 // END — New Functions Conversion Test

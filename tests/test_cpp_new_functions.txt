@@ -580,20 +580,23 @@ public:
 
 
         // =================================================================
-        // SECTION 12 — Counting / Conditional (3 functions)
+        // SECTION 12 — Counting / Conditional (6 functions)
         //
-        // LRO (Largest Recent Occurrence) → manual loop
+        // LRO (Least Recent Occurrence) → manual: scan forward, break first hit
         // SummationIf                     → manual conditional sum
         // IFFString                       → ternary
+        // CountIF                         → manual: count true in lookback
+        // MRO (Most Recent Occurrence)   → manual: scan backward, break first hit
+        // IFF                            → C++ ternary
         // =================================================================
 
-        // PL: LRO — Largest Recent Occurrence
-        //     Find the most recent bar index where a condition was true
-        //     Example: most recent bar where Close > Open (up bar)
+        // PL: LRO — Least Recent Occurrence
+        //     Find the OLDEST bar within lookback where condition was true
+        //     Example: farthest-back bar where Close > Close[1] in last 14 bars
         int lro_val = -1;
-        for (int i = n - 1; i >= 0; --i) {
-            if (closes[i] > opens[i]) {
-                lro_val = (n - 1) - i;  // bars ago
+        for (int i = std::max(1, n - 14); i < n; ++i) {
+            if (closes[i] > closes[i - 1]) {
+                lro_val = (n - 1) - i;  // bars ago (farthest back = largest value)
                 break;
             }
         }
@@ -609,6 +612,72 @@ public:
 
         // PL: IFFString(cond, "up", "down") → ternary
         std::string iff_str = (closes.back() > opens.back()) ? "up" : "down";
+
+        // PL: CountIF(Close > Close[1], 14) → manual: count true in lookback
+        int count_if = 0;
+        for (int i = std::max(0, n - 14); i < n; ++i) {
+            if (i > 0 && closes[i] > closes[i - 1]) ++count_if;
+        }
+
+        // PL: MRO(Close > Close[1], 14, 1) → manual: scan backward for 1st occurrence
+        int mro_val = -1;
+        {
+            int instance = 1;
+            for (int i = n - 1; i >= std::max(0, n - 14); --i) {
+                if (i > 0 && closes[i] > closes[i - 1]) {
+                    if (--instance == 0) {
+                        mro_val = (n - 1) - i;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // PL: IFF(cond, trueVal, falseVal) → C++ ternary
+        double iff_val = (closes.back() > opens.back()) ? 1.0 : -1.0;
+
+
+        // =================================================================
+        // SECTION 12B — Date/Time Conversion (3 functions)
+        //
+        // ELDate(M, D, Y)              → manual: YYYMMDD format (YYY = year - 1900)
+        // MinutesToTime(mins)           → manual: (mins/60)*100 + mins%60
+        // TimeToMinutes(hhmm)           → manual: (hhmm/100)*60 + hhmm%100
+        // =================================================================
+
+        // PL: ELDate(Month, Day, Year) → (Year-1900)*10000 + Month*100 + Day
+        auto el_date = [](int m, int d, int y) -> int {
+            return (y - 1900) * 10000 + m * 100 + d;
+        };
+        int el_date_val = el_date(1, 15, 2025);  // → 1250115
+
+        // PL: MinutesToTime(Minutes) → HHMM integer
+        auto minutes_to_time = [](int mins) -> int {
+            return (mins / 60) * 100 + (mins % 60);
+        };
+        int hhmm_val = minutes_to_time(870);  // → 1430
+
+        // PL: TimeToMinutes(HHMM) → total minutes since midnight
+        auto time_to_minutes = [](int hhmm) -> int {
+            return (hhmm / 100) * 60 + (hhmm % 100);
+        };
+        int mins_val = time_to_minutes(1430);  // → 870
+
+
+        // =================================================================
+        // SECTION 12C — Price Calculation Shortcuts (2 functions)
+        //
+        // MedianPrice                   → TA_MEDPRICE or (H+L)/2
+        // WeightedClose                 → TA_WCLPRICE or (H+L+2C)/4
+        // =================================================================
+
+        // PL: MedianPrice → (H+L)/2
+        //     TA-Lib equivalent: TA_MEDPRICE, but trivial arithmetic is simpler
+        double median_price = (highs.back() + lows.back()) / 2.0;
+
+        // PL: WeightedClose → (H+L+2C)/4
+        //     TA-Lib equivalent: TA_WCLPRICE, but trivial arithmetic is simpler
+        double weighted_close = (highs.back() + lows.back() + 2.0 * closes.back()) / 4.0;
 
 
         // =================================================================
@@ -979,6 +1048,102 @@ public:
 
 
         // =================================================================
+        // SECTION 17 — Custom Functions (10 functions)
+        //
+        // StochRSI(Close, 14, 14)          → TA_STOCHRSI
+        // supertrend(10, 3.0)              → manual: ATR bands + direction
+        // NVI(1000)                        → manual: update when volume drops
+        // PVI(1000)                        → manual: update when volume rises
+        // Coppo(14, 11, 10)               → TA_ROC + TA_WMA
+        // LWTI(Close, 10, 14)             → manual
+        // TVI(Close, Volume, MinMove)     → manual: cumulative directional vol
+        // SharpeRatio                     → manual approximate
+        // WRSI(14, Close)                 → TA_RSI (Wilder smoothing)
+        // NewMA(Close, 14)                → manual: Heikin-Ashi + TEMA hybrid
+        // =================================================================
+
+        // --- Local aliases for current-bar values used by custom functions ---
+        double close = closes.back();
+        double high  = highs.back();
+        double low   = lows.back();
+        double open  = opens.back();
+        double volume = volumes.back();
+        double* close_arr = closes.data();
+
+        // --- ATR needed by supertrend (TA_ATR with period 10) ---
+        std::vector<double> atr10_out(n);
+        double atr_val = 0.0;
+        TA_ATR(0, endIdx, highs.data(), lows.data(), closes.data(),
+               10, &outBeg, &outNB, atr10_out.data());
+        if (outNB > 0) atr_val = atr10_out[outNB - 1];
+
+        // 1. PL: StochRSI(Close, 14, 14) → TA_STOCHRSI
+        // TA_STOCHRSI(startIdx, endIdx, inReal, timePeriod, fastK, fastD, fastD_MAType, ...)
+        double stoch_rsi_k[1], stoch_rsi_d[1];
+        int stoch_rsi_begin, stoch_rsi_count;
+        if (data_size >= 28) {
+            TA_STOCHRSI(0, data_size-1, close_arr, 14, 14, 1, TA_MAType_SMA,
+                        &stoch_rsi_begin, &stoch_rsi_count, stoch_rsi_k, stoch_rsi_d);
+        }
+
+        // 2. PL: supertrend(10, 3) → manual: no TA-Lib equivalent
+        double mid_price = (high + low) / 2.0;
+        double upper_basic = mid_price + 3.0 * atr_val;
+        double lower_basic = mid_price - 3.0 * atr_val;
+        double st_val = (st_dir_ > 0) ? lower_basic : upper_basic;
+
+        // 3. PL: NVI(1000) → manual: update only when volume drops
+        if (bar_index > 0 && volume < prev_volume_ && prev_close_ != 0.0)
+            nvi_ *= 1.0 + (close - prev_close_) / prev_close_;
+
+        // 4. PL: PVI(1000) → manual: update only when volume rises
+        if (bar_index > 0 && volume > prev_volume_ && prev_close_ != 0.0)
+            pvi_ *= 1.0 + (close - prev_close_) / prev_close_;
+
+        // 5. PL: Coppo(14, 11, 10) → TA_ROC + TA_WMA
+        double roc14_out[1], roc11_out[1];
+        int roc_begin, roc_count;
+        if (data_size >= 15) {
+            TA_ROC(0, data_size-1, close_arr, 14, &roc_begin, &roc_count, roc14_out);
+            TA_ROC(0, data_size-1, close_arr, 11, &roc_begin, &roc_count, roc11_out);
+        }
+        double coppo_raw = roc14_out[0] + roc11_out[0];
+
+        // 6. PL: LWTI(Close, 10, 14) → manual
+        double price_diff = (bar_index >= 10) ? close - close_arr[bar_index - 10] : 0.0;
+        double avg_range = (high - low > 0.0001) ? high - low : 0.0001;
+        double lwti_val = (price_diff / avg_range) * 50.0 + 50.0;
+
+        // 7. PL: TVI(Close, Volume, MinMove) → manual: cumulative directional volume
+        double tick = 0.01;
+        if (close >= prev_close_ + tick) tvi_dir_ = 1.0;
+        else if (close <= prev_close_ - tick) tvi_dir_ = -1.0;
+        tvi_ += tvi_dir_ * volume;
+
+        // 8. PL: SharpeRatio → manual approximate
+        double daily_ret = (prev_close_ != 0.0) ? (close - prev_close_) / prev_close_ : 0.0;
+        double sharpe_approx = daily_ret; // simplified
+
+        // 9. PL: WRSI(14, Close) → TA_RSI (uses Wilder smoothing by default)
+        double wrsi_out[1];
+        int wrsi_begin, wrsi_count;
+        if (data_size >= 15)
+            TA_RSI(0, data_size-1, close_arr, 14, &wrsi_begin, &wrsi_count, wrsi_out);
+
+        // 10. PL: NewMA(Close, 14) → manual: Heikin-Ashi + TEMA hybrid
+        double ha_close_raw = (close + close + high + low) / 4.0;
+        ha_open_ = (ha_open_ + ha_close_raw) / 2.0;
+        double ha_max = std::max(high, ha_open_);
+        double ha_min = std::min(low, ha_open_);
+        double ha_c = (ha_close_raw + ha_open_ + ha_max + ha_min) / 4.0;
+        double newma_val = ha_c; // simplified — full version chains triple EMA
+
+        // --- Update prev_close_ / prev_volume_ for next bar ---
+        prev_close_  = close;
+        prev_volume_ = volume;
+
+
+        // =================================================================
         // Example usage: combine several indicators for a demo signal
         // =================================================================
 
@@ -1003,6 +1168,9 @@ public:
         (void)daily_close; (void)weekly_close;
         (void)monthly_close; (void)quarterly_close;
         (void)lro_val; (void)sum_if; (void)iff_str;
+        (void)count_if; (void)mro_val; (void)iff_val;
+        (void)el_date_val; (void)hhmm_val; (void)mins_val;
+        (void)median_price; (void)weighted_close;
         (void)obv_val; (void)vol_roc; (void)vol_osc;
         (void)pvt_val; (void)lw_ad_val;
         (void)fisher_val; (void)fisher_inv; (void)avg_dev; (void)variance;
@@ -1015,6 +1183,10 @@ public:
         (void)piercing; (void)dark_cloud; (void)shooting_star;
         (void)three_white_soldiers; (void)three_black_crows;
         (void)bar_annual; (void)last_bar_on_chart;
+        (void)stoch_rsi_k; (void)stoch_rsi_d;
+        (void)st_val; (void)coppo_raw; (void)lwti_val;
+        (void)sharpe_approx; (void)wrsi_out; (void)newma_val;
+        (void)atr_val; (void)open;
 
         // Demo signal: trend + momentum + volatility filter
         if (position_ == 0
@@ -1079,6 +1251,16 @@ private:
     // Section 13 — Volume state
     double pvt_ = 0.0;
     double lw_accum_dist_ = 0.0;
+
+    // Section 17 — Custom Functions state
+    double prev_close_ = 0.0;
+    double prev_volume_ = 0.0;
+    double nvi_ = 1000.0;         // NVI starts at 1000
+    double pvi_ = 1000.0;         // PVI starts at 1000
+    double tvi_ = 0.0;            // TVI cumulative
+    double tvi_dir_ = 0.0;        // TVI direction
+    int    st_dir_ = 1;           // supertrend direction (1=up, -1=down)
+    double ha_open_ = 0.0;        // Heikin-Ashi open for NewMA
 };
 // END NewFunctionsTest
 // =============================================================================

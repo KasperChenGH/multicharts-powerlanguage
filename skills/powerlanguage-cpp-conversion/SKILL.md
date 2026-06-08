@@ -331,6 +331,17 @@ TA-Lib RT is a community fork that adds streaming APIs: `TA_SMA_StateInit()`, `T
 | **Miscellaneous** | | |
 | `BarAnnualization` | Manual: compute from bar frequency | Bars-per-year factor |
 | `LastBarOnChart` | `bar_index == data_size - 1` | True on last bar |
+| **Custom functions** | | |
+| `StochRSI(Close, N, M)` | `TA_STOCHRSI(0, sz-1, close, N, M, 1, TA_MAType_SMA, ...)` | Stochastic RSI |
+| `supertrend(N, Mult)` | Manual: ATR bands + direction flip logic | No TA-Lib equivalent |
+| `NVI(Start)` | Manual: accumulate on volume-down bars | No TA-Lib equivalent |
+| `PVI(Start)` | Manual: accumulate on volume-up bars | No TA-Lib equivalent |
+| `Coppo(N1, N2, N3)` | Manual: `TA_WMA` of two `TA_ROC` results | Coppock Curve |
+| `LWTI(Close, P, N)` | Manual: `(sma(diff, N) / sma(range, N)) * 50 + 50` | No TA-Lib equivalent |
+| `TVI(Close, Vol, Tick)` | Manual: cumulative directional volume | No TA-Lib equivalent |
+| `SharpeRatio(Period, Rate, Calc, Cap)` | Manual: `(avg_return - rf) / std_return` | Portfolio Sharpe |
+| `WRSI(N, Close)` | `TA_RSI(0, sz-1, close, N, ...)` | TA-Lib RSI uses Wilder smoothing |
+| `NewMA(Close, N)` | Manual: Heikin-Ashi + triple EMA hybrid | No TA-Lib equivalent |
 
 ---
 

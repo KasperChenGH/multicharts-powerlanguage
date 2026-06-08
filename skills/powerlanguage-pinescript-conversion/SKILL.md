@@ -205,6 +205,17 @@ This skill covers the structural and semantic differences between MultiCharts Po
 | **Miscellaneous** | | |
 | `BarAnnualization` | Manual: compute from `timeframe.period` | Bars-per-year factor |
 | `LastBarOnChart` | `barstate.islast` | True on last bar |
+| **Custom functions** | | |
+| `StochRSI(Close, N, M)` | `rsiVal = ta.rsi(close, N)` → `(rsiVal - ta.lowest(rsiVal, M)) / (ta.highest(rsiVal, M) - ta.lowest(rsiVal, M))` | Stochastic of RSI (0–1) |
+| `supertrend(N, Mult)` | `[st, dir] = ta.supertrend(Mult, N)` | Pine order is `(factor, atrPeriod)` — reversed |
+| `NVI(Start)` | Manual: accumulate `prev*(1+(close-close[1])/close[1])` when `volume < volume[1]` | Negative Volume Index |
+| `PVI(Start)` | Manual: accumulate `prev*(1+(close-close[1])/close[1])` when `volume > volume[1]` | Positive Volume Index |
+| `Coppo(N1, N2, N3)` | `ta.wma(ta.roc(close, N1) + ta.roc(close, N2), N3)` | Coppock Curve |
+| `LWTI(Close, P, N)` | Manual: `ta.sma(close-close[P], N) / ta.sma(high-low, N) * 50 + 50` | Larry Williams Trading Index |
+| `TVI(Close, Vol, Tick)` | Manual: cumulative directional volume with tick threshold | Trade Volume Index |
+| `SharpeRatio(Period, Rate, Calc, Cap)` | Manual: portfolio-level `(avgReturn - riskFree) / stdReturn` | No Pine equivalent; portfolio only |
+| `WRSI(N, Close)` | `ta.rsi(close, N)` | Pine RSI already uses Wilder smoothing |
+| `NewMA(Close, N)` | Manual: Heikin-Ashi + triple EMA hybrid | No direct Pine equivalent |
 
 ---
 
