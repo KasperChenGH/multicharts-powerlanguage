@@ -17,7 +17,7 @@ claude /plugin marketplace add KasperChenGH/multicharts-powerlanguage
 claude /plugin install multicharts-powerlanguage@multicharts-powerlanguage-dev
 ```
 
-All 8 skills auto-trigger when relevant — no manual invocation needed. Works on Windows, macOS, and Linux.
+All 10 skills auto-trigger when relevant — no manual invocation needed. Works on Windows, macOS, and Linux.
 
 ---
 
@@ -79,7 +79,9 @@ Buy ("Entry") 1 Contract Next Bar at Market;
 
 | Skill | Description |
 |---|---|
-| `pinescript-reference` | Pine Script v5 — type system, 15 built-in namespaces (`ta.*`, `strategy.*`, `request.*`, etc.), alerts, plotting, gotchas |
+| `pinescript-core` | Pine Script fundamentals — versioning, script types, type system, declarations, control flow, UDFs/UDTs, gotchas |
+| `pinescript-builtins` | Pine Script built-in namespaces — `ta.*`, `strategy.*`, `request.*`, `math.*`, `str.*`, `array.*`, `color.*`, bar state, time |
+| `pinescript-visual` | Pine Script plotting and drawing — `plot()`, `label.*`, `line.*`, `box.*`, `table.*`, `map.*`, `matrix.*`, `log.*`, alerts |
 
 ### Code conversion
 
@@ -139,7 +141,9 @@ multicharts-powerlanguage/
 │   ├── powerlanguage-keywords-reference/  # 947 keywords (40 categories)
 │   │   ├── SKILL.md
 │   │   └── details/                       # 40 category folders
-│   ├── pinescript-reference/              # Pine Script v5 reference
+│   ├── pinescript-core/                   # Pine Script fundamentals
+│   ├── pinescript-builtins/               # Pine Script built-in namespaces
+│   ├── pinescript-visual/                 # Pine Script plotting & drawing
 │   ├── powerlanguage-pinescript-conversion/
 │   ├── powerlanguage-python-conversion/
 │   ├── powerlanguage-rust-conversion/
