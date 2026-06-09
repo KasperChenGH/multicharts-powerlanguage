@@ -379,7 +379,7 @@ The slice `bars[:i+1]` gives the strategy access to full history; `bars[-1]` is 
 | `For i = 1 to n Begin ... End;` | `for i in range(1, n + 1):` | PL `For` is inclusive; Python `range` excludes upper bound |
 | `For i = n DownTo 1 Begin ... End;` | `for i in range(n, 0, -1):` | PL DownTo; Python reversed range |
 | `While cond Begin ... End;` | `while cond:` | Direct mapping |
-| `Switch (expr) Begin Case 1: ... End;` | `match expr:` with `case 1: ...` | Python 3.10+ `match/case`; no fallthrough (matches PL) |
+| `Switch (expr) Begin Case 1: ... End;` | `match expr:` with `case 1: ...` | Python 3.10+ `match/case`; no fallthrough (matches PL); PL empty case body is a compile error — use `Value1 = Value1;` as no-op |
 | `Once Begin ... End;` | `if not self._once_done: ... self._once_done = True` | Use a bool attribute; PL `Once` runs on first bar only |
 
 ---

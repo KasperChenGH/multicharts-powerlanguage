@@ -254,7 +254,7 @@ This skill covers the structural and semantic differences between MultiCharts Po
 | `If cond Then Begin ... End Else Begin ... End;` | `if cond\n    ...\nelse\n    ...` | Same indentation pattern for `else` blocks |
 | `For i = 1 to n Begin ... End;` | `for i = 1 to n\n    ...` | Loop body is indented; no `Begin`/`End` needed |
 | `While cond Begin ... End;` | `while cond\n    ...` | Same indentation pattern |
-| `Switch (expr) Begin Case 1: ...; End;` | `switch expr\n    1 => ...` | Pine `switch` uses `=>` arrows and indentation |
+| `Switch (expr) Begin Case 1: ...; End;` | `switch expr\n    1 => ...` | Pine `switch` uses `=>` arrows and indentation; PL empty case body is a compile error — use `Value1 = Value1;` as no-op |
 | `Once Begin ... End;` | `if barstate.isfirst\n    ...` | PL `Once` runs code on the first bar only; Pine uses the `barstate.isfirst` built-in |
 
 ---

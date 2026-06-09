@@ -80,11 +80,14 @@ End;
 While condition Begin ... End;
 
 Switch (n) Begin
+    Case 0: Value1 = Value1;   // no-op — empty case body is a compile error
     Case 1: ... ;
     Case 2: ... ;
     Default: ... ;
 End;
 ```
+
+**Every `Case` body must have at least one statement.** An empty case (even with only a comment) is a compile error. Use `Value1 = Value1;` as a no-op if the case should do nothing.
 
 **`For` / `While` loop counters must be declared as Variables.** PowerLanguage does not auto-declare loop counters. Using an undeclared name gives "Invalid type operation."
 

@@ -379,7 +379,7 @@ TA-Lib RT is a community fork that adds streaming APIs: `TA_SMA_StateInit()`, `T
 | `If cond Then ... Else ...` | `if (cond) { ... } else { ... }` | Direct mapping |
 | `For i = 1 to n Begin ... End;` | `for (int i = 1; i <= n; ++i) { ... }` | PL `For` is inclusive; use `<=` in C++ |
 | `While cond Begin ... End;` | `while (cond) { ... }` | Direct mapping |
-| `Switch (expr) Begin Case 1: ... End;` | `switch (expr) { case 1: ... break; default: break; }` | C++ `switch` requires `break;` to prevent fallthrough |
+| `Switch (expr) Begin Case 1: ... End;` | `switch (expr) { case 1: ... break; default: break; }` | C++ `switch` requires `break;` to prevent fallthrough; PL empty case body is a compile error — use `Value1 = Value1;` as no-op |
 | `Once Begin ... End;` | `if (first_bar_) { ... first_bar_ = false; }` | Use a bool member; PL `Once` runs on first bar only |
 
 ---
