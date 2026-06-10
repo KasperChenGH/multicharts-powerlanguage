@@ -1,5 +1,7 @@
 # Pine Script Reference & PL-Pine Conversion — Implementation Plan
 
+> **SUPERSEDED (historical document):** the `pinescript-reference` skill described here was implemented, then split into `pinescript-core`, `pinescript-builtins`, and `pinescript-visual` in commit e96a64f (v0.4.0). Skill names and counts below reflect the state as of 2026-06-01.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add two new skills — `pinescript-reference` and `powerlanguage-pinescript-conversion` — so Claude can write Pine Script and convert code bidirectionally between PowerLanguage and Pine Script.

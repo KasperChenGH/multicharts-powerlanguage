@@ -7,7 +7,7 @@ Yields the absolute value of the specified numerical expression.
 
 **Example (illustrative)**
 ```
-Value1 = AbsValue(Close - Close[1]);
+Value1 = AbsValue;
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=AbsValue

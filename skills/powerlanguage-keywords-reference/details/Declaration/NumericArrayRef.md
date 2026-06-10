@@ -1,7 +1,7 @@
-﻿# NumericArrayRef
+# NumericArrayRef
 
 **Category:** Declaration
-**Signature:** `Input:InputName[M1,M2,M3,etc.](NumericArrayRef) Parameters`
+**Signature:** `Input:InputName[M1,M2,M3,etc.](NumericArrayRef)`
 
 **Parameters**
 - `M` *(expression, required)* — see official docs

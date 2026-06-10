@@ -134,7 +134,9 @@ ulcerIndex(float src, int len) =>
 
 // --- Mass Index ---
 // PL: MassIndex(9, 25) → sum of EMA(range) / EMA(EMA(range)) over 25 bars
-massIndex(int emaLen, int sumLen) =>
+// Params must be declared `simple int` — UDF params are series by default,
+// and ta.ema requires a simple int length.
+massIndex(simple int emaLen, simple int sumLen) =>
     rng     = high - low
     ema1    = ta.ema(rng, emaLen)
     ema2    = ta.ema(ema1, emaLen)
@@ -181,8 +183,9 @@ summationIf(bool cond, float val, int len) =>
 // Section 1: Moving Averages
 // =============================================================================
 
-// PL: TriAverage(Close, 14) → ta.sma(ta.sma(ta.sma(close, 14), 14), 14)
-triAvg = ta.sma(ta.sma(ta.sma(close, 14), 14), 14)
+// PL: TriAverage(Close, 14) → triangular MA: SMA of SMA with halved length,
+// halfLen = math.ceil((len + 1) / 2) → ceil((14 + 1) / 2) = 8 (NOT a triple SMA)
+triAvg = ta.sma(ta.sma(close, 8), 8)
 
 // PL: SmoothedAverage(Close, 14) → ta.rma(close, 14)
 smoothAvg = ta.rma(close, 14)
@@ -416,8 +419,11 @@ sumFC = math.sum(close, 14)
 // Section 11: Multi-Period OHLC
 // =============================================================================
 
-// PL: OpenD(0) → request.security(syminfo.tickerid, "D", open)
-openD0 = request.security(syminfo.tickerid, "D", open)
+// PL: OpenD(0) → request.security(syminfo.tickerid, "D", open, lookahead = barmerge.lookahead_on)
+// The current session's open is known at session start, so lookahead_on does not
+// leak future data here; with the default lookahead_off the call would return the
+// PRIOR session's value intraday (off by one session). Documented TradingView idiom.
+openD0 = request.security(syminfo.tickerid, "D", open, lookahead = barmerge.lookahead_on)
 
 // PL: HighD(0) → request.security(syminfo.tickerid, "D", high)
 highD0 = request.security(syminfo.tickerid, "D", high)
@@ -425,9 +431,10 @@ highD0 = request.security(syminfo.tickerid, "D", high)
 // PL: LowD(0) → request.security(syminfo.tickerid, "D", low)
 lowD0 = request.security(syminfo.tickerid, "D", low)
 
-// PL: CloseD(1) → request.security(syminfo.tickerid, "D", close[1])
-// Offset 1 = previous session's close
-closeD1 = request.security(syminfo.tickerid, "D", close[1])
+// PL: CloseD(1) → request.security(syminfo.tickerid, "D", close[1], lookahead = barmerge.lookahead_on)
+// Offset 1 = previous session's close. The [1] offset + lookahead_on combination is
+// leak-free: the referenced daily bar is already closed, so no future data is used.
+closeD1 = request.security(syminfo.tickerid, "D", close[1], lookahead = barmerge.lookahead_on)
 
 // PL: OpenW(0) → request.security(syminfo.tickerid, "W", open)
 openW0 = request.security(syminfo.tickerid, "W", open)

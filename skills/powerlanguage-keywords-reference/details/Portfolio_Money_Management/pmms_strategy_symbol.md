@@ -1,4 +1,4 @@
-﻿# pmms_strategy_symbol
+# pmms_strategy_symbol
 
 **Category:** Portfolio_Money_Management
 **Signature:** `pmms_strategy_symbol(StrategyIndex)`
@@ -8,7 +8,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = pmms_strategy_symbol( 14 );
+pmms_strategy_symbol( StrategyIndex );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=pmms_strategy_symbol

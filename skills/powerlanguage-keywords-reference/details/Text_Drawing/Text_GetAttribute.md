@@ -1,7 +1,7 @@
-﻿# Text_GetAttribute
+# Text_GetAttribute
 
 **Category:** Text_Drawing
-**Signature:** `Text_GetAttribute(ObjectID,Attribute) Parameters`
+**Signature:** `Text_GetAttribute(ObjectID,Attribute)`
 
 **Parameters**
 - `ObjectID` *(numeric, required)* — see official docs
@@ -9,7 +9,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = Text_GetAttribute( 14, 14 );
+Text_GetAttribute( ObjectID, Attribute );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=Text_GetAttribute

@@ -1,7 +1,7 @@
-﻿# Text_SetStyle
+# Text_SetStyle
 
 **Category:** Text_Drawing
-**Signature:** `Text_SetStyle (ObjectID, HorizPl, VertPl) Parameters`
+**Signature:** `Text_SetStyle (ObjectID, HorizPl, VertPl)`
 
 **Parameters**
 - `ObjectID` *(numeric, required)* — see official docs
@@ -10,7 +10,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = Text_SetStyle( 14, 14, 14 );
+Text_SetStyle( ObjectID, HorizPl, VertPl );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=Text_SetStyle

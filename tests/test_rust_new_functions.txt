@@ -43,10 +43,12 @@ pub struct NewFunctionsTest {
     bar_count: usize,
 
     // --- 1. Moving averages ---
-    // TriAverage(Close, 14) → SMA of SMA of SMA
+    // TriAverage(Close, 14) → triangular MA: SMA of SMA with halved length,
+    // half_len = ceil((14 + 1) / 2) = 8 (two chained SMAs, NOT three)
     tri_sma1: SimpleMovingAverage,
     tri_sma2: SimpleMovingAverage,
-    tri_sma3: SimpleMovingAverage,
+    // SMA(14) kept separately for Detrend(Close, 14)
+    detrend_sma14: SimpleMovingAverage,
     // SmoothedAverage(Close, 14) → Wilder smoothing
     smoothed_avg: f64,
 
@@ -131,9 +133,9 @@ impl NewFunctionsTest {
             bar_count: 0,
 
             // 1. Moving averages
-            tri_sma1: SimpleMovingAverage::new(14).unwrap(),
-            tri_sma2: SimpleMovingAverage::new(14).unwrap(),
-            tri_sma3: SimpleMovingAverage::new(14).unwrap(),
+            tri_sma1: SimpleMovingAverage::new(8).unwrap(),
+            tri_sma2: SimpleMovingAverage::new(8).unwrap(),
+            detrend_sma14: SimpleMovingAverage::new(14).unwrap(),
             smoothed_avg: 0.0,
 
             // 2. Stochastic helpers
@@ -220,11 +222,10 @@ impl Strategy for NewFunctionsTest {
         // =================================================================
 
         // PL: TriAverage(Close, 14)
-        //   → manual: SMA of SMA of SMA (triple-smoothed moving average)
-        //   First SMA(close,14), then SMA of that, then SMA of that.
-        let sma1 = self.tri_sma1.next(close);
-        let sma2 = self.tri_sma2.next(sma1);
-        let tri_avg = self.tri_sma3.next(sma2);
+        //   → manual: triangular MA — SMA of SMA with halved length,
+        //   half_len = ceil((14 + 1) / 2) = 8 (two chained SMAs, NOT three).
+        let tri_inner = self.tri_sma1.next(close);
+        let tri_avg = self.tri_sma2.next(tri_inner);
 
         // PL: SmoothedAverage(Close, 14)
         //   → manual: Wilder smoothing: prev*(N-1)/N + val/N
@@ -472,8 +473,7 @@ impl Strategy for NewFunctionsTest {
 
         // PL: Detrend(Close, 14)
         //   → close - SMA(close, 14)
-        //   Reuses tri_sma1 output as the SMA(14) value (same period)
-        let detrend = close - sma1;
+        let detrend = close - self.detrend_sma14.next(close);
 
         // PL: PercentChange(Close, 14)
         //   → 100.0 * (close - close_14_ago) / close_14_ago

@@ -1,11 +1,11 @@
-﻿# RectangleGetEndDate
+# RectangleGetEndDate
 
 **Category:** Rectangle_Drawing
 **Signature:** `RectangleGetEndDate(ID)`
 
 **Example (illustrative)**
 ```
-Value1 = RectangleGetEndDate;
+RectangleGetEndDate( ID );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=RectangleGetEndDate

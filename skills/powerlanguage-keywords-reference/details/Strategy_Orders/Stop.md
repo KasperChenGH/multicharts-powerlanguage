@@ -5,7 +5,7 @@
 
 **Example (illustrative)**
 ```
-Buy ( "Demo" ) 1 Contract Next Bar 100 Stop;
+Buy ( "Demo" ) 1 Contract Next Bar at 100 Stop;
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=Stop

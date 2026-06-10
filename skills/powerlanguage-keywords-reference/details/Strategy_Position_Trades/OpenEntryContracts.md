@@ -1,11 +1,11 @@
-﻿# OpenEntryContracts
+# OpenEntryContracts
 
 **Category:** Strategy_Position_Trades
 **Signature:** `OpenEntryContracts(EntryIndex)`
 
 **Example (illustrative)**
 ```
-Value1 = OpenEntryContracts;
+OpenEntryContracts( EntryIndex );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=OpenEntryContracts

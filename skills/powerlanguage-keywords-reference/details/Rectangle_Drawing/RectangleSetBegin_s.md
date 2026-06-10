@@ -1,7 +1,7 @@
-﻿# RectangleSetBegin_s
+# RectangleSetBegin_s
 
 **Category:** Rectangle_Drawing
-**Signature:** `RectangleSetBegin_s (ID, sDate, sTime_s, sPriceValue) Parameters`
+**Signature:** `RectangleSetBegin_s (ID, sDate, sTime_s, sPriceValue)`
 
 **Parameters**
 - `ID` *(numeric, required)* — see official docs
@@ -11,7 +11,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = RectangleSetBegin_s( 14, 14, 14 );
+RectangleSetBegin_s( ID, sDate, sTime_s, sPriceValue );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=RectangleSetBegin_s

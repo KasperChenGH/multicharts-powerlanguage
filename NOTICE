@@ -27,7 +27,8 @@ Source materials
   TradingView® and Pine Script® are trademarks of TradingView, Inc.
   This plugin is not affiliated with, endorsed by, or sponsored by TradingView, Inc.
 
-  The Pine Script reference content in skills/pinescript-reference/ is entirely
+  The Pine Script reference content in skills/pinescript-core/,
+  skills/pinescript-builtins/, and skills/pinescript-visual/ is entirely
   original, hand-curated from general knowledge of the Pine Script language and
   open-source community resources. No content was scraped, copied, or derived
   from tradingview.com — TradingView's Terms of Service (Section 3) prohibit

@@ -291,7 +291,7 @@ If False Then Begin
     { ================================================================ }
     { === Price calculation shortcuts === }
     { ================================================================ }
-    { AvgPrice -- (H+L+C)/3, no arguments }
+    { AvgPrice -- (O+H+L+C)/4, no arguments }
     Value1 = AvgPrice;
     { MedianPrice -- (H+L)/2, no arguments }
     Value1 = MedianPrice;

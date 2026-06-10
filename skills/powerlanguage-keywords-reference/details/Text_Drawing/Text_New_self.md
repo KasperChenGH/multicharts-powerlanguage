@@ -1,7 +1,7 @@
-﻿# Text_New_self
+# Text_New_self
 
 **Category:** Text_Drawing
-**Signature:** `Text_New_self (BarDate, BarTime, PriceValue,"Text") Parameters`
+**Signature:** `Text_New_self (BarDate, BarTime, PriceValue,"Text")`
 
 **Parameters**
 - `BarDate` *(numeric, required)* — see official docs
@@ -11,7 +11,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = Text_New_self( 14, 14, 14 );
+// Text_New_self takes parameters; see the Usage line above for the call form.
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=Text_New_self

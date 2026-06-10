@@ -38,9 +38,9 @@ This skill covers the structural and semantic differences between MultiCharts Po
 | `Open`, `High`, `Low`, `Close`, `Volume` | `open`, `high`, `low`, `close`, `volume` | Pine is all-lowercase; PL is case-insensitive but conventionally capitalized |
 | `Close[1]` | `close[1]` | Bracket indexing works the same; both are 0-based offset (0 = current bar) |
 | `Close of Data2` | `request.security(symbol, timeframe.period, close)` | PL Data2 is a second chart feed; Pine requires explicit symbol and timeframe strings |
-| `Date`, `Time` | `year(time)`, `month(time)`, `dayofmonth(time)`, `hour(time)`, `minute(time)` | PL `Date` is YYMMDD integer; Pine uses component functions on the `time` timestamp |
+| `Date`, `Time` | `year(time_close)`, `month(time_close)`, `dayofmonth(time_close)`, `hour(time_close)`, `minute(time_close)` | PL `Date` is a YYYMMDD integer with a 1900 offset (1260610 = 2026-06-10); reconstruct as `(year(time_close) - 1900) * 10000 + ...`. PL `Date`/`Time` label the bar CLOSE — use `time_close`, not `time` (Pine `time` is the bar-OPEN timestamp) |
 | `BarNumber` | `bar_index + 1` | PL `BarNumber` is 1-based (first bar = 1); Pine `bar_index` is 0-based (first bar = 0) |
-| `CurrentBar` | `bar_index + 1` | Same mapping as `BarNumber`; both refer to the sequential bar count from history start |
+| `CurrentBar` | `bar_index + 1` | Same mapping as `BarNumber` — but `CurrentBar` counts from the first executed bar after MaxBarsBack, so `bar_index + 1` is exact only when MaxBarsBack = 0 |
 
 ---
 
@@ -51,17 +51,17 @@ This skill covers the structural and semantic differences between MultiCharts Po
 | `Average(Close, Length)` | `ta.sma(close, length)` | Direct equivalent |
 | `XAverage(Close, Length)` | `ta.ema(close, length)` | Direct equivalent |
 | `RSI(Close, Length)` | `ta.rsi(close, length)` | Direct equivalent |
-| `Stochastic(Close, High, Low, Length, 1, 3, 0, 0, 0, 0, 0)` | `ta.stoch(close, high, low, length)` | PL takes 11 params including smoothing; Pine returns raw %K only — %D must be smoothed manually |
+| `Stochastic(High, Low, Close, Length, 1, 3, 0, 0, 0, 0, 0)` | `ta.stoch(close, high, low, length)` | PL arg order starts High, Low, Close; PL takes 11 params including smoothing; Pine returns raw %K only — %D must be smoothed manually |
 | `ADX(Length)` | `[diplus, diminus, adx] = ta.dmi(length, length)` | Pine `ta.dmi` returns a 3-tuple; destructure before use |
-| `CCI(Length)` | `ta.cci(close, length)` | PL `CCI` takes only length (uses HLC internally); Pine `ta.cci` also uses HLC |
-| `AvgTrueRange(Length)` | `ta.atr(length)` | Direct equivalent |
+| `CCI(Length)` | `ta.cci(hlc3, length)` | PL `CCI` takes only length (uses typical price internally); Pine computes on whatever source you pass — pass `hlc3` to match |
+| `AvgTrueRange(Length)` | `ta.sma(ta.tr(true), length)` | PL `AvgTrueRange` is a SIMPLE average of TrueRange. Pine `ta.atr` is Wilder/RMA — use it only if the PL side used `SmoothedAverage(TrueRange, Len)`, which is the matching Wilder pair |
 | `BollingerBand(Close, Length, 2)` | `[mid, upper, lower] = ta.bb(close, length, 2)` | Pine returns a 3-tuple; PL returns the upper or lower band depending on the final argument |
 | `Close Crosses Over MA` | `ta.crossover(close, ma)` | PL keyword phrase; Pine is a function returning bool |
 | `Close Crosses Under MA` | `ta.crossunder(close, ma)` | Same pattern as above |
 | `Highest(Close, Length)` | `ta.highest(close, length)` | Direct equivalent |
 | `Lowest(Close, Length)` | `ta.lowest(close, length)` | Direct equivalent |
 | `Momentum(Close, Length)` | `ta.mom(close, length)` | Direct equivalent |
-| `TSI(Close, LongLen, ShortLen)` | `ta.tsi(close, LongLen, ShortLen)` | Direct equivalent; Pine returns −100..+100 |
+| `TSI(Close, LongLen, ShortLen)` | `ta.tsi(close, ShortLen, LongLen) * 100` | Pine signature is `ta.tsi(source, short_length, long_length)` and returns −1..+1 — swap the length order and multiply by 100 |
 | `AverageFC(Close, Length)` | `ta.sma(close, length)` | Fast-ceiling variant; Pine `ta.sma` is equivalent |
 | `WAverage(Close, Length)` | `ta.wma(close, length)` | Direct equivalent |
 | `AdaptiveMovAvg(Close, Length)` | manual KAMA formula | No Pine built-in; implement Kaufman AMA manually |
@@ -71,10 +71,10 @@ This skill covers the structural and semantic differences between MultiCharts Po
 | `DMIPlus(Length)` | `[diplus, diminus, adx] = ta.dmi(Length, Length)` | Destructure tuple; use `diplus` |
 | `DMIMinus(Length)` | `[diplus, diminus, adx] = ta.dmi(Length, Length)` | Destructure tuple; use `diminus` |
 | `RateOfChange(Close, Length)` | `ta.roc(close, length)` | Direct equivalent |
-| `PercentR(High, Low, Close, Length)` | manual: `−100 * (ta.highest(high,Length) − close) / (ta.highest(high,Length) − ta.lowest(low,Length))` | No Pine built-in; replicate Williams %R formula |
-| `MoneyFlow(Length)` | `ta.mfi(close, length)` | Pine `ta.mfi` is Money Flow Index |
+| `PercentR(Length)` | `ta.wpr(length) + 100` or `100 * (close − ta.lowest(low, Length)) / (ta.highest(high, Length) − ta.lowest(low, Length))` | PL `PercentR` takes length only and is POSITIVE 0..100 (= Williams %R + 100); overbought/oversold thresholds become 80/20 on the positive scale |
+| `MoneyFlow(Length)` | `ta.mfi(hlc3, length)` | Pine `ta.mfi` is Money Flow Index; PL uses typical price internally — pass `hlc3`, not `close` |
 | `Parabolic(AFStep, AFLimit)` | manual Parabolic SAR formula | No Pine built-in; implement SAR loop manually |
-| `Volatility(Length)` | `ta.stdev(close, length)` | PL `Volatility` is standard deviation of closes |
+| `Volatility(Length)` | `ta.ema(ta.tr(true), length)` (or `ta.rma`) | PL `Volatility` is a smoothed average of TrueRange weighted toward the most recent bar — NOT a stdev-based measure (`StandardDev` is stdev of closes; `VolatilityStdDev` is annualized stdev of log returns) |
 | `UltimateOscillator(Len1, Len2, Len3)` | manual formula using `ta.atr` and buying pressure sums | No Pine built-in; compute from three-period ratios |
 | `ChaikinOsc(FastLen, SlowLen)` | manual: `ta.ema(ad, FastLen) − ta.ema(ad, SlowLen)` | No Pine built-in; compute A/D line first, then EMA difference |
 | `PriceOscillator(Close, FastLen, SlowLen)` | manual: `ta.ema(close, FastLen) − ta.ema(close, SlowLen)` | No Pine built-in; difference of two EMAs |
@@ -91,18 +91,18 @@ This skill covers the structural and semantic differences between MultiCharts Po
 | `NthLowest(Close, Length, N)` | manual: sort last `Length` bars, pick Nth | No Pine built-in; use a loop or `array.sort` |
 | `NthHighestBar(Close, Length, N)` | manual: find bar offset of Nth highest | No Pine built-in; combine loop with comparison |
 | `NthLowestBar(Close, Length, N)` | manual: find bar offset of Nth lowest | No Pine built-in; combine loop with comparison |
-| `SwingHigh(Strength, Close, LeftBars, RightBars)` | `ta.pivothigh(close, LeftBars, RightBars)` | Returns `na` when no pivot found |
-| `SwingLow(Strength, Close, LeftBars, RightBars)` | `ta.pivotlow(close, LeftBars, RightBars)` | Returns `na` when no pivot found |
-| `SwingHighBar(Strength, Close, LeftBars, RightBars, N)` | manual: track bar offset of `ta.pivothigh` | No direct built-in; record `bar_index` when pivot appears |
-| `SwingLowBar(Strength, Close, LeftBars, RightBars, N)` | manual: track bar offset of `ta.pivotlow` | No direct built-in; record `bar_index` when pivot appears |
-| `Summation(Close, Length)` | `ta.sma(close, length) * length` | No `ta.sum`; multiply SMA by length |
+| `SwingHigh(Occur, Price, Strength, Length)` | `ta.pivothigh(Price, Strength, Strength)` | Occurrence is the FIRST PL arg; PL returns −1 when no swing found (Pine returns `na`); `Length` must exceed `Strength` |
+| `SwingLow(Occur, Price, Strength, Length)` | `ta.pivotlow(Price, Strength, Strength)` | Same: Occurrence first, −1 when none found, `Length` > `Strength` |
+| `SwingHighBar(Occur, Price, Strength, Length)` | manual: track bar offset of `ta.pivothigh` | No direct built-in; record `bar_index` when pivot appears |
+| `SwingLowBar(Occur, Price, Strength, Length)` | manual: track bar offset of `ta.pivotlow` | No direct built-in; record `bar_index` when pivot appears |
+| `Summation(Close, Length)` | `math.sum(close, length)` | Direct equivalent — `math.sum` exists in v5 |
 | `Cum(Close)` | `ta.cum(close)` | Direct equivalent; cumulative sum from bar 0 |
 | `LinearRegValue(Close, Length, Offset)` | `ta.linreg(close, length, offset)` | Direct equivalent |
 | `LinearRegAngle(Close, Length, Offset)` | manual: `math.todegrees(math.atan(ta.linreg(close, length, offset) − ta.linreg(close, length, offset + 1)))` | No Pine built-in; derive from regression slope |
 | `LinearRegSlope(Close, Length)` | manual: `ta.linreg(close, length, 0) − ta.linreg(close, length, 1)` | No Pine built-in; approximate from two offsets |
 | `Correlation(X, Y, Length)` | `ta.correlation(X, Y, length)` | Direct equivalent |
 | `RSquared(Close, Length)` | `math.pow(ta.correlation(close, bar_index, length), 2)` | R-squared of linear regression; square the correlation |
-| `StdError(Close, Length)` | manual: compute from `ta.stdev` and regression residuals | No Pine built-in; implement standard error formula |
+| `StdError(Close, Length)` | manual: `math.sqrt(sumSqResid / (Length - 2))` from residuals against `ta.linreg(close, Length, 0)` | Standard error of the linear-regression residuals — NOT SE of the mean; no Pine built-in |
 | `Median(Close, Length)` | `ta.median(close, length)` | Direct equivalent |
 | `ELDate` | `(year(time) - 1900) * 10000 + month(time) * 100 + dayofmonth(time)` | PL YYYMMDD format (1900-based century); reconstruct in Pine |
 | `MinutesToTime(mins)` | manual: `int(mins / 60) * 100 + (mins % 60)` | PL returns HHMM integer; replicate arithmetic |
@@ -115,7 +115,7 @@ This skill covers the structural and semantic differences between MultiCharts Po
 | `MRO(Cond, Length, N)` | manual: loop back through `Length` bars | No Pine built-in; most recent occurrence of condition |
 | `AccumDist` | manual: `ta.cum(((close − low) − (high − close)) / (high − low) * volume)` | No Pine built-in; cumulative A/D line formula |
 | `IFF(Cond, TrueVal, FalseVal)` | `Cond ? TrueVal : FalseVal` | Pine ternary operator is the direct equivalent |
-| `TriAverage(Close, Length)` | `ta.sma(ta.sma(close, length), length)` | Triangular MA; double-apply SMA |
+| `TriAverage(Close, Length)` | `halfLen = math.ceil((length + 1) * 0.5)` then `ta.sma(ta.sma(close, halfLen), halfLen)` | Triangular MA = SMA of SMA with HALVED length `ceil((Length+1)*0.5)` — not the full length applied twice |
 | `FastK(StochLength)` | `ta.stoch(close, high, low, StochLength)` | Raw %K; Pine `ta.stoch` returns raw %K |
 | `FastD(StochLength)` | `ta.sma(ta.stoch(close, high, low, StochLength), 3)` | Smoothed %K; apply SMA(3) to FastK |
 | `SlowK(StochLength)` | `ta.sma(ta.stoch(close, high, low, StochLength), 3)` | Same as FastD |
@@ -125,7 +125,7 @@ This skill covers the structural and semantic differences between MultiCharts Po
 | `SlowKCustom(H, L, C, Length)` | `ta.sma(ta.stoch(C, H, L, Length), 3)` | Same as FastDCustom |
 | `SlowDCustom(H, L, C, Length)` | `ta.sma(ta.sma(ta.stoch(C, H, L, Length), 3), 3)` | Slow %D with custom prices |
 | `StochasticExp(H, L, C, Length, S1, S2, ...)` | `ta.ema(ta.stoch(C, H, L, Length), S1)` | Uses EMA smoothing instead of SMA; compute %D from %K manually |
-| `ADXR(Length)` | `(ta.dmi(Length, Length)[2] + ta.dmi(Length, Length)[2][Length]) / 2` | Average of current ADX and ADX N bars ago; no Pine built-in |
+| `ADXR(Length)` | `[diPlus, diMinus, adxV] = ta.dmi(Length, Length)` at global scope, then `(adxV + adxV[Length]) / 2` | Average of current ADX and ADX N bars ago; `[]` indexing on a function call (or chained `[2][Length]`) is invalid — destructure into a variable first |
 | `ADXCustom(H, L, C, Length)` | Manual: replicate ADX using custom H/L/C | No Pine built-in; implement Wilder smoothing with custom prices |
 | `DMI(Length)` | `ta.dmi(Length, Length)` | Same as `ADX`; wrapper that returns DMI value |
 | `DMIPlusCustom(H, L, C, Length)` | Manual: `+DI` with custom prices | No Pine built-in; compute +DM from custom highs |
@@ -152,8 +152,7 @@ This skill covers the structural and semantic differences between MultiCharts Po
 | `PivotLowVSBar(Inst, Price, LStr, RStr, Length)` | Manual: track `bar_index` when `ta.pivotlow` fires | Record bar offset when pivot appears |
 | `Divergence(Price1, Price2, Str, Len, HiLo)` | Manual: compare pivots of two series | No Pine built-in; detect when price makes new high/low but indicator doesn't |
 | `TimeSeriesForecast(Close, Length)` | `ta.linreg(close, Length, 0)` | Direct equivalent |
-
-| `SummationFC(Close, Length)` | `ta.sma(close, Length) * Length` | Fast calc Summation; same as `Summation` in Pine |
+| `SummationFC(Close, Length)` | `math.sum(close, Length)` | Fast calc Summation; same as `Summation` in Pine |
 | `OpenD(N)` | `request.security(syminfo.tickerid, "D", open[N])` | Daily open; requires `request.security` for MTF |
 | `HighD(N)` | `request.security(syminfo.tickerid, "D", high[N])` | Daily high |
 | `LowD(N)` | `request.security(syminfo.tickerid, "D", low[N])` | Daily low |
@@ -195,7 +194,7 @@ This skill covers the structural and semantic differences between MultiCharts Po
 | `Kurtosis(Close, N)` | Manual: 4th moment calculation | Excess kurtosis |
 | `Skew(Close, N)` | Manual: 3rd moment calculation | Skewness |
 | `PercentRank(ValToRank, Price, N)` | `ta.percentrank(close, N)` | Percent rank within lookback |
-| `Covariance(P1, P2, N)` | Manual: `ta.sma(P1*P2, N) - ta.sma(P1, N)*ta.sma(P2, N)` | Covariance |
+| `Covariance(P1, P2, N)` | Manual: `ta.sma(P1*P2, N) - ta.sma(P1, N)*ta.sma(P2, N)` | Covariance — note this `sma(xy) − sma(x)·sma(y)` identity gives the POPULATION (ddof=0) covariance |
 | `Quartile(Close, N, Q)` | `ta.percentile_nearest_rank(close, N, Q*25)` | Quartile value |
 | `TrimMean(Close, N, Pct)` | Manual: sort window, trim, average | Trimmed mean |
 | `Mode(Close, N, Type)` | Manual: frequency count over window | Modal value |
@@ -230,8 +229,11 @@ This skill covers the structural and semantic differences between MultiCharts Po
 | `Buy(qty, "label") shares next bar market` | `strategy.entry("label", strategy.long, qty=qty)` | Pass contract/share count via `qty` parameter |
 | `Buy("label") next bar at price limit` | `strategy.entry("label", strategy.long, limit=price)` | Limit orders use the `limit` param |
 | `Buy("label") next bar at price stop` | `strategy.entry("label", strategy.long, stop=price)` | Stop orders use the `stop` param |
-| `SetStopLoss(dollars)` | `strategy.exit("id", stop=strategy.position_avg_price - dollars / qty)` | PL takes a dollar amount; Pine takes an absolute price level — must convert manually |
-| `SetProfitTarget(dollars)` | `strategy.exit("id", limit=strategy.position_avg_price + dollars / qty)` | Same dollar-to-price conversion required |
+| `SetStopLoss(dollars)` | `strategy.exit("id", stop=strategy.position_avg_price - dollars / (qty * syminfo.pointvalue))` | PL takes a dollar amount; Pine takes an absolute price level — convert via point value |
+| `SetProfitTarget(dollars)` | `strategy.exit("id", limit=strategy.position_avg_price + dollars / (qty * syminfo.pointvalue))` | Same dollar-to-price conversion required |
+| `SetDollarTrailing(dollars)` | `strategy.exit("id", trail_points=activationTicks, trail_offset=dollars / (qty * syminfo.pointvalue) / syminfo.mintick)` | **Pine trailing needs an activation level (`trail_price` or `trail_points`) that PL does not have, and `trail_points`/`trail_offset` are in TICKS** — convert dollars → price distance → ticks |
+| `SetPercentTrailing(dollars, pct)` | `strategy.exit("id", trail_price=activationPrice, trail_offset=offsetTicks)` | Same tick-unit and activation-level warnings; PL arms after `dollars` of open profit then gives back `pct`% of the peak profit — compute the activation price for `trail_price` manually |
+| `[IntrabarOrderGeneration = true]` | `strategy(..., calc_on_every_tick=true)` | Closest mapping, but semantics differ: PL IOG evaluates intrabar on real ticks both live and in backtest; Pine `calc_on_every_tick` affects real-time only — historical bars still fill on OHLC-modeled prices unless bar magnifier is enabled |
 
 ---
 
@@ -266,7 +268,7 @@ This skill covers the structural and semantic differences between MultiCharts Po
 | `MarketPosition` | `strategy.position_size` | PL returns -1/0/1; Pine returns the actual signed position size — check sign rather than comparing to 1 or -1 |
 | `EntryPrice` | `strategy.position_avg_price` | Pine gives the average entry price of the current position |
 | `CurrentContracts` | `math.abs(strategy.position_size)` | PL gives absolute contract count; Pine position size is signed |
-| `BarsSinceEntry` | manual: `bar_index - entryBar` | No Pine built-in; track entry bar index manually with a `var` variable |
+| `BarsSinceEntry` | `bar_index - strategy.opentrades.entry_bar_index(strategy.opentrades - 1)` | Built-in since v5; gives bars since the most recent open trade's entry — no manual tracker needed |
 | `Print("text")` | `label.new(bar_index, high, "text")` or `log.info("text")` | `label.new` creates on-chart labels; `log.info` writes to the Pine console |
 | `#BeginCmtry ... #EndCmtry` | no equivalent | Pine has no commentary output; use `label.new` for visible annotations |
 | `Alert("msg", AlertType)` | `alert("msg", alert.freq_once_per_bar)` or `alertcondition(cond, "title")` | Pine `alertcondition` registers a condition for the Alerts dialog; `alert()` fires immediately |
@@ -274,6 +276,12 @@ This skill covers the structural and semantic differences between MultiCharts Po
 ---
 
 ## Part 2: Semantic Differences and Gotchas
+
+### Order fill timing — the #1 conversion bug
+
+- **PL fills on the NEXT bar.** `Buy next bar at market` fills at the NEXT bar's OPEN. `Buy next bar at X Stop` / `Limit` fills intrabar on the next bar at the stop/limit price (or at the open if the bar gaps through it). Any conversion that flips position on the signal bar at that bar's close is one bar early and uses the wrong price.
+- **Pine matches PL by default.** `strategy.entry` with the default `process_orders_on_close=false` fills at the next bar's open — same as PL `next bar at market`. Setting `process_orders_on_close=true` fills at the SAME bar's close, which does NOT match PL — never set it when converting from PL.
+- **EMA seeding/warmup differs.** PL `XAverage` seeds recursively from the first bar's price; Pine `ta.ema` is `na` during warmup. Early-history values (and therefore early signals) differ between the two platforms — discard roughly the first 3×Length bars before comparing backtests.
 
 1. **`Sell` does not mean "go short".** In PowerLanguage, `Sell` exits an existing long position. The Pine equivalent is `strategy.close()`. If you write `strategy.entry("label", strategy.short)` as a translation of `Sell`, you will create a new short position rather than closing the long — this is one of the most common and costly conversion mistakes.
 
@@ -283,7 +291,7 @@ This skill covers the structural and semantic differences between MultiCharts Po
 
 4. **Stochastic parameter mismatch.** PowerLanguage's `Stochastic` function accepts 11 parameters covering %K and %D periods, smoothing type, and detrending options. Pine's `ta.stoch()` accepts 4 parameters and returns raw %K only. If your PL strategy relies on the smoothed %D line or any of the advanced smoothing options, you must replicate that smoothing manually in Pine after calling `ta.stoch()`.
 
-5. **Bar numbering is offset by one.** PowerLanguage's `BarNumber` and `CurrentBar` start at 1 for the first historical bar. Pine's `bar_index` starts at 0. Any logic that compares bar counts, computes bar offsets, or initializes arrays based on `BarNumber` must subtract or add 1 when converting.
+5. **Bar numbering is offset by one.** PowerLanguage's `BarNumber` and `CurrentBar` start at 1 for the first historical bar. Pine's `bar_index` starts at 0. Any logic that compares bar counts, computes bar offsets, or initializes arrays based on `BarNumber` must subtract or add 1 when converting. Caveat: `CurrentBar` counts from the first EXECUTED bar after MaxBarsBack is satisfied, so `bar_index + 1` is exact only when MaxBarsBack = 0.
 
 6. **Position size semantics differ.** `MarketPosition` in PowerLanguage returns exactly -1 (short), 0 (flat), or 1 (long) regardless of how many contracts are held. Pine's `strategy.position_size` returns the signed number of contracts — for example, +3 if three long contracts are open. Code that tests `if MarketPosition = 1` should become `if strategy.position_size > 0` in Pine, not `if strategy.position_size = 1`.
 
@@ -317,7 +325,7 @@ This skill covers the structural and semantic differences between MultiCharts Po
 - [ ] `BarNumber` / `CurrentBar` comparisons adjusted for 0-based `bar_index`
 - [ ] `MarketPosition` comparisons converted from `= 1` / `= -1` to `> 0` / `< 0`
 - [ ] `CurrentContracts` replaced with `math.abs(strategy.position_size)`
-- [ ] `BarsSinceEntry` replaced with a manual `var int entryBar` tracker
+- [ ] `BarsSinceEntry` replaced with `bar_index - strategy.opentrades.entry_bar_index(strategy.opentrades - 1)`
 - [ ] Dollar-based stop/target amounts converted to price levels in all `strategy.exit()` calls
 - [ ] `Value1..Value99` and `Condition1..Condition99` renamed to typed Pine variables
 - [ ] Stochastic %D smoothing replicated manually if the original strategy used the smoothed line

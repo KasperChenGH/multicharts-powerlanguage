@@ -11,7 +11,7 @@ MultiCharts is a Windows trading platform from MCT Limited (Gibraltar). It conne
 
 ## What PowerLanguage is
 
-PowerLanguage (PL) is the scripting language inside MultiCharts. Source code is edited inside the PowerLanguage Editor and stored in MultiCharts's internal studio database — it doesn't have a standalone source-file extension. Exported study bundles use the `.pla` extension (PowerLanguage Archive — a ZIP-based binary format), and these are brought into another machine via PowerLanguage Editor → File → Import. When sharing or pasting raw source code outside the studio, plain text (`.txt`) is the convention. PowerLanguage is functionally compatible with TradeStation's EasyLanguage — most EasyLanguage scripts run unmodified in MultiCharts, and MultiCharts adds a few of its own keywords (FileAppend, PMM, FormatDate, …) that don't exist in EasyLanguage.
+PowerLanguage (PL) is the scripting language inside MultiCharts. Source code is edited inside the PowerLanguage Editor and stored in MultiCharts's internal studio database — it doesn't have a standalone source-file extension. Exported study bundles use the `.pla` extension (PowerLanguage Archive — a ZIP-based binary format), and these are brought into another machine via PowerLanguage Editor → File → Import. When sharing or pasting raw source code outside the studio, plain text (`.txt`) is the convention. PowerLanguage is functionally compatible with TradeStation's EasyLanguage — most EasyLanguage scripts run unmodified in MultiCharts, and MultiCharts adds keywords of its own (the `pmms_*` portfolio money-management family, `MC_TL_*`/`MC_Arw_*` drawing variants, `RecoverDrawings`, `ProcessMouseEvents`, …) that don't exist in EasyLanguage.
 
 Key characteristics:
 - Pascal-flavored syntax (begin/end blocks, semicolon statement terminators).
@@ -40,7 +40,7 @@ A Signal can't plot. An Indicator can't trade. A Function can't do either; it ju
 
 ## How scripts execute
 
-By default, the entire script runs once per bar, at the bar's close. References like `Close[1]` mean "the close of the bar before this one." Order placement keywords schedule orders for the *next* bar — `Buy ... Next Bar at Market` is the standard idiom.
+By default, a Signal script runs once per bar, at the bar's close (and on every historical bar). References like `Close[1]` mean "the close of the bar before this one." Order placement keywords schedule orders for the *next* bar — `Buy ... Next Bar at Market` is the standard idiom, and it fills at the **next bar's open**, not the signal bar's close. Note: real-time **Indicators** recalculate on every incoming tick by default ("Update on every tick" in study properties) — bar-close-only execution is the Signal default, not a platform-wide rule.
 
 For tick-level execution, enable **Intra-bar Order Generation (IOG)** in script properties. With IOG on, the script runs on every incoming tick, and the values of `Open`/`High`/`Low`/`Close` reflect the developing bar in real time. IOG is needed when you want orders that depend on intra-bar price changes (e.g. stop-orders that should fire as soon as price touches a level, not at the next bar close).
 
@@ -57,10 +57,10 @@ Common uses: pair-trading (data2 = the second leg), regime filters (data2 = a hi
 
 ## Order keywords (Signal scripts only)
 
-- `Buy` — opens / adds to a long position. Cancels any open short on fill.
-- `Sell` — exits a long position.
-- `SellShort` — opens / adds to a short position. Cancels any open long on fill.
-- `BuyToCover` — exits a short position.
+- `Buy` — opens a long position. If currently short, the fill **closes the short and reverses to long** in one order (official docs: "When a Buy order is filled, any open short positions will also be closed"). Adds to an existing long only if pyramiding is enabled in Strategy Properties — **off by default**, so a second `Buy` while already long is ignored.
+- `Sell` — exits a long position. Never opens a short.
+- `SellShort` — opens a short position. If currently long, the fill **closes the long and reverses to short**. Same pyramiding rule as `Buy`.
+- `BuyToCover` — exits a short position. Never opens a long.
 
 General shape:
 

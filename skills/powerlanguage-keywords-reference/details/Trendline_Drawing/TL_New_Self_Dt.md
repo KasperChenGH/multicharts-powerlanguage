@@ -1,7 +1,7 @@
-﻿# TL_New_Self_Dt
+# TL_New_Self_Dt
 
 **Category:** Trendline_Drawing
-**Signature:** `TL_New_Self_Dt (b_DateTime, b_Price, e_DateTime, e_Price); Parameters`
+**Signature:** `TL_New_Self_Dt (b_DateTime, b_Price, e_DateTime, e_Price);`
 
 **Parameters**
 - `b_DateTime` *(numeric, required)* — see official docs
@@ -11,7 +11,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = TL_New_Self_Dt( 14, 14, 14 );
+TL_New_Self_Dt( b_DateTime, b_Price, e_DateTime, e_Price );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=TL_New_Self_Dt

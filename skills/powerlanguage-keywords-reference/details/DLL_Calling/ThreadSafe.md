@@ -1,11 +1,11 @@
-﻿# ThreadSafe
+# ThreadSafe
 
 **Category:** DLL_Calling
 **Signature:** `ThreadSafe`
 
 **Example (illustrative)**
 ```
-Value1 = ThreadSafe;
+// ThreadSafe is a language construct (DLL_Calling); see the Usage line above for how it is used.
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=ThreadSafe

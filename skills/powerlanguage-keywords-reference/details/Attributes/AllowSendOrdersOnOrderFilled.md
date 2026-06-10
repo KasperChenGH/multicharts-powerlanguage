@@ -1,11 +1,11 @@
-﻿# AllowSendOrdersOnOrderFilled
+# AllowSendOrdersOnOrderFilled
 
 **Category:** Attributes
 **Signature:** `[AllowSendOrdersOnOrderFilled = LogicalValue]`
 
 **Example (illustrative)**
 ```
-Value1 = AllowSendOrdersOnOrderFilled;
+[AllowSendOrdersOnOrderFilled = true];
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=AllowSendOrdersOnOrderFilled

@@ -1,7 +1,7 @@
-﻿# TL_New
+# TL_New
 
 **Category:** Trendline_Drawing
-**Signature:** `TL_New (sDate, sTime, sPriceValue, eDate, eTime, ePriceValue) Parameters`
+**Signature:** `TL_New (sDate, sTime, sPriceValue, eDate, eTime, ePriceValue)`
 
 **Parameters**
 - `sDate` *(numeric, required)* — see official docs
@@ -13,7 +13,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = TL_New( 14, 14, 14 );
+TL_New( sDate, sTime, sPriceValue, eDate, eTime, ePriceValue );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=TL_New

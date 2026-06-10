@@ -19,13 +19,28 @@ End users install the plugin and get all generated content via the committed
 4. `Invoke-Pester scripts/tests/` should pass all unit tests.
 5. Commit the regenerated `details/` and `tests/` artifacts.
 
+### Failure semantics (fail-closed)
+
+- If a keyword's verbatim lint still fails after every escalation step
+  (placeholder description, then stripped signature/parameters), the generator
+  **deletes the leaking detail file from disk**, records a hard failure, skips
+  the index + fixture build entirely, and **exits 1**. Leaking content can never
+  be indexed or committed.
+- Any parse failure also aborts the run with exit 1 before index/fixture build.
+- On a successful parse pass, a reconciliation step deletes any orphan
+  `details/<Category>/<Keyword>.md` whose keyword is no longer in the parsed
+  set (each deletion is logged), so removed/renamed CHM keywords don't get
+  re-indexed forever. Empty category folders are removed too.
+- `tests/test_function.txt` is a minimal explicit Function template (no keyword
+  category routes to the Function script type).
+
 ## Module map
 
-- `lib/Parse-Chm.psm1` — HTML→fields parser
-- `lib/Paraphrase.psm1` — description rewriter
-- `lib/Generate-Example.psm1` — original example generator
+- `lib/Parse-Chm.psm1` — HTML→fields parser (decodes common HTML entities; abbreviation-aware first-sentence split)
+- `lib/Paraphrase.psm1` — description rewriter (`Get-ParaphrasedDescription`, `Get-CleanedParamDescription`)
+- `lib/Generate-Example.psm1` — category-aware original example generator (`New-KeywordExample`, `Get-CategoryAwareExample`, shared `Test-StringReturningKeyword` taxonomy)
 - `lib/Write-DetailFile.psm1` — composes the final markdown
 - `lib/Build-Index.psm1` — generates `keywords-index.md`
-- `lib/Build-PlaFixtures.psm1` — generates `tests/test_*.txt`
-- `lib/Test-VerbatimLint.psm1` — ≥10-word verbatim copy detector
+- `lib/Build-PlaFixtures.psm1` — generates `tests/test_*.txt` (order names are made unique per build: MultiCharts requires unique order names per script)
+- `lib/Test-VerbatimLint.psm1` — ≥9-word verbatim copy detector (the paraphraser's own guard uses the same 9-word threshold)
 - `generate-keyword-details.ps1` — top-level orchestrator

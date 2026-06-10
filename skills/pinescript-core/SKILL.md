@@ -1,15 +1,15 @@
 ---
 name: pinescript-core
 description: >-
-  Pine Script language fundamentals — versioning (@version=5, @version=6),
-  script types (indicator, strategy, library), type system (series, simple,
-  input, const), declarations (var, varip, input.*), control flow (if/else,
+  Use when writing or reading Pine Script code structure — language
+  fundamentals: versioning (@version=5, @version=6), script types
+  (indicator, strategy, library), type system (series, simple, input,
+  const), declarations (var, varip, input.*), control flow (if/else,
   for, while, switch, ternary), user-defined functions/types/methods,
   and common gotchas (repainting, na handling, series vs simple context,
-  max_bars_back, global-scope function calls). Use this when writing or
-  reading Pine Script code structure. For built-in namespaces (ta.*, math.*,
-  strategy.*, request.*), see pinescript-builtins. For plotting and drawing
-  objects, see pinescript-visual.
+  max_bars_back, global-scope function calls). For built-in namespaces
+  (ta.*, math.*, strategy.*, request.*), see pinescript-builtins. For
+  plotting and drawing objects, see pinescript-visual.
 ---
 
 # Pine Script Core — Language Fundamentals
@@ -37,12 +37,14 @@ indicator("My Indicator")
 | Area | v5 | v6 |
 |---|---|---|
 | Type system | Implicit casting in many places | Stricter — explicit casts required more often |
-| `request.security()` | Returns series directly | Returns `[value, barstate]` tuple in some overloads; cleaner multi-value syntax |
+| `request.*()` arguments | `symbol`/`timeframe` must be `simple string` | Accept `series string` — "dynamic requests" |
+| `and` / `or` operators | Both operands always evaluated | Lazy (short-circuit) evaluation |
+| `bool` values | Can be `na` | Strictly `true`/`false` — never `na` |
 | `matrix.*` namespace | Available | Extended with more methods |
-| `polyline.*` drawing | Not available | Added in v6 |
-| `chart.point` type | Not available | Added in v6 for coordinate-aware drawings |
-| `UDT` (user-defined types) | Available | Extended — methods can be attached directly to types |
-| `import` libraries | Available | Available; v6 libraries can export methods |
+| `polyline.*` drawing | Available (added to v5 in 2023) | Available |
+| `chart.point` type | Available (added to v5 in 2023) for coordinate-aware drawings | Available |
+| `UDT` (user-defined types) | Available — methods attach via the `method` keyword (added to v5 in 2023) | Available |
+| `import` libraries | Available; libraries can export methods | Available |
 
 **Version target:** All examples in this skill use `//@version=5`. TradingView may show a deprecation warning recommending v6 — this is non-blocking and the code compiles and runs correctly. v6 introduces syntax changes that may require adjustments; test on v6 separately if needed.
 
@@ -111,7 +113,7 @@ export double(float x) =>
     x * 2.0
 ```
 
-- Cannot plot or place orders on its own.
+- Can use `plot()` and drawing functions in its global scope (typically to demo its exports); cannot place orders — `strategy.*` order functions are unavailable.
 - Functions and types marked `export` are visible to importers.
 - Import in another script: `import username/MyLib/1 as MyLib`.
 
@@ -149,7 +151,7 @@ Every value in Pine Script has both a type (e.g. `float`) and a qualifier that d
 | Qualifier | When the value is known | Can be used as |
 |---|---|---|
 | `const` | Compile time — never changes | Anything |
-| `input` | Script load time — set by the user via Inputs dialog | `const`, `input`, `simple`, `series` |
+| `input` | Script load time — set by the user via Inputs dialog | `input`, `simple`, `series` |
 | `simple` | Bar 0 (first bar) — fixed for the script's lifetime | `simple`, `series` |
 | `series` | Every bar — the most general form | `series` only |
 
@@ -161,15 +163,15 @@ indicator("Qualifier demo")
 
 // This works — literal 14 is const int, which satisfies simple int
 length = input.int(14, "Length")
-sma_val = ta.sma(close, length)  // length is input int → accepted as simple int
+ema_val = ta.ema(close, length)  // length is input int → accepted as simple int
 
 // This FAILS — bar index changes every bar, so it is series int
-// ta.sma(close, bar_index)  // ERROR: "simple int" argument required, got "series int"
+// ta.ema(close, bar_index)  // ERROR: "simple int" argument required, got "series int"
 
-plot(sma_val)
+plot(ema_val)
 ```
 
-Common functions that require `simple` (not `series`) arguments include `ta.sma()`, `ta.ema()`, and most `request.*` functions for their `timeframe` parameter.
+Common functions that require `simple` (not `series`) arguments include `ta.ema()`, `ta.rsi()`, `ta.rma()`, `ta.atr()`, and most `request.*` functions for their `timeframe` parameter. (`ta.sma()` is more permissive — its `length` accepts `series int`.)
 
 ### `na`, `nz`, and `fixnan`
 
@@ -243,7 +245,7 @@ plot(highest_close)
 
 ```pine
 //@version=5
-indicator("varip example", calc_on_every_tick = true)
+indicator("varip example")
 
 varip int tick_count = 0  // increments every real-time tick, not just every closed bar
 
@@ -253,7 +255,7 @@ plot(tick_count)
 
 - Like `var`, but updates survive intra-bar recalculations in real-time.
 - On historical bars `varip` behaves identically to `var`.
-- Rarely needed — only useful when `calc_on_every_tick = true` and you need intra-bar state.
+- Rarely needed — only useful when you need state that survives intra-bar updates on the realtime bar (indicators always recalculate per tick; strategies need `calc_on_every_tick = true` in `strategy()`).
 
 ### Input functions
 
@@ -544,7 +546,7 @@ The `method` keyword attaches a function to a type. Inside the method, `this` re
 indicator("Method demo", overlay = false)
 
 type PriceBuffer
-    float[] data     = array.new_float(0)
+    float[] data                  // collection fields cannot have defaults — initialize via .new()
     int     capacity = 20
 
 // method defined on PriceBuffer
@@ -556,7 +558,7 @@ method push(PriceBuffer this, float val) =>
 method average(PriceBuffer this) =>
     array.size(this.data) > 0 ? array.avg(this.data) : na
 
-var PriceBuffer buf = PriceBuffer.new()
+var PriceBuffer buf = PriceBuffer.new(data = array.new_float(0))
 
 buf.push(close)           // call the method with dot notation
 plot(buf.average(), "Buffer avg")
@@ -700,7 +702,7 @@ old_close = close[lookback]   // works once max_bars_back is raised
 | Backtest Strategy Tester tab | No | Yes | No |
 | `export` functions/types | No | No | Yes |
 | Can be `import`-ed | No | No | Yes |
-| `plot()`, `plotshape()`, etc. | Yes | Yes (overlay only for price plots) | No |
+| `plot()`, `plotshape()`, etc. | Yes | Yes (overlay only for price plots) | Yes (global scope only) |
 
 **Tip:** If you intend to backtest, start with `strategy()`. If you only need to display data, use `indicator()`. You cannot do both in a single script — split them into two files that share a library if needed.
 

@@ -1,7 +1,7 @@
 # Pine Script Reference & PowerLanguage-Pine Conversion — Design Spec
 
 **Date:** 2026-06-01
-**Status:** Draft
+**Status:** Implemented, then superseded — `pinescript-reference` was split into `pinescript-core`, `pinescript-builtins`, and `pinescript-visual` in commit e96a64f (v0.4.0). Historical document; skill names below reflect the original design.
 **Scope:** Two new skills for the multicharts-powerlanguage plugin
 
 ## Overview

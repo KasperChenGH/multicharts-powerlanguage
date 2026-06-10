@@ -1,7 +1,7 @@
-﻿# RectangleSetFillColor
+# RectangleSetFillColor
 
 **Category:** Rectangle_Drawing
-**Signature:** `RectangleSetFillColor(ID,Color) Parameters`
+**Signature:** `RectangleSetFillColor(ID,Color)`
 
 **Parameters**
 - `ID` *(numeric, required)* — see official docs
@@ -9,7 +9,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = RectangleSetFillColor( 14, 14 );
+RectangleSetFillColor( ID, Color );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=RectangleSetFillColor

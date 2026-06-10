@@ -1,7 +1,7 @@
-﻿# Arw_New_DT
+# Arw_New_DT
 
 **Category:** Arrow_Drawing
-**Signature:** `Arw_New_DT (Bar_DateTime, PriceValue, Direction) Parameters`
+**Signature:** `Arw_New_DT (Bar_DateTime, PriceValue, Direction)`
 
 **Parameters**
 - `Bar_DateTime` *(numeric, required)* — see official docs
@@ -10,7 +10,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = Arw_New_DT( 14, 14, True );
+Arw_New_DT( Bar_DateTime, PriceValue, Direction );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=Arw_New_DT

@@ -1,11 +1,11 @@
-﻿# LPBool
+# LPBool
 
 **Category:** DLL_Calling
 **Signature:** ``
 
 **Example (illustrative)**
 ```
-Value1 = LPBool;
+// LPBool is a C-type name used within DefineDLLFunc/External declarations; not a standalone value.
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=LPBool

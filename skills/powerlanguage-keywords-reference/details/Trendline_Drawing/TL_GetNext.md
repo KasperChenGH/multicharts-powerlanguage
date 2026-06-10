@@ -1,7 +1,7 @@
-﻿# TL_GetNext
+# TL_GetNext
 
 **Category:** Trendline_Drawing
-**Signature:** `TL_GetNext (TL_ID,Origin) Parameters`
+**Signature:** `TL_GetNext (TL_ID,Origin)`
 
 **Parameters**
 - `TL_ID` *(numeric, required)* — see official docs
@@ -9,7 +9,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = TL_GetNext( 14, 14 );
+TL_GetNext( TL_ID, Origin );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=TL_GetNext

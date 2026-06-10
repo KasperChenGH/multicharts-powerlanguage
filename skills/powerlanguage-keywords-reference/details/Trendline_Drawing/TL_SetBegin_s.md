@@ -1,7 +1,7 @@
-﻿# TL_SetBegin_s
+# TL_SetBegin_s
 
 **Category:** Trendline_Drawing
-**Signature:** `TL_SetBegin_s (TL_ID, sDate, sTime_s, sPriceValue) Parameters`
+**Signature:** `TL_SetBegin_s (TL_ID, sDate, sTime_s, sPriceValue)`
 
 **Parameters**
 - `TL_ID` *(numeric, required)* — see official docs
@@ -11,7 +11,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = TL_SetBegin_s( 14, 14, 14 );
+TL_SetBegin_s( TL_ID, sDate, sTime_s, sPriceValue );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=TL_SetBegin_s

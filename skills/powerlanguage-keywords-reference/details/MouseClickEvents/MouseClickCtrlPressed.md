@@ -1,11 +1,13 @@
-﻿# MouseClickCtrlPressed
+# MouseClickCtrlPressed
 
 **Category:** MouseClickEvents
 **Signature:** `MouseClickCtrlPressed`
 
 **Example (illustrative)**
 ```
-Value1 = MouseClickCtrlPressed;
+If MouseClickCtrlPressed Then Begin
+	Value1 = 1;
+End;  // MouseClickCtrlPressed returns true/false
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=MouseClickCtrlPressed

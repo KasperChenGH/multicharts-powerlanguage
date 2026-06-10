@@ -1,7 +1,7 @@
-﻿# Arw_SetLocation
+# Arw_SetLocation
 
 **Category:** Arrow_Drawing
-**Signature:** `Arw_SetLocation (ObjectID, BarDate, BarTime, PriceValue) Parameters`
+**Signature:** `Arw_SetLocation (ObjectID, BarDate, BarTime, PriceValue)`
 
 **Parameters**
 - `ObjectID` *(numeric, required)* — see official docs
@@ -11,7 +11,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = Arw_SetLocation( 14, 14, 14 );
+Arw_SetLocation( ObjectID, BarDate, BarTime, PriceValue );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=Arw_SetLocation

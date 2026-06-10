@@ -22,7 +22,8 @@ function New-KeywordsIndex {
     [void]$sb.AppendLine('|---|---|')
 
     foreach ($kw in $keywords) {
-      $body = Get-Content $kw.FullName -Raw
+      # -Encoding UTF8: detail files are written BOM-less; PS 5.1 would read them as ANSI.
+      $body = Get-Content $kw.FullName -Raw -Encoding UTF8
       $sig = if ($body -match '(?m)^\*\*Signature:\*\*\s*`(.+?)`') { $Matches[1] } else { '' }
       [void]$sb.AppendLine("| ``$($kw.BaseName)`` | ``$sig`` |")
     }

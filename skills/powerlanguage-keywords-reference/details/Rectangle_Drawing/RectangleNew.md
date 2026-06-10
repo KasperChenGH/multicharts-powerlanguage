@@ -1,7 +1,7 @@
-﻿# RectangleNew
+# RectangleNew
 
 **Category:** Rectangle_Drawing
-**Signature:** `RectangleNew (sDate, sTime, sPriceValue, eDate, eTime, ePriceValue) Parameters`
+**Signature:** `RectangleNew (sDate, sTime, sPriceValue, eDate, eTime, ePriceValue)`
 
 **Parameters**
 - `sDate` *(numeric, required)* — see official docs
@@ -13,7 +13,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = RectangleNew( 14, 14, 14 );
+RectangleNew( sDate, sTime, sPriceValue, eDate, eTime, ePriceValue );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=RectangleNew

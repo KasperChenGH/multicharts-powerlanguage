@@ -1,7 +1,7 @@
-﻿# RectangleSetEnd
+# RectangleSetEnd
 
 **Category:** Rectangle_Drawing
-**Signature:** `RectangleSetEnd (ID, eDate, eTime, ePriceValue) Parameters`
+**Signature:** `RectangleSetEnd (ID, eDate, eTime, ePriceValue)`
 
 **Parameters**
 - `ID` *(numeric, required)* — see official docs
@@ -11,7 +11,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = RectangleSetEnd( 14, 14, 14 );
+RectangleSetEnd( ID, eDate, eTime, ePriceValue );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=RectangleSetEnd

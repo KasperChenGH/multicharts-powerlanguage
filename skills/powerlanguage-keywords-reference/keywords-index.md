@@ -43,13 +43,13 @@ Index of every PowerLanguage keyword grouped by the 40 categories from MultiChar
 | `Arw_GetColor` | `Arw_GetColor(ObjectID)` |
 | `Arw_GetDate` | `Arw_GetDate(ObjectID)` |
 | `Arw_GetDirection` | `Arw_GetDirection(ObjectID)` |
-| `Arw_GetFirst` | `Arw_GetFirst (Origin) Parameters` |
+| `Arw_GetFirst` | `Arw_GetFirst(Origin)` |
 | `Arw_GetLock` | `Arw_GetLock(ArrowID)` |
-| `Arw_GetNext` | `Arw_GetNext(ObjectID,Origin) Parameters` |
+| `Arw_GetNext` | `Arw_GetNext(ObjectID,Origin)` |
 | `Arw_GetSize` | `Arw_GetSize(ObjectID)` |
 | `Arw_GetStyle` | `Arw_GetStyle(ObjectID)` |
 | `Arw_GetText` | `Arw_GetText(ObjectID)` |
-| `Arw_GetTextAttribute` | `Arw_GetTextAttribute(ObjectID,Attribute) Parameters` |
+| `Arw_GetTextAttribute` | `Arw_GetTextAttribute(ObjectID,Attribute)` |
 | `Arw_GetTextBGColor` | `Arw_GetTextBGColor(ObjectID)` |
 | `Arw_GetTextColor` | `Arw_GetTextColor(ObjectID)` |
 | `Arw_GetTextFontName` | `Arw_GetTextFontName(ObjectID)` |
@@ -64,7 +64,7 @@ Index of every PowerLanguage keyword grouped by the 40 categories from MultiChar
 | `Arw_New_DT` | `Arw_New_DT (Bar_DateTime, PriceValue, Direction) Parameters` |
 | `Arw_New_s` | `Arw_New_s (BarDate, BarTime_s, PriceValue, Direction) Parameters` |
 | `Arw_New_self` | `Arw_New_self (BarDate, BarTime, PriceValue, Direction) Parameters` |
-| `ARW_New_Self_BN` | `` |
+| `ARW_New_Self_BN` | `ARW_New_Self_BN(BarNumber, PriceValue, Direction)` |
 | `Arw_New_Self_DT` | `Arw_New_Self_DT (Bar_DateTime, PriceValue, Direction) Parameters` |
 | `Arw_New_self_s` | `Arw_New_self_s (BarDate, BarTime_s, PriceValue, Direction) Parameters` |
 | `Arw_SetBarNumber` | `Arw_SetBarNumber(ref,Barnumber)` |
@@ -339,7 +339,7 @@ Index of every PowerLanguage keyword grouped by the 40 categories from MultiChar
 |---|---|
 | `Array` | `Array:IntraBarPersist>ArrayName1[D1,D2,D3,etc.](InitialValue1,DataN>), IntraBarPersist>ArrayName2[D1,D2,D3,etc.](InitialValue2,DataN>),etc.` |
 | `Arrays` | `` |
-| `Input` | `Input:InputName1(DefaultValue1), InputName2(DefaultValue2), etc. Parameters` |
+| `Input` | `Input: InputName1(DefaultValue1), InputName2(DefaultValue2), etc.` |
 | `Inputs` | `` |
 | `IntraBarPersist` | `Declaration:[IntraBarPersist]Name(InitialValue1)` |
 | `Numeric` | `Input:InputName(Numeric)` |
@@ -847,7 +847,7 @@ Index of every PowerLanguage keyword grouped by the 40 categories from MultiChar
 | `Limit` | `At Price Limit` |
 | `Lower` | `At Price Or Lower` |
 | `Market` | `At Market` |
-| `Sell` | `` |
+| `Sell` | `Sell[("ExitLabel")][From Entry("EntryLabel")][TradeSize[Total]] Exit;` |
 | `SellShort` | `SellShort[("EntryLabel")][TradeSize]Entry` |
 | `SetBreakEven` | `SetBreakEven(Profit)` |
 | `SetBreakEven_pt` | `SetBreakEven_pt(Profit)` |

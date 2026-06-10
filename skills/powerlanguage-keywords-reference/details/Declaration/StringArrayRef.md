@@ -1,7 +1,7 @@
-﻿# StringArrayRef
+# StringArrayRef
 
 **Category:** Declaration
-**Signature:** `Input:InputName[M1,M2,M3,etc.](StringArrayRef) Parameters`
+**Signature:** `Input:InputName[M1,M2,M3,etc.](StringArrayRef)`
 
 **Parameters**
 - `M` *(expression, required)* — see official docs

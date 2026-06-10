@@ -120,6 +120,8 @@ Buy ("Entry") 1 Contract Next Bar at Market;
 | Rust | `orders.push(Order { label: "Entry", side: Side::Long, order_type: OrderType::Market, qty: 1 })` |
 | C++ | `orders.push_back({"Entry", Side::Long, OrderType::Market, 1});` |
 
+PL `Next Bar at Market` fills at the **next bar's open**. Pine's `strategy.entry` does this by default (`process_orders_on_close=false`); the Python/Rust/C++ scaffolds queue the order on the signal bar and fill it at the next bar's open.
+
 ### Full conversion example
 
 The following PowerLanguage strategy buys when a fast EMA crosses above a slow EMA, sells on the reverse cross, and uses an ATR-based trailing stop. Below it is the same logic in all four conversion targets.
@@ -139,9 +141,9 @@ Variables:
     atrVal(0),
     trailStop(0);
 
-fastMA = AverageFC(Close, FastLen);
-slowMA = AverageFC(Close, SlowLen);
-atrVal = AvgTrueRange(ATRLen);
+fastMA = XAverage(Close, FastLen);
+slowMA = XAverage(Close, SlowLen);
+atrVal = AvgTrueRange(ATRLen); { SIMPLE average of TrueRange -- not Wilder }
 
 If fastMA Crosses Over slowMA Then
     Buy ("EMA Cross") Next Bar at Market;
@@ -169,8 +171,10 @@ trailMult = input.float(2.0, "Trail Multiplier")
 
 fastMA = ta.ema(close, fastLen)
 slowMA = ta.ema(close, slowLen)
-atrVal = ta.atr(atrLen)
+atrVal = ta.sma(ta.tr(true), atrLen)  // PL AvgTrueRange = SIMPLE avg of TrueRange; ta.atr is Wilder
+hh10   = ta.highest(high, 10)         // ta.* calls stay at global scope — never inside if/for
 
+// Default process_orders_on_close=false fills at the NEXT bar's open — same as PL "Next Bar at Market"
 if ta.crossover(fastMA, slowMA)
     strategy.entry("EMA Cross", strategy.long)
 
@@ -178,7 +182,7 @@ if ta.crossunder(fastMA, slowMA)
     strategy.close("EMA Cross", comment="EMA Exit")
 
 if strategy.position_size > 0
-    trailStop = ta.highest(high, 10) - trailMult * atrVal
+    trailStop = hh10 - trailMult * atrVal
     strategy.exit("Trail", from_entry="EMA Cross", stop=trailStop)
 
 plot(fastMA, "Fast EMA", color=color.blue)
@@ -202,53 +206,70 @@ class EMACrossTrail:
     def run(self, df: pd.DataFrame) -> pd.DataFrame:
         df["fast_ma"] = ta.ema(df["close"], length=self.fast)
         df["slow_ma"] = ta.ema(df["close"], length=self.slow)
-        df["atr"]     = ta.atr(df["high"], df["low"], df["close"], length=self.atr_len)
+        # PL AvgTrueRange = SIMPLE average of TrueRange; default ta.atr is Wilder
+        df["atr"] = ta.atr(df["high"], df["low"], df["close"],
+                           length=self.atr_len, mamode="sma")
 
-        signals = []
+        fills = [None] * len(df)
+        pending = None  # order queued on bar N fills on bar N+1 (PL "Next Bar" semantics)
         for i in range(1, len(df)):
-            signal = None
+            # 1. Fill last bar's queued order at THIS bar
+            if pending == "BUY":
+                self.position = 1
+                fills[i] = ("BUY", df["open"].iloc[i])    # market: next bar's OPEN
+            elif pending == "SELL":
+                self.position = 0
+                fills[i] = ("SELL", df["open"].iloc[i])
+            elif pending is not None and df["low"].iloc[i] <= pending[1]:
+                self.position = 0                          # sell stop: intrabar at the
+                fills[i] = ("TRAIL_STOP",                  # stop price (open if it gaps)
+                            min(pending[1], df["open"].iloc[i]))
+            pending = None
+
             fast_prev, fast_curr = df["fast_ma"].iloc[i - 1], df["fast_ma"].iloc[i]
             slow_prev, slow_curr = df["slow_ma"].iloc[i - 1], df["slow_ma"].iloc[i]
+            if pd.isna(slow_curr) or pd.isna(df["atr"].iloc[i]):
+                continue  # indicator warm-up
 
-            # EMA crossover → buy
+            # 2. Evaluate signals on this bar's close → queue for the NEXT bar
             if fast_prev <= slow_prev and fast_curr > slow_curr and self.position == 0:
-                self.position = 1
-                signal = "BUY"
-
-            # EMA crossunder → sell
+                pending = "BUY"
             elif fast_prev >= slow_prev and fast_curr < slow_curr and self.position == 1:
-                self.position = 0
-                signal = "SELL"
-
-            # ATR trailing stop
+                pending = "SELL"
             elif self.position == 1:
-                trail = df["high"].iloc[max(0, i - 9):i + 1].max() - self.trail_mult * df["atr"].iloc[i]
-                if df["close"].iloc[i] < trail:
-                    self.position = 0
-                    signal = "TRAIL_STOP"
+                trail = (df["high"].iloc[max(0, i - 9):i + 1].max()
+                         - self.trail_mult * df["atr"].iloc[i])
+                pending = ("TRAIL_STOP", trail)
 
-            signals.append(signal)
-
-        df["signal"] = [None] + signals
+        df["fill"] = fills
         return df
 ```
 
 #### Rust (ta-rs)
 
 ```rust
-use ta::indicators::ExponentialMovingAverage;
-use ta::indicators::AverageTrueRange;
-use ta::Next;
+use ta::indicators::{ExponentialMovingAverage, SimpleMovingAverage, TrueRange};
+use ta::{DataItem, Next};
+
+enum Pending {
+    MarketBuy,
+    MarketSell,
+    StopSell(f64),
+}
 
 struct EmaCrossTrail {
     fast_ema: ExponentialMovingAverage,
     slow_ema: ExponentialMovingAverage,
-    atr: AverageTrueRange,
+    tr: TrueRange,
+    // PL AvgTrueRange = SMA of TrueRange; ta-rs AverageTrueRange is EMA-based (NOT equivalent)
+    atr_sma: SimpleMovingAverage,
     trail_mult: f64,
     position: i32, // 1 = long, 0 = flat
     prev_fast: f64,
     prev_slow: f64,
     highs: Vec<f64>,
+    warmup: usize,
+    pending: Option<Pending>, // order queued on bar N fills on bar N+1 (PL "Next Bar")
 }
 
 impl EmaCrossTrail {
@@ -256,45 +277,63 @@ impl EmaCrossTrail {
         Self {
             fast_ema: ExponentialMovingAverage::new(fast).unwrap(),
             slow_ema: ExponentialMovingAverage::new(slow).unwrap(),
-            atr: AverageTrueRange::new(atr_len).unwrap(),
+            tr: TrueRange::new(),
+            atr_sma: SimpleMovingAverage::new(atr_len).unwrap(),
             trail_mult,
             position: 0,
             prev_fast: 0.0,
             prev_slow: 0.0,
             highs: Vec::new(),
+            warmup: slow.max(atr_len) + 1,
+            pending: None,
         }
     }
 
-    fn on_bar(&mut self, high: f64, low: f64, close: f64) -> Option<&str> {
+    fn on_bar(&mut self, open: f64, high: f64, low: f64, close: f64, volume: f64)
+        -> Option<(&'static str, f64)>
+    {
+        // 1. Fill last bar's queued order at THIS bar
+        let fill = match self.pending.take() {
+            Some(Pending::MarketBuy)  => { self.position = 1; Some(("BUY", open)) }
+            Some(Pending::MarketSell) => { self.position = 0; Some(("SELL", open)) }
+            Some(Pending::StopSell(p)) if low <= p => {
+                self.position = 0;
+                Some(("TRAIL_STOP", p.min(open))) // sell stop: intrabar (open if it gaps)
+            }
+            _ => None,
+        };
+
+        // 2. Update indicators — ta-rs DataItem must come from the builder
+        let bar = DataItem::builder()
+            .open(open).high(high).low(low).close(close).volume(volume)
+            .build().unwrap();
         let fast = self.fast_ema.next(close);
         let slow = self.slow_ema.next(close);
-        let atr_val = self.atr.next((high, low, close));
+        let atr_val = self.atr_sma.next(self.tr.next(&bar));
         self.highs.push(high);
 
-        let signal = if self.prev_fast <= self.prev_slow && fast > slow && self.position == 0 {
-            self.position = 1;
-            Some("BUY")
+        // 3. Guard indicator warm-up before any trading logic
+        if self.highs.len() < self.warmup {
+            self.prev_fast = fast;
+            self.prev_slow = slow;
+            return fill;
+        }
+
+        // 4. Evaluate signals on this bar's close → queue for the NEXT bar
+        if self.prev_fast <= self.prev_slow && fast > slow && self.position == 0 {
+            self.pending = Some(Pending::MarketBuy);
         } else if self.prev_fast >= self.prev_slow && fast < slow && self.position == 1 {
-            self.position = 0;
-            Some("SELL")
+            self.pending = Some(Pending::MarketSell);
         } else if self.position == 1 {
             let lookback = self.highs.len().saturating_sub(10);
             let highest: f64 = self.highs[lookback..].iter().copied()
                 .fold(f64::NEG_INFINITY, f64::max);
-            let trail = highest - self.trail_mult * atr_val;
-            if close < trail {
-                self.position = 0;
-                Some("TRAIL_STOP")
-            } else {
-                None
-            }
-        } else {
-            None
-        };
+            self.pending = Some(Pending::StopSell(highest - self.trail_mult * atr_val));
+        }
 
         self.prev_fast = fast;
         self.prev_slow = slow;
-        signal
+        fill
     }
 }
 ```
@@ -317,47 +356,65 @@ public:
         : fast_(fast), slow_(slow), atr_len_(atr_len), trail_mult_(trail_mult) {}
 
     std::vector<std::string> run(
+        const std::vector<double>& open,
         const std::vector<double>& high,
         const std::vector<double>& low,
         const std::vector<double>& close)
     {
+        TA_Initialize(); // once per process, before any TA_* call
         int n = static_cast<int>(close.size());
-        std::vector<double> fast_ma(n), slow_ma(n), atr(n);
-        int begin_idx, out_count;
+        std::vector<double> fast_ma(n), slow_ma(n), tr(n), atr(n);
+        int fastBeg, slowBeg, trBeg, atrBeg, trNb, nb;
 
-        TA_EMA(0, n - 1, close.data(), fast_, &begin_idx, &out_count, fast_ma.data());
-        TA_EMA(0, n - 1, close.data(), slow_, &begin_idx, &out_count, slow_ma.data());
-        TA_ATR(0, n - 1, high.data(), low.data(), close.data(),
-               atr_len_, &begin_idx, &out_count, atr.data());
+        TA_EMA(0, n - 1, close.data(), fast_, &fastBeg, &nb, fast_ma.data());
+        TA_EMA(0, n - 1, close.data(), slow_, &slowBeg, &nb, slow_ma.data());
+        // PL AvgTrueRange = SIMPLE average of TrueRange; TA_ATR is Wilder (NOT equivalent)
+        TA_TRANGE(0, n - 1, high.data(), low.data(), close.data(),
+                  &trBeg, &trNb, tr.data());
+        TA_SMA(0, trNb - 1, tr.data(), atr_len_, &atrBeg, &nb, atr.data());
+
+        // TA-Lib outputs start at index 0 but correspond to input bar outBeg:
+        // bar i maps to out[i - outBeg], valid only when i >= outBeg
+        int atrOff  = trBeg + atrBeg;
+        int warmup  = std::max({fastBeg, slowBeg, atrOff}) + 1;
 
         std::vector<std::string> signals(n);
-        for (int i = 1; i < n; ++i) {
-            // EMA crossover → buy
-            if (fast_ma[i - 1] <= slow_ma[i - 1] && fast_ma[i] > slow_ma[i]
-                && position_ == 0) {
+        std::string pending;       // order queued on bar N fills on bar N+1 (PL "Next Bar")
+        double pendingStop = 0.0;
+        for (int i = warmup; i < n; ++i) {
+            // 1. Fill last bar's queued order at THIS bar
+            if (pending == "BUY") {
                 position_ = 1;
-                signals[i] = "BUY";
-            }
-            // EMA crossunder → sell
-            else if (fast_ma[i - 1] >= slow_ma[i - 1] && fast_ma[i] < slow_ma[i]
-                     && position_ == 1) {
+                signals[i] = "BUY@" + std::to_string(open[i]);   // market: next bar's OPEN
+            } else if (pending == "SELL") {
                 position_ = 0;
-                signals[i] = "SELL";
+                signals[i] = "SELL@" + std::to_string(open[i]);
+            } else if (pending == "TRAIL_STOP" && low[i] <= pendingStop) {
+                position_ = 0;     // sell stop: intrabar at the stop price (open if it gaps)
+                signals[i] = "TRAIL_STOP@" + std::to_string(std::min(pendingStop, open[i]));
             }
-            // ATR trailing stop
-            else if (position_ == 1) {
+            pending.clear();
+
+            double f  = fast_ma[i - fastBeg], fPrev = fast_ma[i - 1 - fastBeg];
+            double s  = slow_ma[i - slowBeg], sPrev = slow_ma[i - 1 - slowBeg];
+            double av = atr[i - atrOff];
+
+            // 2. Evaluate signals on this bar's close → queue for the NEXT bar
+            if (fPrev <= sPrev && f > s && position_ == 0) {
+                pending = "BUY";
+            } else if (fPrev >= sPrev && f < s && position_ == 1) {
+                pending = "SELL";
+            } else if (position_ == 1) {
                 int start = std::max(0, i - 9);
                 double highest = *std::max_element(high.begin() + start, high.begin() + i + 1);
-                double trail = highest - trail_mult_ * atr[i];
-                if (close[i] < trail) {
-                    position_ = 0;
-                    signals[i] = "TRAIL_STOP";
-                }
+                pending = "TRAIL_STOP";
+                pendingStop = highest - trail_mult_ * av;
             }
         }
         return signals;
     }
 };
+```
 
 ---
 
@@ -444,7 +501,7 @@ multicharts-powerlanguage/
 │   ├── powerlanguage-python-conversion/
 │   ├── powerlanguage-rust-conversion/
 │   └── powerlanguage-cpp-conversion/
-├── tests/                                 # 19 compile-test files
+├── tests/                                 # compile-oriented test fixtures
 ├── scripts/
 │   ├── lib/                               # 8 PowerShell build modules
 │   └── tests/                             # 11 Pester test files (189 tests)
@@ -468,15 +525,15 @@ Invoke-Pester scripts/tests/ -Output Detailed
 
 ### Manual compile tests
 
-19 plain-text files in `tests/` exercise keywords and conversion patterns. PowerLanguage files use unreachable `If False Then Begin … End;` blocks so the compiler checks syntax without executing.
+Compile-oriented plain-text fixtures in `tests/` exercise keywords and conversion patterns. Keyword-sweep files use unreachable `If False Then Begin … End;` blocks so the compiler checks syntax without executing.
 
-**Keyword coverage (8 files):**
+**Keyword coverage:**
 
 | File | Script type | Scope |
 |---|---|---|
 | `test_indicator.txt` | Indicator | 947 CHM keywords |
 | `test_signal.txt` | Signal | 947 CHM keywords |
-| `test_function.txt` | Function | 947 CHM keywords |
+| `test_function.txt` | Function | Real `RangeRatio` function — `Average(Range, Len)` with return-by-assignment |
 | `test_builtins.txt` | Signal | 160 function signatures (150 built-in + 10 custom) |
 | `test_syntax.txt` | Signal | Control flow, operators, crosses |
 | `test_orders.txt` | Signal | All order combinations + stops |

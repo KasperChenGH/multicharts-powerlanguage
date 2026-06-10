@@ -1,7 +1,7 @@
-﻿# Arw_SetTextAttribute
+# Arw_SetTextAttribute
 
 **Category:** Arrow_Drawing
-**Signature:** `Arw_SetTextAttribute(ObjectID,Attribute,LogicalExpression) Parameters`
+**Signature:** `Arw_SetTextAttribute(ObjectID,Attribute,LogicalExpression)`
 
 **Parameters**
 - `ObjectID` *(numeric, required)* — see official docs
@@ -10,7 +10,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = Arw_SetTextAttribute( 14, 14, True );
+Arw_SetTextAttribute( ObjectID, Attribute, LogicalExpression );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=Arw_SetTextAttribute

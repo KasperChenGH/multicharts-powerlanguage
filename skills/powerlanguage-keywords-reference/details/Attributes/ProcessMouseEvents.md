@@ -1,11 +1,11 @@
-﻿# ProcessMouseEvents
+# ProcessMouseEvents
 
 **Category:** Attributes
 **Signature:** `[ProcessMouseEvents = LogicalValue]`
 
 **Example (illustrative)**
 ```
-Value1 = ProcessMouseEvents;
+[ProcessMouseEvents = true];
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=ProcessMouseEvents

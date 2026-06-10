@@ -1,7 +1,7 @@
-﻿# Text_New_BN
+# Text_New_BN
 
 **Category:** Text_Drawing
-**Signature:** `Text_New_BN (BarNumber, PriceValue,"Text") Parameters`
+**Signature:** `Text_New_BN (BarNumber, PriceValue,"Text")`
 
 **Parameters**
 - `BarNumber` *(numeric, required)* — see official docs
@@ -10,7 +10,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = Text_New_BN( 14, 14, "demo" );
+// Text_New_BN takes parameters; see the Usage line above for the call form.
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=Text_New_BN

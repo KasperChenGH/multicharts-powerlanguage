@@ -1,11 +1,11 @@
-﻿# OpenEntryMinProfitPerContract
+# OpenEntryMinProfitPerContract
 
 **Category:** Strategy_Position_Trades
 **Signature:** `OpenEntryMinProfitPerContract(EntryIndex)`
 
 **Example (illustrative)**
 ```
-Value1 = OpenEntryMinProfitPerContract;
+OpenEntryMinProfitPerContract( EntryIndex );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=OpenEntryMinProfitPerContract

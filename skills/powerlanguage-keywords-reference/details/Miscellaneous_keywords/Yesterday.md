@@ -1,11 +1,11 @@
-﻿# Yesterday
+# Yesterday
 
 **Category:** Miscellaneous_keywords
 **Signature:** ``
 
 **Example (illustrative)**
 ```
-Value1 = Yesterday;
+// Yesterday is a connector word used within other statements (e.g. 1 Bar Ago, Buy Next Bar at Market); not a standalone value.
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=Yesterday

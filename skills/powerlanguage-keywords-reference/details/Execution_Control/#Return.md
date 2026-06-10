@@ -1,11 +1,11 @@
-﻿# #Return
+# #Return
 
 **Category:** Execution_Control
 **Signature:** `#Return;`
 
 **Example (illustrative)**
 ```
-Value1 = #Return;
+// #Return is a compiler directive (#-prefixed); see the Usage line above.
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=#Return

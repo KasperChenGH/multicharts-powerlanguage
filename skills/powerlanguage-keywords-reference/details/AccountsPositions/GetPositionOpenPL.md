@@ -1,11 +1,11 @@
-﻿# GetPositionOpenPL
+# GetPositionOpenPL
 
 **Category:** AccountsPositions
 **Signature:** `GetPositionOpenPL(Symbol, Account)`
 
 **Example (illustrative)**
 ```
-Value1 = GetPositionOpenPL;
+GetPositionOpenPL( Symbol, Account );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=GetPositionOpenPL

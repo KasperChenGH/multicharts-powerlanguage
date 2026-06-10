@@ -1,7 +1,7 @@
-﻿# RectangleSetEnd_BN
+# RectangleSetEnd_BN
 
 **Category:** Rectangle_Drawing
-**Signature:** `RectangleSetEnd_BN (ID, BarNumber, Price); Parameters`
+**Signature:** `RectangleSetEnd_BN (ID, BarNumber, Price);`
 
 **Parameters**
 - `ID` *(numeric, required)* — see official docs
@@ -10,7 +10,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = RectangleSetEnd_BN( 14, 14, 14 );
+RectangleSetEnd_BN( ID, BarNumber, Price );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=RectangleSetEnd_BN

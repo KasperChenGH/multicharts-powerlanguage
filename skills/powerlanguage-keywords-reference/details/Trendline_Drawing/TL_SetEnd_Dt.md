@@ -1,7 +1,7 @@
-﻿# TL_SetEnd_Dt
+# TL_SetEnd_Dt
 
 **Category:** Trendline_Drawing
-**Signature:** `TL_SetEnd_Dt (TL_ID, e_DateTime, e_Price); Parameters`
+**Signature:** `TL_SetEnd_Dt (TL_ID, e_DateTime, e_Price);`
 
 **Parameters**
 - `TL_ID` *(numeric, required)* — see official docs
@@ -10,7 +10,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = TL_SetEnd_Dt( 14, 14, 14 );
+TL_SetEnd_Dt( TL_ID, e_DateTime, e_Price );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=TL_SetEnd_Dt

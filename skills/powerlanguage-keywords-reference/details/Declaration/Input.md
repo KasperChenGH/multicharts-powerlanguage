@@ -1,7 +1,7 @@
-﻿# Input
+# Input
 
 **Category:** Declaration
-**Signature:** `Input:InputName1(DefaultValue1), InputName2(DefaultValue2), etc. Parameters`
+**Signature:** `Input:InputName1(DefaultValue1), InputName2(DefaultValue2), etc.`
 
 **Parameters**
 - `DefaultValue` *(numeric, required)* — see official docs

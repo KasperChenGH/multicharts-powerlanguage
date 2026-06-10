@@ -182,16 +182,16 @@ The slice `bars[:i+1]` gives the strategy access to full history; `bars[-1]` is 
 | `Stochastic(...)` | `ta.stoch(highs, lows, closes, k=14, d=3)` | `talib.STOCH(highs, lows, closes, fastk_period=14, slowk_period=3, slowd_period=3)` | Returns slowK/slowD |
 | `ADX(N)` | `ta.adx(highs, lows, closes, length=N)` | `talib.ADX(highs, lows, closes, timeperiod=N)` | |
 | `CCI(N)` | `ta.cci(highs, lows, closes, length=N)` | `talib.CCI(highs, lows, closes, timeperiod=N)` | |
-| `AvgTrueRange(N)` | `ta.atr(highs, lows, closes, length=N)` | `talib.ATR(highs, lows, closes, timeperiod=N)` | Requires HLC |
+| `AvgTrueRange(N)` | `ta.atr(highs, lows, closes, length=N, mamode='sma')` or rolling mean of `ta.true_range(...)` | `talib.SMA(talib.TRANGE(highs, lows, closes), timeperiod=N)` | PL `AvgTrueRange` is a SIMPLE average of TrueRange; pandas-ta/TA-Lib ATR default to Wilder smoothing — the default Wilder ATR matches PL `SmoothedAverage(TrueRange, Len)` instead |
 | `Momentum(Close, N)` | `ta.mom(closes, length=N)` | `talib.MOM(closes, timeperiod=N)` | |
 | `Highest(High, N)` | `highs.rolling(N).max()` | `talib.MAX(highs, timeperiod=N)` | |
 | `Lowest(Low, N)` | `lows.rolling(N).min()` | `talib.MIN(lows, timeperiod=N)` | |
 | `DMIPlus(N)` / `DMIMinus(N)` | `ta.dm(highs, lows, length=N)` | `talib.PLUS_DI(...)` / `talib.MINUS_DI(...)` | |
 | `KeltnerChannel(Close, N, mult)` | `ta.kc(highs, lows, closes, length=N, scalar=mult)` | Manual: `talib.EMA(closes, N) ± mult * talib.ATR(highs, lows, closes, N)` | |
 | `Parabolic(step)` | `ta.psar(highs, lows, af0=step, max_af=0.2)` | `talib.SAR(highs, lows, acceleration=step, maximum=0.2)` | |
-| `PercentR(N)` | `ta.willr(highs, lows, closes, length=N)` | `talib.WILLR(highs, lows, closes, timeperiod=N)` | Returns −100..0 range |
+| `PercentR(N)` | `ta.willr(highs, lows, closes, length=N) + 100` | `talib.WILLR(highs, lows, closes, timeperiod=N) + 100` | PL `PercentR` is POSITIVE 0..100 (= Williams %R + 100); library WILLR returns −100..0 — add 100, and thresholds become 80/20 on the positive scale |
 | `RateOfChange(Close, N)` | `ta.roc(closes, length=N)` | `talib.ROC(closes, timeperiod=N)` | |
-| `Volatility(N)` | `ta.stdev(closes, length=N)` | `talib.STDDEV(closes, timeperiod=N)` | Approximation |
+| `Volatility(N)` | `ta.true_range(highs, lows, closes).ewm(span=N).mean()` (or `ta.atr(..., mamode='ema')`) | `talib.EMA(talib.TRANGE(highs, lows, closes), timeperiod=N)` | PL `Volatility` is a smoothed average of TrueRange weighted toward the most recent bar — NOT a stdev-based measure (`StandardDev` is stdev of closes; `VolatilityStdDev` is annualized stdev of log returns) |
 | `StandardDev(Close, N, 1)` | `ta.stdev(closes, length=N)` | `talib.STDDEV(closes, timeperiod=N, nbdev=1)` | |
 | `TrueRange` | `ta.true_range(highs, lows, closes)` | `talib.TRANGE(highs, lows, closes)` | Per-bar, no period |
 | `MoneyFlow(N)` | `ta.mfi(highs, lows, closes, volumes, length=N)` | `talib.MFI(highs, lows, closes, volumes, timeperiod=N)` | Requires HLCV |
@@ -203,8 +203,8 @@ The slice `bars[:i+1]` gives the strategy access to full history; `bars[-1]` is 
 | `WAverage(Close, N)` | `ta.wma(closes, length=N)` | `talib.WMA(closes, timeperiod=N)` | |
 | `MidPoint(Close, N)` | `ta.midpoint(closes, length=N)` | `talib.MIDPOINT(closes, timeperiod=N)` | |
 | `TSI(Close, LongLen, ShortLen)` | `ta.tsi(closes, fast=ShortLen, slow=LongLen)` | Manual: double-EMA of momentum / double-EMA of abs(momentum) | pandas-ta `fast`=short, `slow`=long (reversed naming vs PL) |
-| `SwingHigh(1, High, L, R)` | Manual: scan for pivot high | Manual: scan for pivot high | No direct library equivalent |
-| `SwingLow(1, Low, L, R)` | Manual: scan for pivot low | Manual: scan for pivot low | Same |
+| `SwingHigh(Occur, Price, Strength, Length)` | Manual: scan for pivot high | Manual: scan for pivot high | Occurrence is the FIRST PL arg; returns −1 when no swing found; `Length` must exceed `Strength` |
+| `SwingLow(Occur, Price, Strength, Length)` | Manual: scan for pivot low | Manual: scan for pivot low | Same: Occurrence first, −1 when none found, `Length` > `Strength` |
 | `HighestBar(High, N)` | `highs[-N:].idxmax()` → compute bars ago | `np.argmax(highs[-N:])` | Returns bars ago |
 | `LowestBar(Low, N)` | `lows[-N:].idxmin()` → compute bars ago | `np.argmin(lows[-N:])` | Returns bars ago |
 | `CountIF(cond, N)` | `cond_series.rolling(N).sum()` | Manual: `sum(1 for ...)` | Count True values |
@@ -224,12 +224,12 @@ The slice `bars[:i+1]` gives the strategy access to full history; `bars[-1]` is 
 | `NthLowest(N, Close, Len)` | Manual: `closes.rolling(Len).apply(lambda x: np.sort(x)[N-1])` | Manual: sort rolling window | Nth smallest value in window |
 | `NthHighestBar(N, Close, Len)` | Manual: find bar offset of Nth highest | Manual: find bar offset of Nth highest | Returns bars ago of Nth highest |
 | `NthLowestBar(N, Close, Len)` | Manual: find bar offset of Nth lowest | Manual: find bar offset of Nth lowest | Returns bars ago of Nth lowest |
-| `SwingHighBar(1, High, L, R)` | Manual: pivot detection with bar offset | Manual: pivot detection with bar offset | Bars since Nth swing high |
-| `SwingLowBar(1, Low, L, R)` | Manual: pivot detection with bar offset | Manual: pivot detection with bar offset | Bars since Nth swing low |
+| `SwingHighBar(Occur, Price, Strength, Length)` | Manual: pivot detection with bar offset | Manual: pivot detection with bar offset | Bars since Nth swing high; same arg order as `SwingHigh` |
+| `SwingLowBar(Occur, Price, Strength, Length)` | Manual: pivot detection with bar offset | Manual: pivot detection with bar offset | Bars since Nth swing low |
 | `LinearRegAngle(Close, N)` | `np.degrees(np.arctan(ta.linreg(closes, length=N, slope=True)))` | `talib.LINEARREG_ANGLE(closes, timeperiod=N)` | Slope converted to degrees |
 | `Correlation(Close, Volume, N)` | `ta.correlation(closes, volumes, length=N)` | `talib.CORREL(closes, volumes, timeperiod=N)` | Pearson correlation |
 | `RSquared(Close, N)` | `ta.correlation(closes, ..., length=N) ** 2` | `talib.CORREL(closes, ..., timeperiod=N) ** 2` | Square of correlation |
-| `StdError(Close, N)` | Manual: `ta.stdev(closes, length=N) / np.sqrt(N)` | Manual: `talib.STDDEV(closes, timeperiod=N) / np.sqrt(N)` | Standard error of estimate |
+| `StdError(Close, N)` | Manual: fit `np.polyfit(np.arange(N), closes[-N:], 1)`, then `np.sqrt(((y - yhat) ** 2).sum() / (N - 2))` | Manual: same residual computation on the window | Standard error of the linear-regression residuals — NOT stdev/sqrt(N) (that is SE of the mean) |
 | `Median(Close, N)` | `ta.median(closes, length=N)` | `closes.rolling(N).median()` | Rolling median |
 | `ELDate(dt)` | Manual: `(y - 1900) * 10000 + m * 100 + d` | Same | EasyLanguage YYYMMDD date format |
 | `MinutesToTime(mins)` | Manual: `(mins // 60) * 100 + mins % 60` | Same | Minutes since midnight to HHMM |
@@ -242,7 +242,7 @@ The slice `bars[:i+1]` gives the strategy access to full history; `bars[-1]` is 
 | `IFF(cond, trueVal, falseVal)` | `trueVal if cond else falseVal` | Same | Python ternary; or `np.where(cond, trueVal, falseVal)` for Series |
 | `TriAverage(Close, N)` | `ta.trima(closes, length=N)` | `talib.TRIMA(closes, timeperiod=N)` | Triangular MA |
 | `FastK(N)` | `ta.stoch(highs, lows, closes, k=N, d=1, smooth_k=1)['STOCHk_N_1_1']` | `talib.STOCHF(highs, lows, closes, fastk_period=N)` | Raw Fast %K |
-| `FastD(N)` | `ta.stoch(highs, lows, closes, k=N, d=3)['STOCHd_N_3_3']` | `talib.STOCHF(highs, lows, closes, fastk_period=N, fastd_period=3)` | Smoothed Fast %D |
+| `FastD(N)` | `ta.stoch(highs, lows, closes, k=N, d=3, smooth_k=1)['STOCHd_N_3_1']` | `talib.STOCHF(highs, lows, closes, fastk_period=N, fastd_period=3)` | Smoothed Fast %D — set `smooth_k=1` so %D is the SMA(3) of RAW %K, not of slowed %K |
 | `SlowK(N)` | `ta.stoch(highs, lows, closes, k=N, d=3)['STOCHk_N_3_3']` | `talib.STOCH(highs, lows, closes, fastk_period=N, slowk_period=3)` | Slow %K |
 | `SlowD(N)` | `ta.stoch(highs, lows, closes, k=N, d=3)['STOCHd_N_3_3']` | `talib.STOCH(highs, lows, closes, fastk_period=N, slowk_period=3, slowd_period=3)` | Slow %D |
 | `FastKCustom(H, L, C, N)` | `ta.stoch(H, L, C, k=N, d=1, smooth_k=1)['STOCHk_...']` | `talib.STOCHF(H, L, C, fastk_period=N)` | Custom prices |
@@ -277,7 +277,6 @@ The slice `bars[:i+1]` gives the strategy access to full history; `bars[-1]` is 
 | `PivotLowVSBar(Inst, Price, LStr, RStr, Len)` | Manual: bars ago of pivot low | Manual: same | Returns offset |
 | `Divergence(P1, P2, Str, Len, HiLo)` | Manual: compare pivot highs/lows of two series | Manual: same | No library built-in |
 | `TimeSeriesForecast(Close, N)` | `ta.tsf(closes, length=N)` | `talib.TSF(closes, timeperiod=N)` | Time Series Forecast |
-
 | `SummationFC(Close, N)` | `closes.rolling(N).sum()` | `talib.SUM(closes, timeperiod=N)` | Same as Summation |
 | `OpenD(N)` | `df.resample('D').first()['open'].iloc[-1-N]` | Manual: resample to daily | Daily open |
 | `HighD(N)` | `df.resample('D').max()['high'].iloc[-1-N]` | Manual: resample | Daily high |
@@ -320,7 +319,7 @@ The slice `bars[:i+1]` gives the strategy access to full history; `bars[-1]` is 
 | `Kurtosis(Close, N)` | `closes.rolling(N).kurt()` | Manual: 4th moment | Excess kurtosis |
 | `Skew(Close, N)` | `closes.rolling(N).skew()` | Manual: 3rd moment | Skewness |
 | `PercentRank(ValToRank, Price, N)` | `closes.rolling(N).apply(lambda w: stats.percentileofscore(w, w.iloc[-1]))` | Manual | Percent rank |
-| `Covariance(P1, P2, N)` | `P1.rolling(N).cov(P2)` | Manual | Covariance |
+| `Covariance(P1, P2, N)` | `P1.rolling(N).cov(P2, ddof=0)` | Manual | Covariance — pandas defaults to SAMPLE covariance (ddof=1); pass `ddof=0` for the population form PL uses |
 | `Quartile(Close, N, Q)` | `closes.rolling(N).quantile(Q*0.25)` | Manual | Quartile value |
 | `TrimMean(Close, N, Pct)` | `closes.rolling(N).apply(lambda w: stats.trim_mean(w, Pct/100))` | Manual | Trimmed mean |
 | `Mode(Close, N, Type)` | `closes.rolling(N).apply(lambda w: w.mode().iloc[0])` | Manual | Modal value |
@@ -399,6 +398,27 @@ The slice `bars[:i+1]` gives the strategy access to full history; `bars[-1]` is 
 ---
 
 ## Part 2: Semantic Differences and Gotchas
+
+### Order fill timing — the #1 conversion bug
+
+PL `Buy next bar at market` fills at the NEXT bar's OPEN, and `next bar at X Stop` / `Limit` fills intrabar on the next bar at the stop/limit price (or at the open if the bar gaps through it). A converted simulator that flips position on the signal bar (same-bar close fill) is one bar early and uses the wrong price.
+
+The executor must queue orders produced on bar N and fill them against bar N+1:
+
+```python
+for i in range(len(bars) - 1):
+    orders: list[Order] = []
+    strategy.on_bar(bars[: i + 1], orders)        # orders queued on bar i...
+    nxt = bars[i + 1]
+    for o in orders:                              # ...filled on bar i+1
+        if o.order_type is OrderType.MARKET:
+            fill(o, price=nxt.open)                          # next bar's OPEN
+        elif o.order_type is OrderType.STOP and nxt.high >= o.price:  # buy stop
+            fill(o, price=max(o.price, nxt.open))            # intrabar at the stop price
+        # sell stop: nxt.low <= o.price; limit orders mirror with reversed comparisons
+```
+
+**EMA seeding/warmup gotcha:** PL `XAverage` seeds recursively from the first bar's price. pandas-ta `ema` defaults to an SMA seed (`sma=True`) — pass `sma=False` to match PL, or document the difference. TA-Lib `TA_EMA` seeds with the SMA of the first `Length` values. Early-history signals therefore differ across targets — discard roughly the first 3×Length bars before comparing backtests.
 
 1. **`Sell` does not mean "go short".** In PowerLanguage, `Sell` exits an existing long position. The Python equivalent is closing the position (setting `self.position = 0`). Do not create a new short entry as a translation of `Sell`.
 

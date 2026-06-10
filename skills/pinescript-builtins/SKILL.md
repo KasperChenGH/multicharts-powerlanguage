@@ -1,11 +1,11 @@
 ---
 name: pinescript-builtins
 description: >-
-  Pine Script built-in namespaces and functions — ta.* (moving averages,
-  oscillators, trend, volatility, volume, crossovers), strategy.* (order
-  functions, position info), request.* (multi-timeframe, financial data),
-  math.*, str.*, array.*, color.*, bar state and time variables, symbol info.
-  Use when writing Pine Script indicator/strategy logic. For language
+  Use when writing Pine Script indicator/strategy logic — built-in
+  namespaces and functions: ta.* (moving averages, oscillators, trend,
+  volatility, volume, crossovers), strategy.* (order functions, position
+  info), request.* (multi-timeframe, financial data), math.*, str.*,
+  array.*, color.*, bar state and time variables, symbol info. For language
   fundamentals (types, declarations, control flow), see pinescript-core.
   For plotting and drawing objects, see pinescript-visual.
 ---
@@ -160,10 +160,13 @@ if ta.crossunder(fast, slow)
 // strategy.close_all()
 
 // --- strategy.exit(id, from_entry, qty, qty_percent, profit, loss, limit, stop, trail_price, trail_points, trail_offset, comment)
+// Units warning: profit, loss, trail_points, and trail_offset are in TICKS (counts);
+// only the *_price params (stop, limit, trail_price) are price-denominated.
 strategy.exit("Long Exit", from_entry = "Long",
               stop   = close * 0.98,
               limit  = close * 1.04,
-              trail_offset = 10 * syminfo.mintick)
+              trail_points = 100,    // activate trailing after 100 ticks of profit
+              trail_offset = 10)     // trail 10 ticks behind the best price
 
 // --- strategy.order(id, direction, qty, ...)
 // Lower-level: places a qty-specified order without the entry/exit pairing semantics
@@ -180,7 +183,7 @@ strategy.exit("Long Exit", from_entry = "Long",
 | `strategy.position_avg_price` | `series float` | Average fill price of the current open position |
 | `strategy.opentrades` | `series int` | Number of currently open trades |
 | `strategy.closedtrades` | `series int` | Total number of closed trades |
-| `strategy.equity` | `series float` | Current account equity (initial capital + net profit) |
+| `strategy.equity` | `series float` | Current account equity (initial capital + net profit + open profit) |
 | `strategy.netprofit` | `series float` | Cumulative realized profit/loss |
 | `strategy.openprofit` | `series float` | Unrealized P&L of open position(s) |
 | `strategy.wintrades` | `series int` | Count of profitable closed trades |
@@ -211,7 +214,8 @@ daily_close = request.security("", "D", close)
 daily_rsi = request.security(syminfo.tickerid, "D", ta.rsi(close, 14))
 
 plot(daily_rsi, "Daily RSI", color = color.blue)
-hline(70), hline(30)
+hline(70)
+hline(30)
 ```
 
 **Common pitfalls:**
@@ -232,7 +236,7 @@ one_min_closes = request.security_lower_tf(syminfo.tickerid, "1", close)
 Fetches fundamental financial data:
 
 ```pine
-eps = request.financial(syminfo.tickerid, "EARNINGS_PER_SHARE", "FQ")
+eps = request.financial(syminfo.tickerid, "EARNINGS_PER_SHARE_BASIC", "FQ")
 // Period: "FQ" quarterly, "FY" annual, "TTM" trailing 12 months
 ```
 
@@ -318,7 +322,7 @@ if array.size(window) > window_size
 rolling_avg = array.size(window) == window_size ? array.avg(window) : na
 ```
 
-> **Type-specific constructors:** use `array.new_int()`, `array.new_float()`, `array.new_bool()`, `array.new_string()`, `array.new_color()` — not a generic `array.new()`.
+> **Constructors:** use `array.new_int()`, `array.new_float()`, `array.new_bool()`, `array.new_string()`, `array.new_color()`, or the generic `array.new<type>(size, initial_value)` (e.g. `array.new<float>(0)`).
 
 ---
 

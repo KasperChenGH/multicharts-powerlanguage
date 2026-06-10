@@ -1,4 +1,4 @@
-﻿# pmms_strategy_is_paused
+# pmms_strategy_is_paused
 
 **Category:** Portfolio_Money_Management
 **Signature:** `pmms_strategy_is_paused(StrategyIndex)`
@@ -8,7 +8,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = pmms_strategy_is_paused( 14 );
+pmms_strategy_is_paused( StrategyIndex );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=pmms_strategy_is_paused

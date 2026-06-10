@@ -1,4 +1,4 @@
-﻿# pmms_strategy_get_entry_contracts
+# pmms_strategy_get_entry_contracts
 
 **Category:** Portfolio_Money_Management
 **Signature:** `pmms_strategy_get_entry_contracts(StrategyIndex)`
@@ -8,7 +8,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = pmms_strategy_get_entry_contracts( 14 );
+pmms_strategy_get_entry_contracts( StrategyIndex );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=pmms_strategy_get_entry_contracts

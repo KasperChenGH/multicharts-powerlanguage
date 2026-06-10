@@ -23,7 +23,7 @@ Describe 'Write-DetailFile' {
         @{ Name = 'EntryType';  Type = 'expression'; Required = $true;  Description = 'placement keyword' }
       )
     }
-    $example = 'Buy ( "Buy_Demo" ) 1 Contract Next Bar Market;'
+    $example = 'Buy ( "Buy_Demo" ) 1 Contract Next Bar at Market;'
 
     $outPath = Write-KeywordDetailFile -Parsed $parsed -Description $parsed.Description -Example $example -OutputRoot $script:tmp
 
@@ -37,7 +37,7 @@ Describe 'Write-DetailFile' {
     $body | Should -Match 'Opens a long position'
     $body | Should -Match '`EntryLabel` \*\(string, optional\)\*'
     $body | Should -Match '`EntryType` \*\(expression, required\)\*'
-    $body | Should -Match 'Buy \( "Buy_Demo" \) 1 Contract Next Bar Market;'
+    $body | Should -Match 'Buy \( "Buy_Demo" \) 1 Contract Next Bar at Market;'
     $body | Should -Match '\*Official docs:\* https://www\.multicharts\.com/trading-software/index\.php\?title=Buy'
   }
 
@@ -55,7 +55,7 @@ Describe 'Write-DetailFile' {
       Name = 'All'; Category = 'Strategy_Orders'
       Description = 'Quantity placeholder.'; Usage = 'All Contracts'; Parameters = @()
     }
-    $outPath = Write-KeywordDetailFile -Parsed $parsed -Description $parsed.Description -Example 'Sell All Contracts Next Bar Market;' -OutputRoot $script:tmp
+    $outPath = Write-KeywordDetailFile -Parsed $parsed -Description $parsed.Description -Example 'Sell All Contracts Next Bar at Market;' -OutputRoot $script:tmp
     $body = Get-Content $outPath -Raw
     $body | Should -Not -Match '\*\*Parameters\*\*'
   }

@@ -1,7 +1,7 @@
-﻿# Text_SetLocation
+# Text_SetLocation
 
 **Category:** Text_Drawing
-**Signature:** `Text_SetLocation (ObjectID, BarDate, BarTime, PriceValue) Parameters`
+**Signature:** `Text_SetLocation (ObjectID, BarDate, BarTime, PriceValue)`
 
 **Parameters**
 - `ObjectID` *(numeric, required)* — see official docs
@@ -11,7 +11,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = Text_SetLocation( 14, 14, 14 );
+Text_SetLocation( ObjectID, BarDate, BarTime, PriceValue );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=Text_SetLocation

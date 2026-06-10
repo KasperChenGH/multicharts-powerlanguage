@@ -1,11 +1,11 @@
-﻿# AllowSendOrdersAlways
+# AllowSendOrdersAlways
 
 **Category:** Attributes
 **Signature:** `[AllowSendOrdersAlways = LogicalValue]`
 
 **Example (illustrative)**
 ```
-Value1 = AllowSendOrdersAlways;
+[AllowSendOrdersAlways = true];
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=AllowSendOrdersAlways

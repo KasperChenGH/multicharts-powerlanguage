@@ -1,4 +1,4 @@
-﻿# pmms_set_strategy_named_num
+# pmms_set_strategy_named_num
 
 **Category:** Portfolio_Money_Management
 **Signature:** `pmms_set_strategy_named_num(StrategyIndex, VariableName, VariableValue)`
@@ -10,7 +10,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = pmms_set_strategy_named_num( 14, "demo", 14 );
+pmms_set_strategy_named_num( StrategyIndex, VariableName, VariableValue );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=pmms_set_strategy_named_num

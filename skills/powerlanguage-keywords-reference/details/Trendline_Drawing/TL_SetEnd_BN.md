@@ -1,7 +1,7 @@
-﻿# TL_SetEnd_BN
+# TL_SetEnd_BN
 
 **Category:** Trendline_Drawing
-**Signature:** `TL_SetEnd_BN (TL_ID, BarNumber, Price); Parameters`
+**Signature:** `TL_SetEnd_BN (TL_ID, BarNumber, Price);`
 
 **Parameters**
 - `TL_ID` *(numeric, required)* — see official docs
@@ -10,7 +10,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = TL_SetEnd_BN( 14, 14, 14 );
+TL_SetEnd_BN( TL_ID, BarNumber, Price );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=TL_SetEnd_BN

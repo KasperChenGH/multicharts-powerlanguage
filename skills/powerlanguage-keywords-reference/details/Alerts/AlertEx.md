@@ -1,4 +1,4 @@
-﻿# AlertEx
+# AlertEx
 
 **Category:** Alerts
 **Signature:** `AlertEx(text&#060;,bgColor&#060;,txtColor&#062;&#062;);`
@@ -10,7 +10,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = AlertEx( "demo", Close, Close );
+// AlertEx takes parameters; see the Usage line above for the call form.
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=AlertEx

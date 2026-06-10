@@ -1,4 +1,4 @@
-﻿# pmm_set_my_named_num
+# pmm_set_my_named_num
 
 **Category:** Portfolio_Money_Management
 **Signature:** `pmm_set_my_named_num(VariableName, VariableValue)`
@@ -9,7 +9,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = pmm_set_my_named_num( "demo", 14 );
+pmm_set_my_named_num( VariableName, VariableValue );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=pmm_set_my_named_num

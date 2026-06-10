@@ -1,11 +1,11 @@
-﻿# TL_GetColor
+# TL_GetColor
 
 **Category:** Trendline_Drawing
 **Signature:** `TL_GetColor(TL_ID)`
 
 **Example (illustrative)**
 ```
-Value1 = TL_GetColor;
+TL_GetColor( TL_ID );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=TL_GetColor

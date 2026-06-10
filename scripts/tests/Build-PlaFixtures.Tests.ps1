@@ -6,10 +6,17 @@ BeforeAll {
   Remove-Item $script:tmp -Recurse -Force -ErrorAction SilentlyContinue
   New-Item -ItemType Directory -Path $script:tmp -Force | Out-Null
 
-  # Synthetic keyword set spanning Indicator + Signal + skip-word categories
+  # Synthetic keyword set spanning Indicator + Signal + skip-word categories.
+  # Market/Limit/Stop and Contract/Contracts share demo order statements and
+  # exercise the unique-order-name behavior.
   $script:keywords = @(
-    @{ Name = 'Buy';      Category = 'Strategy_Orders';  Parameters = @(); Usage = 'Buy ;' }
-    @{ Name = 'Sell';     Category = 'Strategy_Orders';  Parameters = @(); Usage = 'Sell ;' }
+    @{ Name = 'Buy';       Category = 'Strategy_Orders';  Parameters = @(); Usage = 'Buy ;' }
+    @{ Name = 'Sell';      Category = 'Strategy_Orders';  Parameters = @(); Usage = 'Sell ;' }
+    @{ Name = 'Market';    Category = 'Strategy_Orders';  Parameters = @(); Usage = 'Market' }
+    @{ Name = 'Limit';     Category = 'Strategy_Orders';  Parameters = @(); Usage = 'Limit' }
+    @{ Name = 'Stop';      Category = 'Strategy_Orders';  Parameters = @(); Usage = 'Stop' }
+    @{ Name = 'Contract';  Category = 'Strategy_Orders';  Parameters = @(); Usage = 'Contract' }
+    @{ Name = 'Contracts'; Category = 'Strategy_Orders';  Parameters = @(); Usage = 'Contracts' }
     @{ Name = 'AbsValue'; Category = 'Math_and_Trig';    Parameters = @(@{Name='x';Type='numeric';Required=$true;Description='val'}); Usage = 'AbsValue( x )' }
     @{ Name = 'Average';  Category = 'Math_and_Trig';    Parameters = @(@{Name='Price';Type='expression';Required=$true;Description='val'}; @{Name='Length';Type='numeric';Required=$true;Description='length'}); Usage = 'Average( Price, Length )' }
     @{ Name = 'Plot1';    Category = 'Plotting';         Parameters = @(@{Name='Value';Type='numeric';Required=$true;Description='val'}); Usage = 'Plot1( Value )' }
@@ -70,5 +77,28 @@ Describe 'Build-PlaFixtures' {
     $body = Get-Content "$script:tmp/test_indicator.txt" -Raw
     $body | Should -Match '\{\s*Math_and_Trig:\s*AbsValue\s*\}'
     $body | Should -Match '\{\s*Plotting:\s*Plot1\s*\}'
+  }
+
+  It 'emits no duplicate quoted order names in the signal fixture (MultiCharts requires unique order names)' {
+    $body = Get-Content "$script:tmp/test_signal.txt" -Raw
+    $names = [regex]::Matches($body, '(?i)\b(?:Buy|Sell|SellShort|BuyToCover)\s*\(\s*"([^"]+)"') |
+      ForEach-Object { $_.Groups[1].Value }
+    $names.Count | Should -BeGreaterThan 1
+    $dupes = $names | Group-Object | Where-Object Count -gt 1
+    $dupes | Should -BeNullOrEmpty
+  }
+
+  It 'order-name counters reset between builds (re-run is deterministic)' {
+    $body1 = Get-Content "$script:tmp/test_signal.txt" -Raw
+    New-PlaFixtures -Keywords $script:keywords -OutputDir $script:tmp
+    $body2 = Get-Content "$script:tmp/test_signal.txt" -Raw
+    $body2 | Should -Be $body1
+  }
+
+  It 'function fixture is an explicit minimal function template with a return assignment' {
+    $body = Get-Content "$script:tmp/test_function.txt" -Raw
+    $body | Should -Match '(?i)RangeRatio\s*=\s*Range\s*/\s*avgRng'   # return-by-assignment
+    $body | Should -Match '(?i)If\s+avgRng\s*<>\s*0\s+Then'           # divide-by-zero guard
+    $body | Should -Not -Match '(?i)If\s+False\s+Then'   # not the empty keyword shell
   }
 }

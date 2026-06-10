@@ -150,10 +150,10 @@ plot(bbMiddle, color=color.gray, title="BB Middle")
 //   CCI(20)                    → ta.cci(close, 20)
 //   crosses over -100          → ta.crossover(cciVal, -100)
 //   crosses under 100          → ta.crossunder(cciVal, 100)
-//   SetStopLoss(500)           → strategy.exit() with loss= in points
-//                                Dollar amount → points: 500 / syminfo.pointvalue
-//   SetProfitTarget(1000)      → strategy.exit() with profit= in points
-//                                Dollar amount → points: 1000 / syminfo.pointvalue
+//   SetStopLoss(500)           → strategy.exit() with loss= in TICKS
+//                                Dollar amount → ticks: 500 / (syminfo.mintick * syminfo.pointvalue)
+//   SetProfitTarget(1000)      → strategy.exit() with profit= in TICKS
+//                                Dollar amount → ticks: 1000 / (syminfo.mintick * syminfo.pointvalue)
 //   SetBreakEven(200)          → NO direct Pine equivalent.
 //                                Approximation: trail_offset or manual logic.
 //                                Commented-out placeholder is provided below.
@@ -168,26 +168,27 @@ strategy("S4 Multi-Indicator + Risk Mgmt", overlay=true)
 // Converted from: cciVal = CCI(20)
 cciVal = ta.cci(close, 20)
 
-// Dollar-to-points conversion (mirrors PL's SetStopLoss/SetProfitTarget dollar amounts)
-stopLossPoints   = 500  / syminfo.pointvalue   // PL: SetStopLoss(500)
-profitTgtPoints  = 1000 / syminfo.pointvalue   // PL: SetProfitTarget(1000)
-// breakEvenPoints = 200 / syminfo.pointvalue  // PL: SetBreakEven(200) — see note below
+// Dollar-to-ticks conversion: strategy.exit() loss=/profit= are expressed in TICKS,
+// so dollars must be divided by the dollar value of one tick (mintick * pointvalue).
+stopLossTicks   = 500  / (syminfo.mintick * syminfo.pointvalue)   // PL: SetStopLoss(500)
+profitTgtTicks  = 1000 / (syminfo.mintick * syminfo.pointvalue)   // PL: SetProfitTarget(1000)
+// breakEvenTicks = 200 / (syminfo.mintick * syminfo.pointvalue)  // PL: SetBreakEven(200) — see note below
 
 // Converted from: If adxVal > 25 and cciVal crosses over -100 Then Buy ("S4_LE") ...
 if adxVal > 25 and ta.crossover(cciVal, -100)
     strategy.entry("S4_LE", strategy.long)
     // Apply stop-loss and profit-target (replaces SetStopLoss / SetProfitTarget)
     strategy.exit("S4_LE_exit", from_entry="S4_LE",
-                  loss=stopLossPoints, profit=profitTgtPoints)
+                  loss=stopLossTicks, profit=profitTgtTicks)
     // NOTE: SetBreakEven(200) has no built-in Pine equivalent.
     // A manual approach would track entry bar and move stop to entry price
-    // once unrealised profit >= breakEvenPoints, implemented with var variables.
+    // once unrealised profit >= breakEvenTicks, implemented with var variables.
 
 // Converted from: If adxVal > 25 and cciVal crosses under 100 Then SellShort ("S4_SE") ...
 if adxVal > 25 and ta.crossunder(cciVal, 100)
     strategy.entry("S4_SE", strategy.short)
     strategy.exit("S4_SE_exit", from_entry="S4_SE",
-                  loss=stopLossPoints, profit=profitTgtPoints)
+                  loss=stopLossTicks, profit=profitTgtTicks)
 // END STRATEGY 4
 // =============================================================================
 
@@ -510,6 +511,9 @@ for i = 1 to 5
 //                     If upCount >= 3 and MarketPosition = 0 Then Buy ("S10_LE") ...
 //                 End;
 // PL Time is HHMM integer; Pine uses hour() and minute() from the bar timestamp.
+// NOTE: PL Time is the bar's CLOSE time, while Pine hour/minute reflect the bar's
+// OPEN time — so this conversion is off by one bar period unless based on the
+// close timestamp instead, e.g. hC = hour(time_close), mC = minute(time_close).
 sessionMinute = hour * 60 + minute
 if sessionMinute >= 570 and sessionMinute <= 900  // 9:30 = 570 min, 15:00 = 900 min
     if upCount >= 3 and strategy.position_size == 0
@@ -598,9 +602,9 @@ plot(sarVal,   color=color.purple, style=plot.style_cross, title="Parabolic SAR"
 // PL source: lines 252-269 of test_strategies.txt
 //
 // Conversion notes:
-//   PercentR(14)                → manual: -100 * (ta.highest(high,14) - close)
-//                                         / (ta.highest(high,14) - ta.lowest(low,14))
-//     (Pine has no built-in ta.percentr)
+//   PercentR(14)                → ta.wpr(14) + 100
+//     ta.wpr() is Pine's built-in Williams %R on a -100..0 scale;
+//     PL PercentR uses the positive 0..100 scale, hence the +100 shift.
 //   RateOfChange(Close, 10)    → ta.roc(close, 10)
 //   Volatility(20)             → approximated with ta.stdev(close, 20)
 //   StandardDev(Close, 20, 1)  → ta.stdev(close, 20)
@@ -611,10 +615,9 @@ plot(sarVal,   color=color.purple, style=plot.style_cross, title="Parabolic SAR"
 strategy("S12 Williams %R + ROC + Volatility + StdDev", overlay=false)
 
 // Converted from: wrVal = PercentR(14)
-// Pine has no direct ta.percentr; manual Williams %R formula:
-hh14 = ta.highest(high, 14)
-ll14 = ta.lowest(low, 14)
-wrVal = -100 * (hh14 - close) / (hh14 - ll14)
+// ta.wpr() is the built-in Williams %R (-100..0 scale);
+// PL PercentR returns the positive 0..100 scale → ta.wpr + 100.
+wrVal = ta.wpr(14) + 100
 
 // Converted from: rocVal = RateOfChange(Close, 10)
 rocVal = ta.roc(close, 10)
@@ -660,7 +663,8 @@ hline(-20, "Overbought", color=color.red)
 // PL source: lines 272-291 of test_strategies.txt
 //
 // Conversion notes:
-//   MoneyFlow(14)               → ta.mfi(high, low, close, volume, 14)
+//   MoneyFlow(14)               → ta.mfi(hlc3, 14)
+//                                 v5 signature is ta.mfi(source, length)
 //   AccumDist(14)               → ta.cum(ta.accdist) over N bars is not direct;
 //                                 PL AccumDist(N) ≈ summation of AD line over N bars.
 //                                 Approximation: math.sum(ta.accdist - ta.accdist[1], 14)
@@ -677,7 +681,8 @@ hline(-20, "Overbought", color=color.red)
 strategy("S13 MFI + AccumDist + LinReg + WAverage", overlay=true)
 
 // Converted from: mfiVal = MoneyFlow(14)
-mfiVal = ta.mfi(high, low, close, volume, 14)
+// Pine v5 signature is ta.mfi(source, length) — typical price is the standard source
+mfiVal = ta.mfi(hlc3, 14)
 
 // Converted from: adVal = AccumDist(14)
 // PL AccumDist(N) returns a summation of the accumulation/distribution over N bars.
@@ -730,10 +735,12 @@ plot(linRegVal, color=color.purple, title="LinReg Value")
 // PL source: lines 294-310 of test_strategies.txt
 //
 // Conversion notes:
-//   SwingHigh(1, High, 3, 10)   → ta.pivothigh(high, 3, 10)
+//   SwingHigh(1, High, 3, 10)   → ta.pivothigh(high, 3, 3)
 //     PL SwingHigh instance param (1) has no Pine equivalent; ignored.
+//     PL's 4th arg (Length=10) is the bars-back search window, NOT the
+//     right-side strength — Pine's rightbars = Strength (3).
 //     Returns na when no pivot is found (same as PL returning 0/negative).
-//   SwingLow(1, Low, 3, 10)     → ta.pivotlow(low, 3, 10)
+//   SwingLow(1, Low, 3, 10)     → ta.pivotlow(low, 3, 3)
 //   HighestBar(High, 20)        → ta.highestbars(high, 20)
 //     Returns negative offset in Pine (e.g., -5 = 5 bars ago); negate for
 //     comparison with PL's positive bars-ago value.
@@ -752,8 +759,9 @@ strategy("S14 Swing + HighestBar + CountIF + Prices", overlay=true)
 // Converted from: swHi = SwingHigh(1, High, 3, 10)
 //                 swLo = SwingLow(1, Low, 3, 10)
 // ta.pivothigh/low return the pivot price, or na if no pivot on this bar.
-swHi = ta.pivothigh(high, 3, 10)
-swLo = ta.pivotlow(low, 3, 10)
+// PL's Length arg (10) is the search window, not right-strength — Pine rightbars = Strength.
+swHi = ta.pivothigh(high, 3, 3)
+swLo = ta.pivotlow(low, 3, 3)
 
 // Converted from: hiBar = HighestBar(High, 20)
 // ta.highestbars returns a negative offset; negate for PL-style positive bars-ago.

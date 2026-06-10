@@ -1,3 +1,20 @@
+# Shared taxonomy (Test-StringReturningKeyword) lives in Generate-Example.psm1.
+# NO -Force here: a forced nested import UNLOADS an already-globally-imported
+# Generate-Example and re-imports it into this module's private scope, which
+# removes New-KeywordExample from the orchestrator's session mid-run.
+Import-Module "$PSScriptRoot\Generate-Example.psm1"
+
+# Per-build counters used to keep strategy-order names unique within a fixture
+# (MultiCharts requires unique order names per script). Reset by New-PlaFixtures.
+$script:OrderNameCounts = @{}
+
+function Get-UniqueOrderName {
+  param([Parameter(Mandatory)][string] $Base)
+  if (-not $script:OrderNameCounts.ContainsKey($Base)) { $script:OrderNameCounts[$Base] = 0 }
+  $script:OrderNameCounts[$Base]++
+  return "${Base}_$($script:OrderNameCounts[$Base])"
+}
+
 # Category -> script-type mapping. Keywords in a category emit into that script's .txt.
 # Note: the output files are plain-text PowerLanguage source, NOT the .pla archive
 # format (which is a binary export bundle). The maintainer PASTES the contents
@@ -107,7 +124,6 @@ function Get-KeywordStatement {
   # then sees the rest as stray syntax. These show up because Parse-Chm
   # captures the H1 text verbatim from the CHM, which sometimes contains spaces.
   if ($name -match '\s') {
-    $safeName = $name -replace '\s+', '_'
     return "// $name (multi-word keyword); see official docs for usage."
   }
 
@@ -118,25 +134,8 @@ function Get-KeywordStatement {
   }
 
   # String-returning keywords cannot be assigned to numeric Value1.
-  # Match a curated list plus a heuristic on name endings.
-  $stringReturningNames = @(
-    'Description','ExchListed','Symbol','SymbolName','SymbolRoot',
-    'RTSymbol','RTSymbolName','GetSymbolName','GetExchangeName',
-    'GetRTSymbolName','TradeDate','SymbolCurrencyCode',
-    'q_ExchangeListed','q_Description',
-    # Environment-info string returners
-    'GetCurrency','GetCountry','GetCDRomDrive','GetUserName','GetAppInfo',
-    # Other string-returning names
-    'BarType_uid','BarType','BarType_ex',
-    # Account info string returners
-    'GetAccountID','GetAccount','GetPositionBrokerSymbol',
-    # PMM named-value string returners
-    'pmm_get_global_named_str','pmm_get_my_named_str',
-    'pmms_get_strategy_named_str','pmms_strategies_get_by_symbol_name'
-  )
-  $looksLikeString = $name -match '(?i)(Name|Description|Symbol|Listed|Exchange|Root|ToStr|ToString|ToString_Ms|CodeToStr|DateStr|TimeStr)$' -or
-                     $name -match '^(?i)Format(Time|Date|DateTime)'
-  if (($stringReturningNames -contains $name) -or $looksLikeString) {
+  # Shared taxonomy: Test-StringReturningKeyword (Generate-Example.psm1).
+  if (Test-StringReturningKeyword -Name $name) {
     return "// $name returns a string; see official docs for usage."
   }
 
@@ -246,11 +245,13 @@ function Get-KeywordStatement {
     }
     'Strategy_Orders' {
       if ($name -in @('Buy','Sell','SellShort','BuyToCover')) {
-        return "$name ( ""${name}_T"" ) 1 Contract Next Bar Market;"
+        return "$name ( ""${name}_T"" ) 1 Contract Next Bar at Market;"
       }
-      if ($name -eq 'All')                                  { return 'Sell All Contracts Next Bar Market;' }
-      if ($name -in @('Market','Limit','Stop'))             { return 'Buy ( "MLS" ) 1 Contract Next Bar Market;' }
-      if ($name -in @('Contract','Contracts'))              { return 'Buy ( "C" ) 1 Contract Next Bar Market;' }
+      if ($name -eq 'All')                                  { return 'Sell All Contracts Next Bar at Market;' }
+      # MultiCharts requires unique order names per script — several keywords
+      # share the same demo entry, so suffix a per-build counter (MLS_1, MLS_2, ...).
+      if ($name -in @('Market','Limit','Stop'))             { return "Buy ( ""$(Get-UniqueOrderName 'MLS')"" ) 1 Contract Next Bar at Market;" }
+      if ($name -in @('Contract','Contracts'))              { return "Buy ( ""$(Get-UniqueOrderName 'C')"" ) 1 Contract Next Bar at Market;" }
       return "// $name -- see official docs"
     }
     'Math_and_Trig' {
@@ -265,12 +266,13 @@ function Get-KeywordStatement {
         else { $argCount = (($inner -split ',').Count) }
       }
       # Build $argCount placeholder args — Close for the first, 14 / 2 / etc. for the rest.
-      $args = @()
+      # ($argv, not $args — $args is a PowerShell automatic variable and must not be shadowed.)
+      $argv = @()
       for ($i = 0; $i -lt $argCount; $i++) {
-        $args += if ($i -eq 0) { 'Close' } else { '2' }
+        $argv += if ($i -eq 0) { 'Close' } else { '2' }
       }
       if ($argCount -eq 0) { return "Value1 = $name;" }
-      return "Value1 = $name( $($args -join ', ') );"
+      return "Value1 = $name( $($argv -join ', ') );"
     }
     'Plotting' {
       if ($name -match '^Plot\d')           { return "$name( Close );" }
@@ -339,8 +341,12 @@ function New-PlaFixtures {
 
   if (-not (Test-Path $OutputDir)) { New-Item -ItemType Directory -Path $OutputDir -Force | Out-Null }
 
-  # Bucket keywords by script type.
-  $byType = @{ 'Indicator' = @(); 'Signal' = @(); 'Function' = @() }
+  # Reset the unique-order-name counters so repeated builds are deterministic.
+  $script:OrderNameCounts = @{}
+
+  # Bucket keywords by script type. No category maps to 'Function' — the
+  # function fixture is an explicit template, written separately below.
+  $byType = @{ 'Indicator' = @(); 'Signal' = @() }
   foreach ($kw in $Keywords) {
     $type = $script:CategoryScriptType[$kw.Category]
     if (-not $type) { $type = 'Indicator' }      # default safety net
@@ -354,10 +360,11 @@ function New-PlaFixtures {
   $headerByType = @{
     'Indicator' = "{ test_indicator.txt -- exercises every keyword routed to Indicator script type }`r`n{ Paste this whole file into a new Indicator study in PowerLanguage Editor and Verify (F3). }`r`n${arrayDecls}"
     'Signal'    = "{ test_signal.txt -- exercises every keyword routed to Signal script type }`r`n{ Paste this whole file into a new Signal study in PowerLanguage Editor and Verify (F3). }`r`n${arrayDecls}"
-    'Function'  = "{ test_function.txt -- function return idioms }`r`n{ Paste this whole file into a new Function in PowerLanguage Editor and Verify (F3). }`r`n"
   }
 
-  foreach ($type in 'Indicator','Signal','Function') {
+  $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+
+  foreach ($type in 'Indicator','Signal') {
     $sb = [System.Text.StringBuilder]::new()
     [void]$sb.AppendLine($headerByType[$type])
     [void]$sb.AppendLine('If False Then Begin    { wrap every statement in an unreachable If/Then to verify syntax only }')
@@ -368,9 +375,31 @@ function New-PlaFixtures {
     [void]$sb.AppendLine('End;')
 
     $outPath = Join-Path $OutputDir "test_$($type.ToLower()).txt"
-    $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
     [System.IO.File]::WriteAllText($outPath, $sb.ToString(), $utf8NoBom)
   }
+
+  # Function fixture: no keyword category routes to the Function script type,
+  # so instead of an empty keyword shell this is a minimal, real Function
+  # template (RangeRatio) — a function returns by assigning to its own name.
+  $fnSb = [System.Text.StringBuilder]::new()
+  [void]$fnSb.AppendLine('{ test_function.txt -- RangeRatio: minimal real PL function showing return-by-assignment }')
+  [void]$fnSb.AppendLine('{ Create a new Function named RangeRatio (numeric return type) in PowerLanguage Editor, }')
+  [void]$fnSb.AppendLine('{ paste this body, and Verify (F3). }')
+  [void]$fnSb.AppendLine('{ A PL function returns its value by assigning to its own name. }')
+  [void]$fnSb.AppendLine()
+  [void]$fnSb.AppendLine('Inputs:')
+  [void]$fnSb.AppendLine('    Len(Numeric);')
+  [void]$fnSb.AppendLine()
+  [void]$fnSb.AppendLine('Variables:')
+  [void]$fnSb.AppendLine('    avgRng(0);')
+  [void]$fnSb.AppendLine()
+  [void]$fnSb.AppendLine('avgRng = Average(Range, Len);')
+  [void]$fnSb.AppendLine()
+  [void]$fnSb.AppendLine('If avgRng <> 0 Then')
+  [void]$fnSb.AppendLine('    RangeRatio = Range / avgRng')
+  [void]$fnSb.AppendLine('Else')
+  [void]$fnSb.AppendLine('    RangeRatio = 0;')
+  [System.IO.File]::WriteAllText((Join-Path $OutputDir 'test_function.txt'), $fnSb.ToString(), $utf8NoBom)
 }
 
 Export-ModuleMember -Function New-PlaFixtures

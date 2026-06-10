@@ -1,4 +1,4 @@
-﻿# pmms_strategy_resume
+# pmms_strategy_resume
 
 **Category:** Portfolio_Money_Management
 **Signature:** `pmms_strategy_resume(StrategyIndex)`
@@ -8,7 +8,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = pmms_strategy_resume( 14 );
+pmms_strategy_resume( StrategyIndex );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=pmms_strategy_resume

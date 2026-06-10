@@ -1,7 +1,7 @@
-﻿# TL_SetAlert
+# TL_SetAlert
 
 **Category:** Trendline_Drawing
-**Signature:** `TL_SetAlert(TL_ID,AlertStatus) Parameters`
+**Signature:** `TL_SetAlert(TL_ID,AlertStatus)`
 
 **Parameters**
 - `TL_ID` *(numeric, required)* — see official docs
@@ -9,7 +9,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = TL_SetAlert( 14, 14 );
+TL_SetAlert( TL_ID, AlertStatus );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=TL_SetAlert

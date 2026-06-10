@@ -1,6 +1,6 @@
 ---
 name: powerlanguage-syntax
-description: Use when reading or writing PowerLanguage code — declarations (Inputs, Variables, Arrays), data types (numeric, string, truefalse), the begin/end semicolon rules, control flow (If/Then/Else, For, While, Switch), bar references (Close, Close[N], Date, Time, BarNumber), operators, comments, the pre-declared Value1..Value10000 and Condition1..Condition10000 built-ins, the built-in trade-state variables (MarketPosition, EntryPrice, BarsSinceEntry, CurrentContracts), and common gotchas — including "syntax error, unexpected X" / "Wrong syntax of X" errors caused by writing keywords like Print/File/Variable/If/Yesterday/#BeginCmtry as RHS values, MarketPosition(N) being position history (NOT bar offset), and bars being labeled by their close time (NOT open time).
+description: Use when reading or writing PowerLanguage code — declarations (Inputs, Variables, Arrays), data types (numeric, string, truefalse), the begin/end semicolon rules, control flow (If/Then/Else, For, While, Switch), bar references (Close, Close[N], Date, Time, BarNumber), operators, comments, the pre-declared Value0..Value99 and Condition0..Condition99 built-ins, the built-in trade-state variables (MarketPosition, EntryPrice, BarsSinceEntry, CurrentContracts), and common gotchas — including "syntax error, unexpected X" / "Wrong syntax of X" errors caused by writing keywords like Print/File/Variable/If/Yesterday/#BeginCmtry as RHS values, MarketPosition(N) being position history (NOT bar offset), and bars being labeled by their close time (NOT open time).
 ---
 
 # PowerLanguage Syntax
@@ -28,12 +28,12 @@ Arrays:
 
 **Pre-declared default variables.** PowerLanguage ships with numbered built-ins that don't need a `Variables:` declaration:
 
-| Name | Type | Count |
-|---|---|---|
-| `Value1` … `Value10000` | numeric | 10,000 |
-| `Condition1` … `Condition10000` | truefalse | 10,000 |
+| Name | Type | Documented range | Notes |
+|---|---|---|---|
+| `Value0` … `Value99` | numeric | 100 (official docs) | MC 15 compiler empirically accepts much higher indices — `Value10000` compile-verified — but anything past `Value99` is undocumented |
+| `Condition0` … `Condition99` | truefalse | 100 (official docs) | Indices past `Condition99` are **unverified** — do not emit them in generated code |
 
-Use them directly: `Value1 = Average(Close, 14);`, `If Condition1 Then Buy ...;`. No declaration line required (declaring one just shadows the built-in with an identical local). These are handy for quick scratch values when you don't want to bother naming a variable.
+Use them directly: `Value1 = Average(Close, 14);`, `If Condition1 Then Buy ...;`. No declaration line required (declaring one just shadows the built-in with an identical local). These are handy for quick scratch values when you don't want to bother naming a variable. **For generated code, stay within 0–99** — declare named variables if you need more.
 
 ## Data types
 
@@ -100,7 +100,7 @@ End;
 | `Close`, `Open`, `High`, `Low` | OHLC of current bar |
 | `Volume` | Volume of current bar |
 | `OpenInterest` | OI of current bar (futures/options) |
-| `Date` | Bar date as `YYYMMDD` integer (note: only 7 digits for years up to 2099, format is `(YYYY-1900)*10000 + MM*100 + DD`) |
+| `Date` | Bar date as `YYYMMDD` integer, format `(YYYY-1900)*10000 + MM*100 + DD` — 7 digits for years 2000–2099 (e.g. 1260610 = 2026-06-10), 6 digits for 1900–1999 (e.g. 990115 = 1999-01-15) |
 | `Time` | Bar **close** time as `HHMM` integer — see gotcha below |
 | `BarNumber` | Sequential count, same as `CurrentBar` |
 
@@ -246,7 +246,7 @@ These functions populate output ref variables — you must declare Variables for
 | `TrueLow` | `TrueLow` | numeric (no args) |
 | `Range` | `Range` | numeric (no args; High - Low) |
 | `TrueRangeCustom` | `TrueRangeCustom(HPrice, LPrice, CPrice)` | numeric (true range with custom H/L/C) |
-| `VolatilityStdDev` | `VolatilityStdDev(NumDays)` | numeric (historical volatility based on stdev of closes) |
+| `VolatilityStdDev` | `VolatilityStdDev(NumDays)` | numeric (annualized historical volatility: stdev of log returns) |
 | `StandardDevAnnual` | `StandardDevAnnual(Price, Length, DataType)` | numeric (annualized standard deviation) |
 
 ### Price extremes and Nth

@@ -1,14 +1,14 @@
 ---
 name: pinescript-visual
 description: >-
-  Pine Script plotting and drawing — plot(), plotshape(), plotchar(),
-  plotarrow(), bgcolor(), barcolor(), fill(), hline(), label.* (create,
-  set, get, styles), line.* (segments, rays, extend), box.* (rectangles,
-  supply/demand zones), table.* (fixed-position grids), map.* (key-value
-  dictionaries), matrix.* (2D arrays, linear algebra), log.* (debugging),
-  alerts (alert, alertcondition), and drawing object limits. Use when
-  adding visual output to Pine Script. For language fundamentals, see
-  pinescript-core. For built-in namespaces (ta.*, strategy.*), see
+  Use when adding visual output to Pine Script — plotting and drawing:
+  plot(), plotshape(), plotchar(), plotarrow(), bgcolor(), barcolor(),
+  fill(), hline(), label.* (create, set, get, styles), line.* (segments,
+  rays, extend), box.* (rectangles, supply/demand zones), table.*
+  (fixed-position grids), map.* (key-value dictionaries), matrix.* (2D
+  arrays, linear algebra), log.* (debugging), alerts (alert,
+  alertcondition), and drawing object limits. For language fundamentals,
+  see pinescript-core. For built-in namespaces (ta.*, strategy.*), see
   pinescript-builtins.
 ---
 
@@ -106,7 +106,7 @@ hline(50,  "Midpoint",   color = color.gray,  linestyle = hline.style_dotted)
 hline(30,  "Oversold",   color = color.green, linestyle = hline.style_dashed)
 ```
 
-`hline()` takes a `simple float` — the price level cannot vary bar by bar.
+`hline()`'s price takes an `input int/float` — only `const` or `input` values; the price level cannot vary bar by bar.
 
 ---
 
@@ -403,7 +403,6 @@ alertcondition(cross_up, title = "EMA Cross Up", message = "Fast crossed above S
 | `alert.freq_once_per_bar` | At most once per bar |
 | `alert.freq_once_per_bar_close` | Only on confirmed close |
 | `alert.freq_all` | Every matching tick |
-| `alert.freq_once_per_alert` | Only one time ever |
 
 ---
 

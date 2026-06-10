@@ -1,4 +1,4 @@
-﻿# pmm_set_my_status
+# pmm_set_my_status
 
 **Category:** Portfolio_Money_Management
 **Signature:** `pmm_set_my_status(Status)`
@@ -8,7 +8,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = pmm_set_my_status( "demo" );
+pmm_set_my_status( Status );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=pmm_set_my_status

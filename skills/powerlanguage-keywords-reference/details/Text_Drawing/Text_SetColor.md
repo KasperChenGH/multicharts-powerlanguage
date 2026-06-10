@@ -1,7 +1,7 @@
-﻿# Text_SetColor
+# Text_SetColor
 
 **Category:** Text_Drawing
-**Signature:** `Text_SetColor(ObjectID,TextColor) Parameters`
+**Signature:** `Text_SetColor(ObjectID,TextColor)`
 
 **Parameters**
 - `ObjectID` *(numeric, required)* — see official docs
@@ -9,7 +9,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = Text_SetColor( 14, 14 );
+Text_SetColor( ObjectID, TextColor );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=Text_SetColor

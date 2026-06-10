@@ -5,11 +5,7 @@
 
 **Example (illustrative)**
 ```
-Switch (direction) Begin
-    Case 0: Value1 = Value1;   // no-op — body CANNOT be empty
-    Case 1: Buy next bar at market;
-    Case 2: SellShort next bar at market;
-End;
+// case is used in expressions, e.g. If Close > Open Then ... ;
 ```
 
 **Rules:**

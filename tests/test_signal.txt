@@ -354,9 +354,9 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Strategy_Orders: SetBreakEven }
     // SetBreakEven is a setter; see official docs.
     { Strategy_Orders: SellShort }
-    SellShort ( "SellShort_T" ) 1 Contract Next Bar Market;
+    SellShort ( "SellShort_T" ) 1 Contract Next Bar at Market;
     { Strategy_Orders: Sell }
-    Sell ( "Sell_T" ) 1 Contract Next Bar Market;
+    Sell ( "Sell_T" ) 1 Contract Next Bar at Market;
     { Strategy_Orders: SetBreakEven_pt }
     // SetBreakEven_pt is a setter; see official docs.
     { Strategy_Orders: SetPercentTrailing }
@@ -370,15 +370,15 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Strategy_Orders: Cover }
     // Cover -- see official docs
     { Strategy_Orders: Contracts }
-    Buy ( "C" ) 1 Contract Next Bar Market;
+    Buy ( "C_1" ) 1 Contract Next Bar at Market;
     { Strategy_Orders: Higher }
     // Higher -- see official docs
     { Strategy_Orders: Market }
-    Buy ( "MLS" ) 1 Contract Next Bar Market;
+    Buy ( "MLS_1" ) 1 Contract Next Bar at Market;
     { Strategy_Orders: Lower }
     // Lower -- see official docs
     { Strategy_Orders: Limit }
-    Buy ( "MLS" ) 1 Contract Next Bar Market;
+    Buy ( "MLS_2" ) 1 Contract Next Bar at Market;
     { Strategy_Orders: SetPercentTrailing_pt }
     // SetPercentTrailing_pt is a setter; see official docs.
     { Strategy_Orders: Shares }
@@ -394,7 +394,7 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Strategy_Orders: Total }
     // Total -- see official docs
     { Strategy_Orders: Stop }
-    Buy ( "MLS" ) 1 Contract Next Bar Market;
+    Buy ( "MLS_3" ) 1 Contract Next Bar at Market;
     { Strategy_Orders: SetStopContract }
     // SetStopContract is a setter; see official docs.
     { Strategy_Orders: SetProfitTarget_pt }
@@ -446,13 +446,13 @@ If False Then Begin    { wrap every statement in an unreachable If/Then to verif
     { Strategy_Events: RejectedOrderContracts }
     Value1 = RejectedOrderContracts;
     { Strategy_Orders: All }
-    Sell All Contracts Next Bar Market;
+    Sell All Contracts Next Bar at Market;
     { Strategy_Orders: Contract }
-    Buy ( "C" ) 1 Contract Next Bar Market;
+    Buy ( "C_2" ) 1 Contract Next Bar at Market;
     { Strategy_Orders: BuyToCover }
-    BuyToCover ( "BuyToCover_T" ) 1 Contract Next Bar Market;
+    BuyToCover ( "BuyToCover_T" ) 1 Contract Next Bar at Market;
     { Strategy_Orders: Buy }
-    Buy ( "Buy_T" ) 1 Contract Next Bar Market;
+    Buy ( "Buy_T" ) 1 Contract Next Bar at Market;
     { Strategy_Events: FilledOrderAction }
     Value1 = FilledOrderAction;
     { Portfolio_Strategy_Properties: Portfolio_TotalMaxRiskEquityPercent }

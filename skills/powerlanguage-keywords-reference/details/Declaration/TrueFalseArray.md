@@ -1,7 +1,7 @@
-﻿# TrueFalseArray
+# TrueFalseArray
 
 **Category:** Declaration
-**Signature:** `Input:InputName[M1,M2,M3,etc.](TrueFalseArray) Parameters`
+**Signature:** `Input:InputName[M1,M2,M3,etc.](TrueFalseArray)`
 
 **Parameters**
 - `M` *(expression, required)* — see official docs

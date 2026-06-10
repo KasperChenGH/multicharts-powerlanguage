@@ -5,7 +5,7 @@
 # Each block is a self-contained strategy class inheriting from the Strategy
 # ABC defined in Part 0 of the powerlanguage-python-conversion skill.
 #
-# Dependencies: pandas-ta (primary), python-talib (alternative)
+# Dependencies: pandas-ta (primary), TA-Lib (alternative; pip install TA-Lib; import talib)
 #
 # NOTE: These cannot be run as-is in a single file — each strategy is a
 # standalone class. Separator lines mark where one ends and the next begins.

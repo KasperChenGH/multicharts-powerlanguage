@@ -7,7 +7,7 @@ Provides average price of the position.
 
 **Example (illustrative)**
 ```
-Value1 = GetPositionAveragePrice;
+GetPositionAveragePrice( Symbol, Account );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=GetPositionAveragePrice

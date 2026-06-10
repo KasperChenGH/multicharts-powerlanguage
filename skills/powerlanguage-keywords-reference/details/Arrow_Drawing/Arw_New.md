@@ -1,7 +1,7 @@
-﻿# Arw_New
+# Arw_New
 
 **Category:** Arrow_Drawing
-**Signature:** `Arw_New (BarDate, BarTime, PriceValue, Direction) Parameters`
+**Signature:** `Arw_New (BarDate, BarTime, PriceValue, Direction)`
 
 **Parameters**
 - `BarDate` *(numeric, required)* — see official docs
@@ -11,7 +11,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = Arw_New( 14, 14, 14 );
+Arw_New( BarDate, BarTime, PriceValue, Direction );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=Arw_New

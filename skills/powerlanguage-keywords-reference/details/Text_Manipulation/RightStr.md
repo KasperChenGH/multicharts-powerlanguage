@@ -1,11 +1,11 @@
-﻿# RightStr
+# RightStr
 
 **Category:** Text_Manipulation
 **Signature:** `RightStr(String,sSize)`
 
 **Example (illustrative)**
 ```
-Value1 = RightStr;
+// RightStr is a language construct (Text_Manipulation); see the Usage line above for how it is used.
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=RightStr

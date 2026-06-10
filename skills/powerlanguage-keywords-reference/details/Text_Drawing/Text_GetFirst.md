@@ -1,14 +1,14 @@
-﻿# Text_GetFirst
+# Text_GetFirst
 
 **Category:** Text_Drawing
-**Signature:** `Text_GetFirst (Origin) Parameters`
+**Signature:** `Text_GetFirst (Origin)`
 
 **Parameters**
 - `Origin` *(numeric, required)* — see official docs
 
 **Example (illustrative)**
 ```
-Value1 = Text_GetFirst( 14 );
+Text_GetFirst( Origin );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=Text_GetFirst

@@ -6,7 +6,7 @@
 # All conversions live in a single class NewFunctionsTest(Strategy) whose
 # on_bar method exercises every function, grouped by category.
 #
-# Dependencies: pandas-ta (primary), python-talib (alternative), numpy,
+# Dependencies: pandas-ta (primary), TA-Lib (alternative; pip install TA-Lib; import talib), numpy,
 #               scipy.stats (for statistical helpers)
 #
 # NOTE: This file is a reference showing how each PL function maps to Python.

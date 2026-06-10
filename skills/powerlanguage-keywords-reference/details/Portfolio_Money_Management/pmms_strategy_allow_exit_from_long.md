@@ -1,11 +1,11 @@
-﻿# pmms_strategy_allow_exit_from_long
+# pmms_strategy_allow_exit_from_long
 
 **Category:** Portfolio_Money_Management
 **Signature:** `pmms_strategy_allow_exit_from_long(StrategyIndex)`
 
 **Example (illustrative)**
 ```
-Value1 = pmms_strategy_allow_exit_from_long;
+pmms_strategy_allow_exit_from_long( StrategyIndex );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=pmms_strategy_allow_exit_from_long

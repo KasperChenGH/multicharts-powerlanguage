@@ -1,4 +1,4 @@
-﻿# pmms_strategy_set_status
+# pmms_strategy_set_status
 
 **Category:** Portfolio_Money_Management
 **Signature:** `pmms_strategy_set_status(StrategyIndex, Status)`
@@ -9,7 +9,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = pmms_strategy_set_status( 14, "demo" );
+pmms_strategy_set_status( StrategyIndex, Status );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=pmms_strategy_set_status

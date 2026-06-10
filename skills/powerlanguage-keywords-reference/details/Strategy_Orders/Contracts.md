@@ -5,7 +5,7 @@
 
 **Example (illustrative)**
 ```
-Buy ( "Demo" ) 2 Contracts Next Bar Market;
+Buy ( "Demo" ) 2 Contracts Next Bar at Market;
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=Contracts

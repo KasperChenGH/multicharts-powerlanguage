@@ -1,7 +1,7 @@
-﻿# TL_New_BN
+# TL_New_BN
 
 **Category:** Trendline_Drawing
-**Signature:** `TL_New_BN (b_BarNumber, b_Price, e_BarNumber, e_Price); Parameters`
+**Signature:** `TL_New_BN (b_BarNumber, b_Price, e_BarNumber, e_Price);`
 
 **Parameters**
 - `b_BarNumber` *(numeric, required)* — see official docs
@@ -11,7 +11,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = TL_New_BN( 14, 14, 14 );
+TL_New_BN( b_BarNumber, b_Price, e_BarNumber, e_Price );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=TL_New_BN

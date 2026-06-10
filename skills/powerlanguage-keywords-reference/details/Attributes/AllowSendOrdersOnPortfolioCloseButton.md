@@ -1,11 +1,11 @@
-﻿# AllowSendOrdersOnPortfolioCloseButton
+# AllowSendOrdersOnPortfolioCloseButton
 
 **Category:** Attributes
 **Signature:** `[AllowSendOrdersOnPortfolioCloseButton = LogicalValue]`
 
 **Example (illustrative)**
 ```
-Value1 = AllowSendOrdersOnPortfolioCloseButton;
+[AllowSendOrdersOnPortfolioCloseButton = true];
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=AllowSendOrdersOnPortfolioCloseButton

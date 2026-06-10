@@ -1,11 +1,11 @@
-﻿# Arw_GetTime_DT
+# Arw_GetTime_DT
 
 **Category:** Arrow_Drawing
 **Signature:** `Arw_GetTime_DT(ObjectID)`
 
 **Example (illustrative)**
 ```
-Value1 = Arw_GetTime_DT;
+Arw_GetTime_DT( ObjectID );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=Arw_GetTime_DT

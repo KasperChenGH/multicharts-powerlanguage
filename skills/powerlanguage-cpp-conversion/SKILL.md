@@ -180,7 +180,7 @@ TA-Lib RT is a community fork that adds streaming APIs: `TA_SMA_StateInit()`, `T
 | `Stochastic(...)` | `TA_STOCH(0, endIdx, inHigh, inLow, inClose, fastK, slowK, slowKMAType, slowD, slowDMAType, &outBeg, &outNB, outSlowK, outSlowD)` | Full %K/%D smoothing control — maps better to PL's 11-param version than Pine's simple `ta.stoch` |
 | `ADX(Length)` | `TA_ADX(0, endIdx, inHigh, inLow, inClose, length, &outBeg, &outNB, outAdx)` | Direct equivalent |
 | `CCI(Length)` | `TA_CCI(0, endIdx, inHigh, inLow, inClose, length, &outBeg, &outNB, outCci)` | PL `CCI` takes only length (uses HLC internally); TA-Lib requires explicit HLC arrays |
-| `AvgTrueRange(Length)` | `TA_ATR(0, endIdx, inHigh, inLow, inClose, length, &outBeg, &outNB, outAtr)` | Requires HLC arrays |
+| `AvgTrueRange(Length)` | `TA_TRANGE(0, endIdx, inHigh, inLow, inClose, &outBeg, &outNB, outTr)` then `TA_SMA` over `outTr` | PL `AvgTrueRange` is a SIMPLE average of TrueRange. `TA_ATR` is Wilder-smoothed — NOT equivalent; `TA_ATR` instead matches PL `SmoothedAverage(TrueRange, Len)` |
 | `BollingerBand(Close, Length, 2)` | `TA_BBANDS(0, endIdx, inClose, length, 2.0, 2.0, TA_MAType_SMA, &outBeg, &outNB, outUpper, outMiddle, outLower)` | Returns three arrays: upper, middle, lower |
 | `Close Crosses Over MA` | `prev_close <= prev_ma && close > ma` | No built-in crossover in TA-Lib; implement as two-bar comparison |
 | `Close Crosses Under MA` | `prev_close >= prev_ma && close < ma` | Same pattern |
@@ -197,10 +197,10 @@ TA-Lib RT is a community fork that adds streaming APIs: `TA_SMA_StateInit()`, `T
 | `DMIPlus(Length)` | `TA_PLUS_DI(0, endIdx, inHigh, inLow, inClose, length, &outBeg, &outNB, outPlusDI)` | +DI component of DMI |
 | `DMIMinus(Length)` | `TA_MINUS_DI(0, endIdx, inHigh, inLow, inClose, length, &outBeg, &outNB, outMinusDI)` | −DI component of DMI |
 | `RateOfChange(Close, Length)` | `TA_ROC(0, endIdx, inClose, length, &outBeg, &outNB, outRoc)` | Percentage rate of change |
-| `PercentR(Length)` | `TA_WILLR(0, endIdx, inHigh, inLow, inClose, length, &outBeg, &outNB, outWillR)` | Williams %R; direct equivalent |
+| `PercentR(Length)` | `TA_WILLR(0, endIdx, inHigh, inLow, inClose, length, &outBeg, &outNB, outWillR)` then add 100 to each value | PL `PercentR` is POSITIVE 0..100 (= Williams %R + 100); `TA_WILLR` returns −100..0 — thresholds become 80/20 on the positive scale |
 | `MoneyFlow(Length)` | `TA_MFI(0, endIdx, inHigh, inLow, inClose, inVolume, length, &outBeg, &outNB, outMfi)` | Money Flow Index; requires HLCV arrays |
 | `Parabolic(AFStep, AFMax)` | `TA_SAR(0, endIdx, inHigh, inLow, AFStep, AFMax, &outBeg, &outNB, outSar)` | Parabolic SAR; requires HL arrays |
-| `Volatility(Length)` | `TA_STDDEV(0, endIdx, inClose, length, 1.0, &outBeg, &outNB, outStdDev)` | PL Volatility returns annualized StdDev of log returns; adjust scaling |
+| `Volatility(Length)` | `TA_TRANGE(0, endIdx, inHigh, inLow, inClose, &outBeg, &outNB, outTr)` then `TA_EMA` over `outTr` (approximation) | PL `Volatility` is an EMA-weighted average of TrueRange (weighted toward the most recent bar) — NOT a stdev of log returns (that is `VolatilityStdDev`) |
 | `UltimateOscillator(Len1, Len2, Len3)` | `TA_ULTOSC(0, endIdx, inHigh, inLow, inClose, len1, len2, len3, &outBeg, &outNB, outUltOsc)` | Three-period weighted oscillator |
 | `ChaikinOsc(FastLen, SlowLen)` | `TA_ADOSC(0, endIdx, inHigh, inLow, inClose, inVolume, fastLen, slowLen, &outBeg, &outNB, outAdosc)` | Chaikin A/D Oscillator; requires HLCV |
 | `PriceOscillator(FastLen, SlowLen)` | `TA_APO(0, endIdx, inClose, fastLen, slowLen, TA_MAType_SMA, &outBeg, &outNB, outApo)` | Absolute Price Oscillator |
@@ -217,10 +217,10 @@ TA-Lib RT is a community fork that adds streaming APIs: `TA_SMA_StateInit()`, `T
 | `NthLowest(N, Close, Length)` | Manual: copy window, `std::nth_element`, pick Nth from low end | No TA-Lib equivalent |
 | `NthHighestBar(N, Close, Length)` | Manual: find Nth highest value, then scan for its bar index | No TA-Lib equivalent |
 | `NthLowestBar(N, Close, Length)` | Manual: find Nth lowest value, then scan for its bar index | No TA-Lib equivalent |
-| `SwingHigh(1, Close, LeftStr, RightStr)` | Manual: check `Close[RightStr+i] < Close[0]` for right side and `Close[LeftStr+i] < Close[0]` for left side | Pivot-point detection; no TA-Lib equivalent |
-| `SwingLow(1, Close, LeftStr, RightStr)` | Manual: check `Close[i] > Close[0]` on both sides of candidate bar | Mirror of SwingHigh with `>` comparisons |
-| `SwingHighBar(1, Close, LeftStr, RightStr)` | Manual: find SwingHigh, return bars-ago offset | Same pivot logic, return offset instead of price |
-| `SwingLowBar(1, Close, LeftStr, RightStr)` | Manual: find SwingLow, return bars-ago offset | Same pivot logic, return offset instead of price |
+| `SwingHigh(Occur, Price, Strength, Length)` | Manual: candidate bar higher than `Strength` bars on each side, scanning the last `Length` bars | Occurrence is the FIRST PL arg (Nth most recent swing); returns −1 when none found; `Length` must exceed `Strength`; no TA-Lib equivalent |
+| `SwingLow(Occur, Price, Strength, Length)` | Manual: candidate bar lower than `Strength` bars on each side, scanning the last `Length` bars | Mirror of SwingHigh with reversed comparisons; −1 when none found |
+| `SwingHighBar(Occur, Price, Strength, Length)` | Manual: find SwingHigh, return bars-ago offset | Same pivot logic, return offset instead of price |
+| `SwingLowBar(Occur, Price, Strength, Length)` | Manual: find SwingLow, return bars-ago offset | Same pivot logic, return offset instead of price |
 | `Summation(Close, Length)` | `TA_SUM(0, endIdx, inClose, length, &outBeg, &outNB, outSum)` | Rolling sum; direct equivalent |
 | `Cum(Close)` | Manual: `cumulative_ += bars.back().close` (running total as member) | Cumulative sum from bar 1; no period param |
 | `LinearRegValue(Close, Length, Offset)` | `TA_LINEARREG(0, endIdx, inClose, length, &outBeg, &outNB, outLinReg)` | Offset projection requires manual adjustment |
@@ -228,7 +228,7 @@ TA-Lib RT is a community fork that adds streaming APIs: `TA_SMA_StateInit()`, `T
 | `LinearRegSlope(Close, Length)` | `TA_LINEARREG_SLOPE(0, endIdx, inClose, length, &outBeg, &outNB, outSlope)` | Slope coefficient; direct equivalent |
 | `Correlation(Close, Close2, Length)` | `TA_CORREL(0, endIdx, inClose, inClose2, length, &outBeg, &outNB, outCorr)` | Pearson correlation; direct equivalent |
 | `RSquared(Close, Length)` | Manual: `pow(TA_CORREL result, 2)` | Coefficient of determination; square the correlation |
-| `StdError(Close, Length)` | Manual: `TA_STDDEV result / sqrt(length)` | Standard error of the mean |
+| `StdError(Close, Length)` | Manual: compute residuals against the `TA_LINEARREG` fit, then `sqrt(sum_sq_resid / (length - 2))` | Standard error of the linear-regression residuals — NOT `TA_STDDEV / sqrt(length)` (that is SE of the mean) |
 | `Median(Close, Length)` | Manual: copy window, `std::nth_element(begin, mid, end)`, read middle | No TA-Lib rolling median |
 | `ELDate` | Manual: convert `bar.time` to YYYMMDD format (YYY = year − 1900) | PL EasyLanguage date format |
 | `MinutesToTime(mins)` | Manual: `int hhmm = (mins / 60) * 100 + (mins % 60)` | Convert total minutes to HHMM integer |
@@ -278,7 +278,6 @@ TA-Lib RT is a community fork that adds streaming APIs: `TA_SMA_StateInit()`, `T
 | `PivotLowVSBar(Inst, Price, LStr, RStr, Len)` | Manual: return offset of detected pivot low | bars-ago index |
 | `Divergence(P1, P2, Str, Len, HiLo)` | Manual: compare pivot highs/lows of two series | No TA-Lib function |
 | `TimeSeriesForecast(Close, Length)` | `TA_TSF(0, endIdx, inClose, length, &outBeg, &outNB, outTsf)` | Direct equivalent |
-
 | `SummationFC(Close, Length)` | `TA_SUM(0, endIdx, inClose, length, &outBeg, &outNB, outSum)` | Same as `Summation` |
 | `OpenD(N)` | Manual: aggregate intraday bars into daily `struct DailyBar`, index `daily_bars[size-1-N].open` | Requires daily bar aggregation |
 | `HighD(N)` | Manual: `daily_bars[size-1-N].high` | Daily high from aggregation |
@@ -317,7 +316,7 @@ TA-Lib RT is a community fork that adds streaming APIs: `TA_SMA_StateInit()`, `T
 | `C_3WhSolds_3BlkCrows(Len, Factor, ...)` | `TA_CDL3WHITESOLDIERS(...)` / `TA_CDL3BLACKCROWS(...)` | Separate functions |
 | **Statistical extended** | | |
 | `AvgDeviation(Close, N)` | Manual: mean absolute deviation | No TA-Lib equivalent |
-| `Variance(Close, N)` | `TA_VAR(0, endIdx, inClose, N, &outBeg, &outNB, outVar)` | Population variance |
+| `Variance(Close, N)` | `TA_VAR(0, endIdx, inClose, N, 1.0, &outBeg, &outNB, outVar)` | Population variance; the `1.0` is the required `double optInNbDev` argument |
 | `Kurtosis(Close, N)` | Manual: 4th moment calculation | No TA-Lib equivalent |
 | `Skew(Close, N)` | Manual: 3rd moment calculation | No TA-Lib equivalent |
 | `PercentRank(ValToRank, Price, N)` | Manual: count values ≤ target / N | No TA-Lib equivalent |
@@ -399,6 +398,30 @@ TA-Lib RT is a community fork that adds streaming APIs: `TA_SMA_StateInit()`, `T
 ---
 
 ## Part 2: Semantic Differences and Gotchas
+
+### Order fill timing — the #1 conversion bug
+
+PL `Buy next bar at market` fills at the NEXT bar's OPEN, and `next bar at X Stop` / `Limit` fills intrabar on the next bar at the stop/limit price (or at the open if the bar gaps through it). A converted simulator that flips position on the signal bar (same-bar close fill) is one bar early and uses the wrong price.
+
+The executor must queue orders produced on bar N and fill them against bar N+1:
+
+```cpp
+for (size_t i = 0; i + 1 < bars.size(); ++i) {
+    orders.clear();
+    std::vector<Bar> history(bars.begin(), bars.begin() + i + 1);
+    strategy.on_bar(history, orders);             // orders queued on bar i...
+    const Bar& next = bars[i + 1];
+    for (const Order& o : orders) {               // ...filled on bar i+1
+        if (o.type == OrderType::Market)
+            fill(o, next.open);                                  // next bar's OPEN
+        else if (o.type == OrderType::Stop && next.high >= o.price)  // buy stop
+            fill(o, std::max(o.price, next.open));               // intrabar at the stop price
+        // sell stop: next.low <= o.price; limit orders mirror with reversed comparisons
+    }
+}
+```
+
+**EMA seeding/warmup gotcha:** PL `XAverage` seeds recursively from the first bar's price; TA-Lib `TA_EMA` seeds with the SMA of the first `Length` values — early values differ. Other targets differ again (pandas-ta SMA seed by default, ta-rs first-value seed, Pine `na` during warmup). Discard roughly the first 3×Length bars before comparing backtests.
 
 1. **`Sell` does not mean "go short".** In PowerLanguage, `Sell` exits an existing long position. The C++ equivalent is closing the position (setting `position_` to 0). Do not create a new short entry as a translation of `Sell`.
 

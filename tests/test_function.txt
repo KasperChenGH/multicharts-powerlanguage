@@ -1,5 +1,17 @@
-{ test_function.txt -- function return idioms }
-{ Paste this whole file into a new Function in PowerLanguage Editor and Verify (F3). }
+{ test_function.txt -- RangeRatio: minimal real PL function showing return-by-assignment }
+{ Create a new Function named RangeRatio (numeric return type) in PowerLanguage Editor, }
+{ paste this body, and Verify (F3). }
+{ A PL function returns its value by assigning to its own name. }
 
-If False Then Begin    { wrap every statement in an unreachable If/Then to verify syntax only }
-End;
+Inputs:
+    Len(Numeric);
+
+Variables:
+    avgRng(0);
+
+avgRng = Average(Range, Len);
+
+If avgRng <> 0 Then
+    RangeRatio = Range / avgRng
+Else
+    RangeRatio = 0;

@@ -27,7 +27,9 @@ function Write-KeywordDetailFile {
     [void]$sb.AppendLine('**Parameters**')
     foreach ($p in $Parsed.Parameters) {
       $req = if ($p.Required) { 'required' } else { 'optional' }
-      [void]$sb.AppendLine("- ``$($p.Name)`` *($($p.Type), $req)* — $($p.Description)")
+      # Em-dash from its code point: a literal U+2014 in this file is mangled
+      # by PowerShell 5.1's ANSI fallback when the file has no BOM.
+      [void]$sb.AppendLine("- ``$($p.Name)`` *($($p.Type), $req)* $([char]0x2014) $($p.Description)")
     }
   }
 

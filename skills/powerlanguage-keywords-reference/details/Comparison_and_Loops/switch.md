@@ -5,12 +5,7 @@
 
 **Example (illustrative)**
 ```
-Switch (n) Begin
-    Case 0: Value1 = Value1;   // no-op — empty case body is a compile error
-    Case 1: Buy next bar at market;
-    Case 2: SellShort next bar at market;
-    Default: ; // default must also have a statement
-End;
+// switch is used in expressions, e.g. If Close > Open Then ... ;
 ```
 
 **Rules:**

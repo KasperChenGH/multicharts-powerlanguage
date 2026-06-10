@@ -1,11 +1,26 @@
 function ConvertTo-PlainText {
   param([string] $Html)
-  # Strip tags, strip non-alphanumeric punctuation, collapse whitespace, lowercase.
+  # Strip tags, decode HTML entities, strip non-alphanumeric punctuation,
+  # collapse whitespace, lowercase.
+  # Entities MUST be decoded before punctuation stripping: otherwise "&amp;"
+  # survives as the spurious word "amp" and "&#8211;" as "8211", which breaks
+  # verbatim runs and lets real copies evade detection (false negative for
+  # the legal control). &amp; is decoded LAST to avoid over-decoding.
   # Strip punctuation so that "parameters." and "parameters" align as the same word.
   # Underscores are PRESERVED (kept by [^a-zA-Z0-9_\s] character class) so keyword names
   # like GV_SetNamedInt remain a single token. Hyphens are dropped — irrelevant for
   # PowerLanguage keywords which use underscores, not hyphens, but worth noting.
-  ($Html -replace '<[^>]+>', ' ' -replace '[^a-zA-Z0-9_\s]', ' ' -replace '\s+', ' ').Trim().ToLowerInvariant()
+  $t = $Html -replace '<[^>]+>', ' '
+  $t = $t -replace '&nbsp;',  ' '
+  $t = $t -replace '&quot;',  '"'
+  $t = $t -replace '&lt;',    '<'
+  $t = $t -replace '&gt;',    '>'
+  $t = $t -replace '&#0*60;', '<'
+  $t = $t -replace '&#0*62;', '>'
+  $t = $t -replace '&#8211;', ' '
+  $t = $t -replace '&#8212;', ' '
+  $t = $t -replace '&amp;',   '&'
+  ($t -replace '[^a-zA-Z0-9_\s]', ' ' -replace '\s+', ' ').Trim().ToLowerInvariant()
 }
 
 # Minimum run length for "verbatim copy" detection.

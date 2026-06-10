@@ -1,4 +1,4 @@
-﻿# pmms_strategy_riskcapital
+# pmms_strategy_riskcapital
 
 **Category:** Portfolio_Money_Management
 **Signature:** `pmms_strategy_riskcapital(StrategyIndex)`
@@ -8,7 +8,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = pmms_strategy_riskcapital( 14 );
+pmms_strategy_riskcapital( StrategyIndex );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=pmms_strategy_riskcapital

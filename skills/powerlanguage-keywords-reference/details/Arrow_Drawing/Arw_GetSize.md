@@ -1,11 +1,11 @@
-﻿# Arw_GetSize
+# Arw_GetSize
 
 **Category:** Arrow_Drawing
 **Signature:** `Arw_GetSize(ObjectID)`
 
 **Example (illustrative)**
 ```
-Value1 = Arw_GetSize;
+Arw_GetSize( ObjectID );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=Arw_GetSize

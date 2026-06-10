@@ -1,7 +1,7 @@
 ﻿# Plot
 
 **Category:** Plotting
-**Signature:** `Numerical: PlotN&#060;[Offset]&#062;(Expression &#060;,"PlotName"&#060;,PlotColor &#060;,Scanner Cell Background Color &#060;,LineWidth &#062;&#062;&#062;&#062;)`
+**Signature:** `PlotN[Offset](Expression[, "PlotName"[, PlotColor[, BgColor[, LineWidth]]]])` — N is the plot number 1..999; only Expression is required
 
 **Parameters**
 - `N` *(numeric, optional)* — see official docs
@@ -13,7 +13,8 @@
 
 **Example (illustrative)**
 ```
-// Plot -- see Usage line above
+Plot1(Average(Close, 20), "AvgC");
+Plot2[1](Highest(High, 10), "HH10");  // offset: plot shifted 1 bar back
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=Plot

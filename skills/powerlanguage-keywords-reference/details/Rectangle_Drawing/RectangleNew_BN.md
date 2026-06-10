@@ -1,7 +1,7 @@
-﻿# RectangleNew_BN
+# RectangleNew_BN
 
 **Category:** Rectangle_Drawing
-**Signature:** `RectangleNew_BN (b_BarNumber, b_Price, e_BarNumber, e_Price); Parameters`
+**Signature:** `RectangleNew_BN (b_BarNumber, b_Price, e_BarNumber, e_Price);`
 
 **Parameters**
 - `b_BarNumber` *(numeric, required)* — see official docs
@@ -11,7 +11,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = RectangleNew_BN( 14, 14, 14 );
+RectangleNew_BN( b_BarNumber, b_Price, e_BarNumber, e_Price );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=RectangleNew_BN

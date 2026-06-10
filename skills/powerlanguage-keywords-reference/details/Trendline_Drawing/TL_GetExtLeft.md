@@ -1,11 +1,11 @@
-﻿# TL_GetExtLeft
+# TL_GetExtLeft
 
 **Category:** Trendline_Drawing
 **Signature:** `TL_GetExtLeft(TL_ID)`
 
 **Example (illustrative)**
 ```
-Value1 = TL_GetExtLeft;
+TL_GetExtLeft( TL_ID );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=TL_GetExtLeft

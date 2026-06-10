@@ -1,7 +1,7 @@
-﻿# Text_New_Dt
+# Text_New_Dt
 
 **Category:** Text_Drawing
-**Signature:** `Text_New_Dt (Bar_DateTime, PriceValue,"Text") Parameters`
+**Signature:** `Text_New_Dt (Bar_DateTime, PriceValue,"Text")`
 
 **Parameters**
 - `Bar_DateTime` *(numeric, required)* — see official docs
@@ -10,7 +10,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = Text_New_Dt( 14, 14, "demo" );
+// Text_New_Dt takes parameters; see the Usage line above for the call form.
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=Text_New_Dt

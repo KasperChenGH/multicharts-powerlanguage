@@ -1,11 +1,11 @@
-﻿# GetPositionSymbol
+# GetPositionSymbol
 
 **Category:** AccountsPositions
 **Signature:** `GetPositionSymbol(Account, PositionLoc)`
 
 **Example (illustrative)**
 ```
-Value1 = GetPositionSymbol;
+GetPositionSymbol( Account, PositionLoc );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=GetPositionSymbol

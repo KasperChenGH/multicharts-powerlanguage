@@ -1,4 +1,4 @@
-﻿# pmms_strategy_entryprice
+# pmms_strategy_entryprice
 
 **Category:** Portfolio_Money_Management
 **Signature:** `pmms_strategy_entryprice(StrategyIndex)`
@@ -8,7 +8,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = pmms_strategy_entryprice( 14 );
+pmms_strategy_entryprice( StrategyIndex );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=pmms_strategy_entryprice

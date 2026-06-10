@@ -148,7 +148,7 @@ The slice `&bars[..=i]` gives the strategy access to full history; `bars.last().
 | `Stochastic(...)` | `SlowStochastic::new(k_period, d_period).unwrap()` → `.next(&data_item)` | Accepts f64 but needs OHLC `DataItem` for correct stochastic formula; PL takes 11 params — map k_period and d_period |
 | `ADX(Length)` | Not in ta-rs; use `yata::indicators::ADX` or implement manually | ta-rs lacks ADX; `yata` crate covers it |
 | `CCI(Length)` | `CommodityChannelIndex::new(length).unwrap()` → `.next(&data_item)` | PL `CCI` takes only length (uses HLC internally); ta-rs requires a type implementing `Close + High + Low` |
-| `AvgTrueRange(Length)` | `AverageTrueRange::new(length).unwrap()` → `.next(&data_item)` | Accepts f64 but needs OHLC `DataItem` for correct true-range calculation (high-low range) |
+| `AvgTrueRange(Length)` | `TrueRange::new()` → `.next(&data_item)`, feed each value into `SimpleMovingAverage::new(length)` | PL `AvgTrueRange` is a SIMPLE average of TrueRange. ta-rs `AverageTrueRange` is EMA-based — NOT equivalent; the smoothed (Wilder-style) PL match is `SmoothedAverage(TrueRange, Len)`. Needs OHLC `DataItem` for correct true range |
 | `BollingerBand(Close, Length, 2)` | `BollingerBands::new(length, 2.0).unwrap()` → `.next(bar.close)` | Returns `BollingerBandsOutput { average, upper, lower }`. Note: ta-rs may use EMA internally — verify output matches PL's SMA-based Bollinger Bands |
 | `Close Crosses Over MA` | `prev_close <= prev_ma && close > ma` | No built-in crossover in ta-rs; store previous-bar values yourself |
 | `Close Crosses Under MA` | `prev_close >= prev_ma && close < ma` | Same pattern, reversed inequality |
@@ -158,17 +158,17 @@ The slice `&bars[..=i]` gives the strategy access to full history; `bars.last().
 | `TSI(Close, LongLen, ShortLen)` | Manual: double-EMA of momentum / double-EMA of abs(momentum) | No ta-rs built-in; use two nested `ExponentialMovingAverage` pairs — one for `EMA(EMA(mtm, long), short)`, one for `EMA(EMA(abs(mtm), long), short)`, then `100 * ratio` |
 | `AverageFC(Close, Length)` | `SimpleMovingAverage::new(length).unwrap()` → `.next(bar.close)` | "Fast calculation" variant; same result as `Average` — use `SimpleMovingAverage` |
 | `WAverage(Close, Length)` | Manual: weighted sum `Σ(close[i] * (length - i)) / Σ(1..=length)` | No ta-rs built-in; iterate `bars[len-length..len]`, weight newest bar highest |
-| `AdaptiveMovAvg(Close, Length)` | `EfficiencyRatio::new(length)` + manual AMA smoothing | Use ta-rs `EfficiencyRatio`; AMA = `prev + er^2 * (close - prev)` (Kaufman formula) |
+| `AdaptiveMovAvg(Close, Length)` | `EfficiencyRatio::new(length)` + manual AMA smoothing | Use ta-rs `EfficiencyRatio`; smoothing constant `sc = (er * (fast_sc - slow_sc) + slow_sc)^2` with `fast_sc = 2/(2+1)`, `slow_sc = 2/(30+1)`, then AMA = `prev + sc * (close - prev)` (Kaufman formula — NOT `er^2`) |
 | `MidPoint(Close, Length)` | `(Maximum::new(length).next(c) + Minimum::new(length).next(c)) / 2.0` | Combine ta-rs `Maximum` and `Minimum` |
 | `MACD(Close, FastLen, SlowLen)` | `ta::indicators::MovingAverageConvergenceDivergence::new(fast, slow, signal).unwrap()` → `.next(bar.close)` | Returns `MACDOutput { macd, signal, histogram }` |
 | `KeltnerChannel(Close, Length, Factor)` | `KeltnerChannel::new(length, factor).unwrap()` → `.next(&data_item)` | Returns `KeltnerChannelOutput { average, upper, lower }`; needs OHLC `DataItem` |
 | `DMIPlus(Length)` | Manual or `yata`; +DI = 100 × smoothed(+DM) / smoothed(TR) | Not in ta-rs; compute +DM = `max(high - prev_high, 0)` when > −DM, else 0 |
 | `DMIMinus(Length)` | Manual or `yata`; −DI = 100 × smoothed(−DM) / smoothed(TR) | Not in ta-rs; compute −DM = `max(prev_low - low, 0)` when > +DM, else 0 |
 | `RateOfChange(Close, Length)` | `RateOfChange::new(length).unwrap()` → `.next(bar.close)` | ta-rs `RateOfChange`; returns percentage change |
-| `PercentR(Length)` | Manual: `−100 × (highest − close) / (highest − lowest)` | Use ta-rs `Maximum`/`Minimum` over `length` bars for highest-high/lowest-low |
+| `PercentR(Length)` | Manual: `100 × (close − lowest) / (highest − lowest)` | PL `PercentR` is POSITIVE 0..100 (= Williams %R + 100; thresholds 80/20). Use ta-rs `Maximum`/`Minimum` over `length` bars for highest-high/lowest-low |
 | `MoneyFlow(Length)` | Manual: MFI = 100 − 100/(1 + pos_flow/neg_flow) | Classify each bar's typical-price × volume as positive or negative, sum over `length` |
 | `Parabolic(AFStep, AFMax)` | Manual state machine tracking AF and EP | No crate built-in; maintain `af`, `ep`, `sar`, flip on new extreme; complex — ~40 lines |
-| `Volatility(Length)` | `StandardDeviation::new(length).unwrap()` → `.next(bar.close)` | PL `Volatility` = standard deviation of close; ta-rs `StandardDeviation` matches |
+| `Volatility(Length)` | `TrueRange::new()` → `.next(&data_item)`, feed each value into `ExponentialMovingAverage::new(length)` | PL `Volatility` is a smoothed average of TrueRange weighted toward the most recent bar — NOT a standard deviation of closes (that is `StandardDev`) |
 | `UltimateOscillator(Fast, Mid, Slow)` | Manual: weighted average of BP/TR ratios over three periods | BP = close − min(low, prev_close); sum BP and TR over 7/14/28, weight 4:2:1 |
 | `ChaikinOsc(FastLen, SlowLen)` | Manual: EMA(fast, ADL) − EMA(slow, ADL) | ADL = cum sum of `((close−low)−(high−close))/(high−low) × volume`; apply two EMAs |
 | `PriceOscillator(FastLen, SlowLen)` | Manual: `EMA(fast) − EMA(slow)` | Two `ExponentialMovingAverage` instances; subtract slow from fast |
@@ -185,10 +185,10 @@ The slice `&bars[..=i]` gives the strategy access to full history; `bars.last().
 | `NthLowest(N, Close, Length)` | Manual: sort last `length` closes ascending, take index `N-1` | Collect into `Vec`, `sort_by()` ascending, return `[n-1]` |
 | `NthHighestBar(N, Close, Length)` | Manual: sort with indices, return bars-ago of Nth highest | Pair `(value, offset)`, sort descending, return offset at `N-1` |
 | `NthLowestBar(N, Close, Length)` | Manual: sort with indices, return bars-ago of Nth lowest | Pair `(value, offset)`, sort ascending, return offset at `N-1` |
-| `SwingHigh(Instance, Close, LeftStr, RightStr)` | Manual: `bars[pivot]` > all `LeftStr` bars before and `RightStr` bars after | Confirmed only after `RightStr` bars pass; `Instance` selects Nth most recent swing |
-| `SwingLow(Instance, Close, LeftStr, RightStr)` | Manual: `bars[pivot]` < all `LeftStr` bars before and `RightStr` bars after | Same pivot logic, reversed comparison |
-| `SwingHighBar(Instance, Close, LeftStr, RightStr)` | Manual: bars-ago offset of the detected swing high | Same detection as `SwingHigh`; return `bars.len() - 1 - pivot_index` |
-| `SwingLowBar(Instance, Close, LeftStr, RightStr)` | Manual: bars-ago offset of the detected swing low | Same detection as `SwingLow`; return offset |
+| `SwingHigh(Occur, Price, Strength, Length)` | Manual: `bars[pivot]` > all `Strength` bars on each side, scanning the last `Length` bars | Occurrence is the FIRST PL arg (`Occur` selects Nth most recent swing); returns −1 when none found; `Length` must exceed `Strength`; confirmed only after `Strength` bars pass |
+| `SwingLow(Occur, Price, Strength, Length)` | Manual: `bars[pivot]` < all `Strength` bars on each side, scanning the last `Length` bars | Same pivot logic, reversed comparison; −1 when none found |
+| `SwingHighBar(Occur, Price, Strength, Length)` | Manual: bars-ago offset of the detected swing high | Same detection as `SwingHigh`; return `bars.len() - 1 - pivot_index` |
+| `SwingLowBar(Occur, Price, Strength, Length)` | Manual: bars-ago offset of the detected swing low | Same detection as `SwingLow`; return offset |
 | `Summation(Close, Length)` | Manual: `bars[len-length..len].iter().map(\|b\| b.close).sum::<f64>()` | Rolling sum over last `length` bars |
 | `Cum(Close)` | Manual: `self.cum_val += bar.close;` | Cumulative sum from bar 1; store running total in struct field |
 | `LinearRegValue(Close, Length, Offset)` | Manual: least-squares fit over `length` bars, evaluate at `Offset` | Compute slope/intercept via `Σxy`, `Σx²`; project forward by `Offset` bars |
@@ -209,7 +209,7 @@ The slice `&bars[..=i]` gives the strategy access to full history; `bars.last().
 | `MRO(Cond, Length, Instance)` | Manual: scan backward from current bar for `Instance`-th true | Returns bars-ago offset; iterate `(1..=length).rev()`, decrement instance counter on match |
 | `AccumDist` | Manual: `self.ad += ((close−low)−(high−close))/(high−low) * volume` | Cumulative; guard division by zero when `high == low` |
 | `IFF(Cond, TrueVal, FalseVal)` | `if cond { true_val } else { false_val }` | Direct Rust `if/else` expression; returns a value |
-| `TriAverage(Close, Length)` | Manual: `SimpleMovingAverage` applied twice | Double-SMA; create two `SimpleMovingAverage` instances, feed output of first into second |
+| `TriAverage(Close, Length)` | Manual: two `SimpleMovingAverage` instances of HALVED length `(length + 2) / 2` (= `ceil((Length+1)*0.5)`) | Triangular MA = SMA of SMA with the halved length, not the full length applied twice; feed output of first into second |
 | `FastK(StochLength)` | Manual: `(close - min) / (max - min) * 100` using `Minimum`/`Maximum` | Raw %K from default H/L/C; no ta-rs helper |
 | `FastD(StochLength)` | Manual: `SimpleMovingAverage::new(3)` applied to FastK values | Smoothed Fast %K |
 | `SlowK(StochLength)` | `SlowStochastic::new(StochLength, 3).unwrap()` → `.next(&data_item)` | Same as SlowStochastic output |
@@ -246,7 +246,6 @@ The slice `&bars[..=i]` gives the strategy access to full history; `bars.last().
 | `PivotLowVSBar(Inst, Price, LStr, RStr, Len)` | Manual: bars-ago offset of pivot low | Same detection, return offset |
 | `Divergence(P1, P2, Str, Len, HiLo)` | Manual: compare pivot highs/lows of price vs indicator | Return 1 if divergence found between two series |
 | `TimeSeriesForecast(Close, Length)` | Manual: `linear_reg_value + slope` | Uses same slope/intercept as `LinearRegValue` |
-
 | `SummationFC(Close, Length)` | Manual: `bars[len-length..len].iter().map(\|b\| b.close).sum::<f64>()` | Same as `Summation`; fast calc variant |
 | `OpenD(N)` | Manual: aggregate bars into daily periods, return `daily_bars[daily_bars.len()-1-N].open` | Requires daily bar aggregation from intraday data |
 | `HighD(N)` | Manual: `daily_bars[..].high` | Aggregate highs per day |
@@ -367,6 +366,30 @@ The slice `&bars[..=i]` gives the strategy access to full history; `bars.last().
 ---
 
 ## Part 2: Semantic Differences and Gotchas
+
+### Order fill timing — the #1 conversion bug
+
+PL `Buy next bar at market` fills at the NEXT bar's OPEN, and `next bar at X Stop` / `Limit` fills intrabar on the next bar at the stop/limit price (or at the open if the bar gaps through it). A converted simulator that flips position on the signal bar (same-bar close fill) is one bar early and uses the wrong price.
+
+The executor must queue orders produced on bar N and fill them against bar N+1:
+
+```rust
+for i in 0..bars.len() - 1 {
+    orders.clear();
+    strategy.on_bar(&bars[..=i], &mut orders);    // orders queued on bar i...
+    let next = &bars[i + 1];
+    for order in &orders {                        // ...filled on bar i+1
+        match order.order_type {
+            OrderType::Market => fill(order, next.open),       // next bar's OPEN
+            OrderType::Stop(p) if next.high >= p =>            // buy stop
+                fill(order, p.max(next.open)),                 // intrabar at the stop price
+            _ => {} // sell stop: next.low <= p; limit orders mirror with reversed comparisons
+        }
+    }
+}
+```
+
+**EMA seeding/warmup gotcha:** PL `XAverage` seeds recursively from the first bar's price; ta-rs `ExponentialMovingAverage` also seeds with the first value, so the two match — but pandas-ta (SMA seed by default), TA-Lib (SMA-of-first-Length seed), and Pine (`na` during warmup) all differ. Early-history signals diverge across targets — discard roughly the first 3×Length bars before comparing backtests.
 
 1. **`Sell` does not mean "go short".** In PowerLanguage, `Sell` exits an existing long position. The Rust equivalent is closing the position (setting position to 0 and recording the exit). Do not create a new short entry as a translation of `Sell`.
 

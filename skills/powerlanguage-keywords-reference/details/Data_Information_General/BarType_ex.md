@@ -1,11 +1,12 @@
-﻿# BarType_ex
+# BarType_ex
 
 **Category:** Data_Information_General
 **Signature:** `See official docs for signature details.`
 
 **Example (illustrative)**
 ```
-Value1 = BarType_ex;
+Variables: str_val("");
+str_val = BarType_ex;  // BarType_ex returns a string
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=BarType_ex

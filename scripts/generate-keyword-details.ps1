@@ -55,29 +55,8 @@ foreach ($lib in $libs) {
   Import-Module "$repoRoot/scripts/lib/$lib.psm1" -Force
 }
 
-function Get-CleanedParamDescription {
-  param([string] $RawDesc)
-
-  # Strip CHM boilerplate prefixes that we already encode separately via *(optional)*/*(required)*.
-  $cleaned = $RawDesc
-  $cleaned = $cleaned -replace '^\s*an\s+optional\s+parameter\s*;\s*',''
-  $cleaned = $cleaned -replace '^\s*a\s+required\s+parameter\s*;\s*',''
-  $cleaned = $cleaned -replace '^\s*an?\s+optional\s+parameter\.\s*',''
-  $cleaned = $cleaned -replace '^\s*a\s+required\s+parameter\.\s*',''
-  $cleaned = $cleaned.Trim()
-
-  # Try the rule-based paraphraser first.
-  try {
-    return Get-ParaphrasedDescription $cleaned
-  } catch {
-    # Paraphraser couldn't safely rewrite this one. Fall back to a short, original
-    # placeholder pointing the user at the wiki for full details.
-    # Take the first <= 6 words (under the 9-word lint threshold) and append a citation.
-    $words = $cleaned -split '\s+'
-    $first = ($words | Select-Object -First 6) -join ' '
-    return "$first — see official docs"
-  }
-}
+# Get-CleanedParamDescription now lives in lib/Paraphrase.psm1 (imported above)
+# so it is unit-testable.
 
 # Find every .htm under the category tree
 $htmFiles = Get-ChildItem "$ChmExtractedRoot/files/03_words" -Recurse -Filter '*.htm'
@@ -95,7 +74,7 @@ foreach ($f in $htmFiles) {
     $parsed = Parse-ChmFile $f.FullName
 
     # Try to paraphrase the main description. If the paraphraser can't safely
-    # rewrite it (rule miss or 10-word verbatim run survived), fall back to a
+    # rewrite it (rule miss or 9-word verbatim run survived), fall back to a
     # generic placeholder + the wiki link in the footer. This keeps coverage
     # at 100% of keywords rather than dropping un-paraphraseable ones.
     try {
@@ -127,13 +106,16 @@ foreach ($f in $htmFiles) {
     # come from Parse-Chm's regex extraction and occasionally contain large
     # chunks of the CHM Usage prose verbatim. Replacing them with placeholders
     # preserves the keyword file at the cost of less detail.
-    $md = Get-Content $outPath -Raw
-    $htm = Get-Content $f.FullName -Raw
+    # -Encoding UTF8 everywhere: these files are BOM-less UTF-8; PS 5.1 would
+    # otherwise read them as ANSI and corrupt non-ASCII characters.
+    $md = Get-Content $outPath -Raw -Encoding UTF8
+    $htm = Get-Content $f.FullName -Raw -Encoding UTF8
+    $persistentLeak = $false
     if (Test-VerbatimLint -MarkdownText $md -SourceHtmlText $htm) {
       # Step 1: placeholder description.
       Write-KeywordDetailFile -Parsed $parsed -Description $placeholderDescription -Example $example -OutputRoot $DetailsRoot | Out-Null
       $verbatimLintFailures++
-      $md2 = Get-Content $outPath -Raw
+      $md2 = Get-Content $outPath -Raw -Encoding UTF8
       if (Test-VerbatimLint -MarkdownText $md2 -SourceHtmlText $htm) {
         # Step 2: also blank out Usage + Parameters.
         $strippedParsed = @{
@@ -143,15 +125,59 @@ foreach ($f in $htmFiles) {
           Parameters = @()
         }
         Write-KeywordDetailFile -Parsed $strippedParsed -Description $placeholderDescription -Example $example -OutputRoot $DetailsRoot | Out-Null
-        $md3 = Get-Content $outPath -Raw
+        $md3 = Get-Content $outPath -Raw -Encoding UTF8
         if (Test-VerbatimLint -MarkdownText $md3 -SourceHtmlText $htm) {
-          $failures += @{ File = $f.FullName; Reason = 'verbatim-lint (persists even with stripped placeholder)' }
+          # Fail closed: a verbatim leak survived every escalation step.
+          # Remove the leaking file from disk so it can never be committed,
+          # and record a hard failure (the run will exit 1 below).
+          Remove-Item $outPath -Force -ErrorAction SilentlyContinue
+          Write-Host "REMOVED leaking output: $outPath" -ForegroundColor Red
+          $persistentLeak = $true
+          $failures += @{ File = $f.FullName; Reason = 'verbatim-lint (persists even with stripped placeholder); output file removed' }
         }
       }
     }
-    $parsedKeywords += $parsed
+    if (-not $persistentLeak) { $parsedKeywords += $parsed }
   } catch {
     $failures += @{ File = $f.FullName; Reason = $_.Exception.Message }
+  }
+}
+
+# Fail closed: any hard failure (parse error or persistent verbatim leak)
+# aborts the run BEFORE index/fixture building, with a non-zero exit code,
+# so stale or leaking content is never indexed or committed.
+if ($failures.Count -gt 0) {
+  Write-Host ""
+  Write-Host "$($failures.Count) keyword(s) hit a hard failure:" -ForegroundColor Red
+  $failures | ForEach-Object {
+    Write-Host "  $($_.File)  =>  $($_.Reason)" -ForegroundColor Red
+  }
+  Write-Host "Fail-closed: skipping index + fixture build. Fix the failures and re-run." -ForegroundColor Red
+  exit 1
+}
+
+# Reconciliation: delete orphan detail files whose keyword is no longer in the
+# parsed set (e.g. removed/renamed in a newer CHM). Without this, Build-Index
+# would re-index stale files forever.
+$expectedRel = @{}
+foreach ($kw in $parsedKeywords) { $expectedRel["$($kw.Category)\$($kw.Name).md"] = $true }
+$orphansDeleted = 0
+if (Test-Path $DetailsRoot) {
+  $detailsRootFull = (Resolve-Path $DetailsRoot).Path
+  Get-ChildItem $detailsRootFull -Recurse -Filter '*.md' | ForEach-Object {
+    $rel = "$($_.Directory.Name)\$($_.Name)"
+    if (-not $expectedRel.ContainsKey($rel)) {
+      Write-Host "Reconciliation: deleting orphan detail file $($_.FullName)" -ForegroundColor Yellow
+      Remove-Item $_.FullName -Force
+      $orphansDeleted++
+    }
+  }
+  # Drop category folders left empty by the reconciliation.
+  Get-ChildItem $detailsRootFull -Directory | Where-Object {
+    @(Get-ChildItem $_.FullName -Recurse -File).Count -eq 0
+  } | ForEach-Object {
+    Write-Host "Reconciliation: removing empty category folder $($_.FullName)" -ForegroundColor Yellow
+    Remove-Item $_.FullName -Recurse -Force
   }
 }
 
@@ -169,11 +195,4 @@ Write-Host ""
 Write-Host "Generated $($parsedKeywords.Count) of $($htmFiles.Count) keyword files." -ForegroundColor Green
 Write-Host "  $paraphraseSkipped keyword(s) used the placeholder description (paraphrase rule miss)." -ForegroundColor Cyan
 Write-Host "  $verbatimLintFailures keyword(s) had a verbatim-lint hit and were rewritten with placeholder." -ForegroundColor Cyan
-
-if ($failures.Count -gt 0) {
-  Write-Host ""
-  Write-Host "$($failures.Count) keyword(s) hit a hard failure:" -ForegroundColor Yellow
-  $failures | ForEach-Object {
-    Write-Host "  $($_.File)  =>  $($_.Reason)" -ForegroundColor Yellow
-  }
-}
+Write-Host "  $orphansDeleted orphan detail file(s) removed by reconciliation." -ForegroundColor Cyan

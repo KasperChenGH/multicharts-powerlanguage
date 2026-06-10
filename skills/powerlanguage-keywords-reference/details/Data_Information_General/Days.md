@@ -1,11 +1,11 @@
-﻿# Days
+# Days
 
 **Category:** Data_Information_General
 **Signature:** ``
 
 **Example (illustrative)**
 ```
-Value1 = Days;
+// Days is a connector word used within other statements (e.g. 1 Bar Ago, Buy Next Bar at Market); not a standalone value.
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=Days

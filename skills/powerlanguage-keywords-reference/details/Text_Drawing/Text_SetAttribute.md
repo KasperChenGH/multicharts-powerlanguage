@@ -1,7 +1,7 @@
-﻿# Text_SetAttribute
+# Text_SetAttribute
 
 **Category:** Text_Drawing
-**Signature:** `Text_SetAttribute(ObjectID,Attribute,LogicalExpression) Parameters`
+**Signature:** `Text_SetAttribute(ObjectID,Attribute,LogicalExpression)`
 
 **Parameters**
 - `ObjectID` *(numeric, required)* — see official docs
@@ -10,7 +10,7 @@
 
 **Example (illustrative)**
 ```
-Value1 = Text_SetAttribute( 14, 14, True );
+Text_SetAttribute( ObjectID, Attribute, LogicalExpression );  // parameter names are placeholders -- replace with real values (see the Usage line above)
 ```
 
 *Official docs:* https://www.multicharts.com/trading-software/index.php?title=Text_SetAttribute
