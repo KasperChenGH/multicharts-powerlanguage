@@ -6,7 +6,7 @@
 
 A Claude Code plugin for [MultiCharts](https://www.multicharts.com/) PowerLanguage — gives Claude expert knowledge of PowerLanguage syntax, 947 keywords, 160 functions (150 built-in + 10 custom), and bidirectional code conversion to [TradingView Pine Script](https://www.tradingview.com/), Python, Rust, and C++.
 
-**947 keywords · 160 functions · 8 auto-activating skills · 4 conversion targets**
+**947 keywords · 160 functions · 10 auto-activating skills · 4 conversion targets**
 
 ---
 
@@ -48,7 +48,7 @@ If MyRSI Crosses Above Overbought Then
 SetStopLoss(StopLossPct * 0.01 * EntryPrice);
 ```
 
-### Code conversion
+### Code conversion (quick)
 
 > Convert this to Python / Rust / C++ / Pine Script
 
@@ -62,6 +62,245 @@ Buy ("Entry") 1 Contract Next Bar at Market;
 | Python | `orders.append(Order("Entry", Side.LONG, OrderType.MARKET, 1))` |
 | Rust | `orders.push(Order { label: "Entry", side: Side::Long, order_type: OrderType::Market, qty: 1 })` |
 | C++ | `orders.push_back({"Entry", Side::Long, OrderType::Market, 1});` |
+
+### Full conversion example
+
+The following PowerLanguage strategy buys when a fast EMA crosses above a slow EMA, sells on the reverse cross, and uses an ATR-based trailing stop. Below it is the same logic in all four conversion targets.
+
+#### PowerLanguage (source)
+
+```pascal
+Inputs:
+    FastLen(9),
+    SlowLen(21),
+    ATRLen(14),
+    TrailMult(2.0);
+
+Variables:
+    fastMA(0),
+    slowMA(0),
+    atrVal(0),
+    trailStop(0);
+
+fastMA = AverageFC(Close, FastLen);
+slowMA = AverageFC(Close, SlowLen);
+atrVal = AvgTrueRange(ATRLen);
+
+If fastMA Crosses Over slowMA Then
+    Buy ("EMA Cross") Next Bar at Market;
+
+If fastMA Crosses Under slowMA Then
+    Sell ("EMA Exit") Next Bar at Market;
+
+If MarketPosition = 1 Then Begin
+    trailStop = Highest(High, 10) - TrailMult * atrVal;
+    Sell ("Trail") Next Bar at trailStop Stop;
+End;
+```
+
+#### Pine Script
+
+```pine
+//@version=5
+strategy("EMA Cross + ATR Trail", overlay=true,
+         initial_capital=10000, default_qty_type=strategy.fixed, default_qty_value=1)
+
+fastLen   = input.int(9,   "Fast EMA")
+slowLen   = input.int(21,  "Slow EMA")
+atrLen    = input.int(14,  "ATR Length")
+trailMult = input.float(2.0, "Trail Multiplier")
+
+fastMA = ta.ema(close, fastLen)
+slowMA = ta.ema(close, slowLen)
+atrVal = ta.atr(atrLen)
+
+if ta.crossover(fastMA, slowMA)
+    strategy.entry("EMA Cross", strategy.long)
+
+if ta.crossunder(fastMA, slowMA)
+    strategy.close("EMA Cross", comment="EMA Exit")
+
+if strategy.position_size > 0
+    trailStop = ta.highest(high, 10) - trailMult * atrVal
+    strategy.exit("Trail", from_entry="EMA Cross", stop=trailStop)
+
+plot(fastMA, "Fast EMA", color=color.blue)
+plot(slowMA, "Slow EMA", color=color.orange)
+```
+
+#### Python (pandas-ta)
+
+```python
+import pandas as pd
+import pandas_ta as ta
+
+class EMACrossTrail:
+    def __init__(self, fast=9, slow=21, atr_len=14, trail_mult=2.0):
+        self.fast = fast
+        self.slow = slow
+        self.atr_len = atr_len
+        self.trail_mult = trail_mult
+        self.position = 0  # 1 = long, 0 = flat
+
+    def run(self, df: pd.DataFrame) -> pd.DataFrame:
+        df["fast_ma"] = ta.ema(df["close"], length=self.fast)
+        df["slow_ma"] = ta.ema(df["close"], length=self.slow)
+        df["atr"]     = ta.atr(df["high"], df["low"], df["close"], length=self.atr_len)
+
+        signals = []
+        for i in range(1, len(df)):
+            signal = None
+            fast_prev, fast_curr = df["fast_ma"].iloc[i - 1], df["fast_ma"].iloc[i]
+            slow_prev, slow_curr = df["slow_ma"].iloc[i - 1], df["slow_ma"].iloc[i]
+
+            # EMA crossover → buy
+            if fast_prev <= slow_prev and fast_curr > slow_curr and self.position == 0:
+                self.position = 1
+                signal = "BUY"
+
+            # EMA crossunder → sell
+            elif fast_prev >= slow_prev and fast_curr < slow_curr and self.position == 1:
+                self.position = 0
+                signal = "SELL"
+
+            # ATR trailing stop
+            elif self.position == 1:
+                trail = df["high"].iloc[max(0, i - 9):i + 1].max() - self.trail_mult * df["atr"].iloc[i]
+                if df["close"].iloc[i] < trail:
+                    self.position = 0
+                    signal = "TRAIL_STOP"
+
+            signals.append(signal)
+
+        df["signal"] = [None] + signals
+        return df
+```
+
+#### Rust (ta-rs)
+
+```rust
+use ta::indicators::ExponentialMovingAverage;
+use ta::indicators::AverageTrueRange;
+use ta::Next;
+
+struct EmaCrossTrail {
+    fast_ema: ExponentialMovingAverage,
+    slow_ema: ExponentialMovingAverage,
+    atr: AverageTrueRange,
+    trail_mult: f64,
+    position: i32, // 1 = long, 0 = flat
+    prev_fast: f64,
+    prev_slow: f64,
+    highs: Vec<f64>,
+}
+
+impl EmaCrossTrail {
+    fn new(fast: usize, slow: usize, atr_len: usize, trail_mult: f64) -> Self {
+        Self {
+            fast_ema: ExponentialMovingAverage::new(fast).unwrap(),
+            slow_ema: ExponentialMovingAverage::new(slow).unwrap(),
+            atr: AverageTrueRange::new(atr_len).unwrap(),
+            trail_mult,
+            position: 0,
+            prev_fast: 0.0,
+            prev_slow: 0.0,
+            highs: Vec::new(),
+        }
+    }
+
+    fn on_bar(&mut self, high: f64, low: f64, close: f64) -> Option<&str> {
+        let fast = self.fast_ema.next(close);
+        let slow = self.slow_ema.next(close);
+        let atr_val = self.atr.next((high, low, close));
+        self.highs.push(high);
+
+        let signal = if self.prev_fast <= self.prev_slow && fast > slow && self.position == 0 {
+            self.position = 1;
+            Some("BUY")
+        } else if self.prev_fast >= self.prev_slow && fast < slow && self.position == 1 {
+            self.position = 0;
+            Some("SELL")
+        } else if self.position == 1 {
+            let lookback = self.highs.len().saturating_sub(10);
+            let highest: f64 = self.highs[lookback..].iter().copied()
+                .fold(f64::NEG_INFINITY, f64::max);
+            let trail = highest - self.trail_mult * atr_val;
+            if close < trail {
+                self.position = 0;
+                Some("TRAIL_STOP")
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
+        self.prev_fast = fast;
+        self.prev_slow = slow;
+        signal
+    }
+}
+```
+
+#### C++ (TA-Lib)
+
+```cpp
+#include <vector>
+#include <string>
+#include <algorithm>
+#include "ta-lib/ta_libc.h"
+
+class EmaCrossTrail {
+    int fast_, slow_, atr_len_;
+    double trail_mult_;
+    int position_ = 0; // 1 = long, 0 = flat
+
+public:
+    EmaCrossTrail(int fast, int slow, int atr_len, double trail_mult)
+        : fast_(fast), slow_(slow), atr_len_(atr_len), trail_mult_(trail_mult) {}
+
+    std::vector<std::string> run(
+        const std::vector<double>& high,
+        const std::vector<double>& low,
+        const std::vector<double>& close)
+    {
+        int n = static_cast<int>(close.size());
+        std::vector<double> fast_ma(n), slow_ma(n), atr(n);
+        int begin_idx, out_count;
+
+        TA_EMA(0, n - 1, close.data(), fast_, &begin_idx, &out_count, fast_ma.data());
+        TA_EMA(0, n - 1, close.data(), slow_, &begin_idx, &out_count, slow_ma.data());
+        TA_ATR(0, n - 1, high.data(), low.data(), close.data(),
+               atr_len_, &begin_idx, &out_count, atr.data());
+
+        std::vector<std::string> signals(n);
+        for (int i = 1; i < n; ++i) {
+            // EMA crossover → buy
+            if (fast_ma[i - 1] <= slow_ma[i - 1] && fast_ma[i] > slow_ma[i]
+                && position_ == 0) {
+                position_ = 1;
+                signals[i] = "BUY";
+            }
+            // EMA crossunder → sell
+            else if (fast_ma[i - 1] >= slow_ma[i - 1] && fast_ma[i] < slow_ma[i]
+                     && position_ == 1) {
+                position_ = 0;
+                signals[i] = "SELL";
+            }
+            // ATR trailing stop
+            else if (position_ == 1) {
+                int start = std::max(0, i - 9);
+                double highest = *std::max_element(high.begin() + start, high.begin() + i + 1);
+                double trail = highest - trail_mult_ * atr[i];
+                if (close[i] < trail) {
+                    position_ = 0;
+                    signals[i] = "TRAIL_STOP";
+                }
+            }
+        }
+        return signals;
+    }
+};
 
 ---
 
