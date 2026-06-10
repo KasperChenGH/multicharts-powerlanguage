@@ -345,7 +345,7 @@ The slice `&bars[..=i]` gives the strategy access to full history; `bars.last().
 |---|---|---|
 | `If cond Then Begin ... End;` | `if cond { ... }` | Direct mapping |
 | `If cond Then ... Else ...` | `if cond { ... } else { ... }` | Direct mapping |
-| `For i = 1 to n Begin ... End;` | `for i in 1..=n { ... }` | PL `For` is inclusive; Rust `..=` is inclusive |
+| `For idx = 1 to n Begin ... End;` | `for i in 1..=n { ... }` | PL `For` is inclusive; Rust `..=` is inclusive. PL side uses `idx` because `i` is reserved (alias for OpenInterest) |
 | `While cond Begin ... End;` | `while cond { ... }` | Direct mapping |
 | `Switch (expr) Begin Case 1: ... End;` | `match expr { 1 => { ... }, _ => {} }` | Rust `match` requires exhaustive arms; add `_ => {}` default; PL empty case body is a compile error — use `Value1 = Value1;` as no-op |
 | `Once Begin ... End;` | `if self.first_bar { ... self.first_bar = false; }` | Use a bool field; PL `Once` runs on first bar only |
