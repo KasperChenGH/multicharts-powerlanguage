@@ -21,6 +21,63 @@ All 10 skills auto-trigger when relevant — no manual invocation needed. Works 
 
 ---
 
+## How to use
+
+After installing, just talk to Claude naturally. The plugin activates automatically when your question involves PowerLanguage, Pine Script, or code conversion — no special commands needed.
+
+### Ask about PowerLanguage syntax
+
+```
+You: What's the difference between EntryPrice and OpenEntryPrice in MultiCharts?
+
+You: How do I declare an array in PowerLanguage?
+
+You: What parameters does the Stochastic function take?
+```
+
+### Generate PowerLanguage code
+
+```
+You: Write a signal that buys when RSI crosses below 30 and sells when it crosses above 70
+
+You: Create an indicator that plots Bollinger Bands with a 20-period SMA and 2 standard deviations
+
+You: Write a function that calculates the Sharpe ratio
+```
+
+### Convert code between languages
+
+```
+You: Convert this PowerLanguage signal to Pine Script:
+     [paste your code]
+
+You: Translate this Pine Script strategy to Python using pandas-ta:
+     [paste your code]
+
+You: Port this PowerLanguage indicator to Rust
+```
+
+### Ask about Pine Script
+
+```
+You: How does request.security() work in Pine Script?
+
+You: What's the difference between var and varip?
+
+You: Write a Pine Script indicator that shows RSI with overbought/oversold zones
+```
+
+### Debug and review
+
+```
+You: Why is this PowerLanguage signal giving me a compile error?
+     [paste your code]
+
+You: Review this strategy for common PowerLanguage gotchas
+```
+
+---
+
 ## Examples
 
 ### Code generation
