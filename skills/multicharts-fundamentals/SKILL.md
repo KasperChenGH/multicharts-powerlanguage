@@ -1,6 +1,6 @@
 ---
 name: multicharts-fundamentals
-description: Use when you need to understand what MultiCharts is, which PowerLanguage script type to write (Indicator vs Signal vs Function), how scripts execute (bar-close vs intra-bar-order-generation), how to reference multiple data series (data1, data2, ...), how Buy/Sell/SellShort/BuyToCover orders are issued, or what the unique-signal-name compile rule is. Triggers for orientation questions about the MultiCharts platform and the structural choices in a PowerLanguage script.
+description: Use when orienting on the MultiCharts platform — choosing Indicator vs Signal vs Function, bar-close vs intra-bar-order-generation execution, multi-data references (data1, data2), Buy/Sell/SellShort/BuyToCover orders, and the unique-signal-name compile rule.
 ---
 
 # MultiCharts Fundamentals

@@ -1,13 +1,6 @@
 ---
 name: pinescript-builtins
-description: >-
-  Use when writing Pine Script indicator/strategy logic — built-in
-  namespaces and functions: ta.* (moving averages, oscillators, trend,
-  volatility, volume, crossovers), strategy.* (order functions, position
-  info), request.* (multi-timeframe, financial data), math.*, str.*,
-  array.*, color.*, bar state and time variables, symbol info. For language
-  fundamentals (types, declarations, control flow), see pinescript-core.
-  For plotting and drawing objects, see pinescript-visual.
+description: Use when writing Pine Script logic with built-in namespaces — ta.* (averages, oscillators, crossovers), strategy.* (orders, position info), request.* (multi-timeframe), math.*, str.*, array.*, color.*, bar state, symbol info.
 ---
 
 # Pine Script Built-in Namespaces

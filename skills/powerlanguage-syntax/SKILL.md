@@ -1,6 +1,6 @@
 ---
 name: powerlanguage-syntax
-description: Use when reading or writing PowerLanguage code — declarations (Inputs, Variables, Arrays), data types (numeric, string, truefalse), the begin/end semicolon rules, control flow (If/Then/Else, For, While, Switch), bar references (Close, Close[N], Date, Time, BarNumber), operators, comments, the pre-declared Value0..Value99 and Condition0..Condition99 built-ins, the built-in trade-state variables (MarketPosition, EntryPrice, BarsSinceEntry, CurrentContracts), and common gotchas — including "syntax error, unexpected X" / "Wrong syntax of X" errors caused by writing keywords like Print/File/Variable/If/Yesterday/#BeginCmtry as RHS values, MarketPosition(N) being position history (NOT bar offset), and bars being labeled by their close time (NOT open time).
+description: Use when reading or writing PowerLanguage code — declarations, data types, begin/end rules, control flow, bar references (Close[N]), Value/Condition built-ins, trade-state variables (MarketPosition, EntryPrice), and gotchas including "syntax error, unexpected X" / "Wrong syntax of X" from keywords used as RHS values, MarketPosition(N) being position history (not bar offset), and bars labeled by close time.
 ---
 
 # PowerLanguage Syntax

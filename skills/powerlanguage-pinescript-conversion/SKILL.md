@@ -1,11 +1,6 @@
 ---
 name: powerlanguage-pinescript-conversion
-description: >-
-  Use when converting, translating, porting, or migrating code between
-  MultiCharts PowerLanguage and TradingView Pine Script, in either direction.
-  Contains concept mapping tables, semantic difference documentation, and
-  pre/post-conversion checklists. References pinescript-core, pinescript-builtins,
-  pinescript-visual, and powerlanguage-syntax for language-specific details.
+description: Use when converting or porting code between MultiCharts PowerLanguage and TradingView Pine Script in either direction — concept mapping tables, semantic differences, conversion checklists.
 ---
 
 # PowerLanguage ↔ Pine Script Conversion

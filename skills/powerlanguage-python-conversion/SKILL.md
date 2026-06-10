@@ -1,6 +1,6 @@
 ---
 name: powerlanguage-python-conversion
-description: Use when converting, translating, porting, or migrating code between MultiCharts PowerLanguage and Python, in either direction. Contains a lightweight Strategy ABC scaffold, concept mapping tables, semantic difference documentation, and pre/post-conversion checklists. References powerlanguage-syntax for PowerLanguage-specific details. Recommends pandas-ta as the primary indicator library with TA-Lib as an alternative.
+description: Use when converting or porting code between MultiCharts PowerLanguage and Python in either direction — Strategy ABC scaffold, concept mapping tables, semantic differences, pandas-ta/TA-Lib indicators, conversion checklists.
 ---
 
 # PowerLanguage ↔ Python Conversion

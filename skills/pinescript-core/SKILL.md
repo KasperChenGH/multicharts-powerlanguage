@@ -1,15 +1,6 @@
 ---
 name: pinescript-core
-description: >-
-  Use when writing or reading Pine Script code structure — language
-  fundamentals: versioning (@version=5, @version=6), script types
-  (indicator, strategy, library), type system (series, simple, input,
-  const), declarations (var, varip, input.*), control flow (if/else,
-  for, while, switch, ternary), user-defined functions/types/methods,
-  and common gotchas (repainting, na handling, series vs simple context,
-  max_bars_back, global-scope function calls). For built-in namespaces
-  (ta.*, math.*, strategy.*, request.*), see pinescript-builtins. For
-  plotting and drawing objects, see pinescript-visual.
+description: Use when writing or reading Pine Script language fundamentals — @version, script types (indicator/strategy/library), type system (series/simple/const), var/varip/input.*, control flow, user-defined functions/types, gotchas (repainting, na handling, max_bars_back).
 ---
 
 # Pine Script Core — Language Fundamentals

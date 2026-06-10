@@ -1,12 +1,6 @@
 ---
 name: powerlanguage-rust-conversion
-description: >-
-  Use when converting, translating, porting, or migrating code between
-  MultiCharts PowerLanguage and Rust, in either direction. Contains a
-  lightweight Strategy trait scaffold, concept mapping tables, semantic
-  difference documentation, and pre/post-conversion checklists. References
-  powerlanguage-syntax for PowerLanguage-specific details. Recommends the
-  ta-rs crate for technical indicators.
+description: Use when converting or porting code between MultiCharts PowerLanguage and Rust in either direction — Strategy trait scaffold, concept mapping tables, semantic differences, ta-rs indicators, conversion checklists.
 ---
 
 # PowerLanguage ↔ Rust Conversion

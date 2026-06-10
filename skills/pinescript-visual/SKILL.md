@@ -1,15 +1,6 @@
 ---
 name: pinescript-visual
-description: >-
-  Use when adding visual output to Pine Script — plotting and drawing:
-  plot(), plotshape(), plotchar(), plotarrow(), bgcolor(), barcolor(),
-  fill(), hline(), label.* (create, set, get, styles), line.* (segments,
-  rays, extend), box.* (rectangles, supply/demand zones), table.*
-  (fixed-position grids), map.* (key-value dictionaries), matrix.* (2D
-  arrays, linear algebra), log.* (debugging), alerts (alert,
-  alertcondition), and drawing object limits. For language fundamentals,
-  see pinescript-core. For built-in namespaces (ta.*, strategy.*), see
-  pinescript-builtins.
+description: Use when adding visual output to Pine Script — plot()/plotshape()/bgcolor()/fill()/hline(), label.*, line.*, box.*, table.*, map.*, matrix.*, log.*, alerts, and drawing object limits.
 ---
 
 # Pine Script Plotting & Drawing

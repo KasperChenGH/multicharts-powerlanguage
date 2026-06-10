@@ -1,12 +1,6 @@
 ---
 name: powerlanguage-cpp-conversion
-description: >-
-  Use when converting, translating, porting, or migrating code between
-  MultiCharts PowerLanguage and C++, in either direction. Contains a
-  lightweight Strategy base class scaffold, concept mapping tables, semantic
-  difference documentation, and pre/post-conversion checklists. References
-  powerlanguage-syntax for PowerLanguage-specific details. Recommends
-  TA-Lib for technical indicators.
+description: Use when converting or porting code between MultiCharts PowerLanguage and C++ in either direction — Strategy base-class scaffold, concept mapping tables, semantic differences, TA-Lib indicators, conversion checklists.
 ---
 
 # PowerLanguage ↔ C++ Conversion

@@ -1,6 +1,6 @@
 ---
 name: powerlanguage-keywords-reference
-description: Use when looking up any PowerLanguage keyword or built-in function — covers the 947 official keywords from MultiCharts's own help system, organized into 40 categories (Strategy Orders, Math and Trig, Date and Time Routines, Plotting, all four Drawing categories, Sessions, Strategy Position, Portfolio Money Management, etc.). Returns the keyword's name, category, signature, paraphrased description, and a link to the official wiki page.
+description: Use when looking up any of the 947 official PowerLanguage keywords and built-in functions across 40 categories (Strategy Orders, Math and Trig, Plotting, Drawing, Sessions, Portfolio, etc.) — returns signature, category, description, and official wiki link.
 ---
 
 # PowerLanguage Keywords Reference
