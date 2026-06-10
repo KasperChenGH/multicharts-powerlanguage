@@ -6,7 +6,7 @@ Describe 'Plugin metadata files' {
   It 'plugin.json parses as valid JSON and has expected fields' {
     $p = Get-Content "$repoRoot/.claude-plugin/plugin.json" -Raw | ConvertFrom-Json
     $p.name        | Should -Be 'multicharts-powerlanguage'
-    $p.version     | Should -Be '0.4.0'
+    $p.version     | Should -Be '0.5.0'
     $p.license     | Should -Be 'MIT'
     $p.author.name | Should -Be 'Yu-An Chen'
     $p.homepage    | Should -Match 'github.com/KasperChenGH/multicharts-powerlanguage'
@@ -24,7 +24,7 @@ Describe 'Plugin metadata files' {
   It 'package.json parses as valid JSON' {
     $j = Get-Content "$repoRoot/package.json" -Raw | ConvertFrom-Json
     $j.name    | Should -Be 'multicharts-powerlanguage'
-    $j.version | Should -Be '0.4.0'
+    $j.version | Should -Be '0.5.0'
   }
 
   It 'all three files declare the same version' {

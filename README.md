@@ -1,7 +1,7 @@
 # multicharts-powerlanguage
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.4.0-blue.svg)](https://github.com/KasperChenGH/multicharts-powerlanguage)
+[![Version](https://img.shields.io/badge/version-0.5.0-blue.svg)](https://github.com/KasperChenGH/multicharts-powerlanguage)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude_Code-plugin-blueviolet.svg)](https://github.com/KasperChenGH/multicharts-powerlanguage)
 
 A Claude Code plugin for [MultiCharts](https://www.multicharts.com/) PowerLanguage — gives Claude expert knowledge of PowerLanguage syntax, 947 keywords, 160 functions (150 built-in + 10 custom), and bidirectional code conversion to [TradingView Pine Script](https://www.tradingview.com/), Python, Rust, and C++.
