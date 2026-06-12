@@ -182,7 +182,7 @@ TA-Lib RT is a community fork that adds streaming APIs: `TA_SMA_StateInit()`, `T
 | `Lowest(Close, Length)` | `TA_MIN(0, endIdx, inClose, length, &outBeg, &outNB, outMin)` | Direct equivalent |
 | `Momentum(Close, Length)` | `TA_MOM(0, endIdx, inClose, length, &outBeg, &outNB, outMom)` | Direct equivalent |
 | `TSI(Close, LongLen, ShortLen)` | Manual: compute momentum, apply `TA_EMA` twice (long then short) to both momentum and abs(momentum), then `100.0 * smoothed_mtm / smoothed_abs_mtm` | TA-Lib has no `TA_TSI`; chain two EMA passes |
-| `AverageFC(Close, Length)` | `TA_SMA(0, endIdx, inClose, length, &outBeg, &outNB, outSma)` | Same as `Average`; FC = "fast calculation" (PL optimization, no C++ equivalent) |
+| `AverageFC(Close, Length)` | `TA_SMA(0, endIdx, inClose, length, &outBeg, &outNB, outSma)` | FC = "fast calculation": `AverageFC = SummationFC/Len` (running-sum SMA), numerically identical to `Average`; `TA_SMA` gives the same values |
 | `WAverage(Close, Length)` | `TA_WMA(0, endIdx, inClose, length, &outBeg, &outNB, outWma)` | Weighted moving average; direct equivalent |
 | `AdaptiveMovAvg(Close, Length)` | `TA_KAMA(0, endIdx, inClose, length, &outBeg, &outNB, outKama)` | Kaufman Adaptive MA; direct equivalent |
 | `MidPoint(Close, Length)` | `TA_MIDPOINT(0, endIdx, inClose, length, &outBeg, &outNB, outMid)` | (Highest + Lowest) / 2 over period |

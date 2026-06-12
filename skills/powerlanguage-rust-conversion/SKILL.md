@@ -150,7 +150,7 @@ The slice `&bars[..=i]` gives the strategy access to full history; `bars.last().
 | `Lowest(Close, Length)` | `Minimum::new(length).unwrap()` → `.next(bar.close)` | ta-rs `Minimum` indicator |
 | `Momentum(Close, Length)` | `close - bars[bars.len() - 1 - length].close` | No ta-rs built-in; compute directly from bar slice. Guard with `bars.len() > length`. |
 | `TSI(Close, LongLen, ShortLen)` | Manual: double-EMA of momentum / double-EMA of abs(momentum) | No ta-rs built-in; use two nested `ExponentialMovingAverage` pairs — one for `EMA(EMA(mtm, long), short)`, one for `EMA(EMA(abs(mtm), long), short)`, then `100 * ratio` |
-| `AverageFC(Close, Length)` | `SimpleMovingAverage::new(length).unwrap()` → `.next(bar.close)` | "Fast calculation" variant; same result as `Average` — use `SimpleMovingAverage` |
+| `AverageFC(Close, Length)` | `SimpleMovingAverage::new(length).unwrap()` → `.next(bar.close)` | FC = "fast calculation": `AverageFC = SummationFC/Len` (running-sum SMA), numerically identical to `Average` — use `SimpleMovingAverage` |
 | `WAverage(Close, Length)` | Manual: weighted sum `Σ(close[i] * (length - i)) / Σ(1..=length)` | No ta-rs built-in; iterate `bars[len-length..len]`, weight newest bar highest |
 | `AdaptiveMovAvg(Close, Length)` | `EfficiencyRatio::new(length)` + manual AMA smoothing | Use ta-rs `EfficiencyRatio`; smoothing constant `sc = (er * (fast_sc - slow_sc) + slow_sc)^2` with `fast_sc = 2/(2+1)`, `slow_sc = 2/(30+1)`, then AMA = `prev + sc * (close - prev)` (Kaufman formula — NOT `er^2`) |
 | `MidPoint(Close, Length)` | `(Maximum::new(length).next(c) + Minimum::new(length).next(c)) / 2.0` | Combine ta-rs `Maximum` and `Minimum` |

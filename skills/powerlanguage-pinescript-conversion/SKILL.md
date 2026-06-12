@@ -57,7 +57,7 @@ This skill covers the structural and semantic differences between MultiCharts Po
 | `Lowest(Close, Length)` | `ta.lowest(close, length)` | Direct equivalent |
 | `Momentum(Close, Length)` | `ta.mom(close, length)` | Direct equivalent |
 | `TSI(Close, LongLen, ShortLen)` | `ta.tsi(close, ShortLen, LongLen) * 100` | Pine signature is `ta.tsi(source, short_length, long_length)` and returns −1..+1 — swap the length order and multiply by 100 |
-| `AverageFC(Close, Length)` | `ta.sma(close, length)` | Fast-ceiling variant; Pine `ta.sma` is equivalent |
+| `AverageFC(Close, Length)` | `ta.sma(close, length)` | FC = "fast calculation": `AverageFC = SummationFC/Len` (running-sum SMA), numerically identical to `Average`; Pine `ta.sma` is equivalent |
 | `WAverage(Close, Length)` | `ta.wma(close, length)` | Direct equivalent |
 | `AdaptiveMovAvg(Close, Length)` | manual KAMA formula | No Pine built-in; implement Kaufman AMA manually |
 | `MidPoint(Close, Length)` | `(ta.highest(close, length) + ta.lowest(close, length)) / 2` | No built-in; average of highest and lowest |

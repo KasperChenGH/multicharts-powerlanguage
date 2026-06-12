@@ -210,7 +210,7 @@ The slice `bars[:i+1]` gives the strategy access to full history; `bars[-1]` is 
 | `CountIF(cond, N)` | `cond_series.rolling(N).sum()` | Manual: `sum(1 for ...)` | Count True values |
 | `Crosses Over` | `prev_a <= prev_b and a > b` | Same | No built-in; store previous values |
 | `Crosses Under` | `prev_a >= prev_b and a < b` | Same | Same |
-| `AverageFC(Close, N)` | `ta.sma(closes, length=N)` | `talib.SMA(closes, timeperiod=N)` | Fast version of Average; same math, use SMA |
+| `AverageFC(Close, N)` | `ta.sma(closes, length=N)` | `talib.SMA(closes, timeperiod=N)` | FC = "fast calculation": `AverageFC = SummationFC/Len` (running-sum SMA), numerically identical to `Average` — use SMA |
 | `AdaptiveMovAvg(Close, N)` | `ta.kama(closes, length=N)` | `talib.KAMA(closes, timeperiod=N)` | Kaufman Adaptive Moving Average |
 | `UltimateOscillator(7,14,28)` | `ta.uo(highs, lows, closes, fast=7, medium=14, slow=28)` | `talib.ULTOSC(highs, lows, closes, timeperiod1=7, timeperiod2=14, timeperiod3=28)` | Requires HLC |
 | `ChaikinOsc(3, 10)` | `ta.adosc(highs, lows, closes, volumes, fast=3, slow=10)` | `talib.ADOSC(highs, lows, closes, volumes, fastperiod=3, slowperiod=10)` | Requires HLCV |
